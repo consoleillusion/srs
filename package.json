@@ -1,0 +1,52 @@
+{
+  "name": "resource-server",
+  "version": "0.0.1",
+  "description": "JSON Schema in, JSON:API server out (Bun, Hono, Turso/SQLite)",
+  "type": "module",
+  "bin": {
+    "resource-server": "./src/cli.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client/index.ts",
+    "./build-schema": "./src/db/build-schema.ts"
+  },
+  "files": [
+    "src",
+    "!src/**/*.test.ts",
+    "!src/seed",
+    "README.md"
+  ],
+  "engines": {
+    "bun": ">=1.4"
+  },
+  "scripts": {
+    "db:migrate": "bunx drizzle-kit migrate --config drizzle.config.ts",
+    "db:generate": "bun src/db/generate-migration.ts",
+    "db:reset": "bun src/db/reset.ts",
+    "dev": "bun --watch src/server/index.ts",
+    "start": "bun src/server/index.ts",
+    "test": "bun test",
+    "cli": "bun src/cli.ts",
+    "pretest": "bun src/db/generate-migration.ts",
+    "docs": "bun install --cwd tools/typedoc && tools/typedoc/node_modules/.bin/typedoc",
+    "docs:check": "bun install --cwd tools/typedoc && tools/typedoc/node_modules/.bin/typedoc --emit none"
+  },
+  "dependencies": {
+    "@serenity-kit/opaque": "^1.1.0",
+    "@tursodatabase/database": "^0.8.3",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "dotenv": "^18.0.10",
+    "drizzle-kit": "1.0.0-rc.5-ab785fc",
+    "drizzle-orm": "1.0.0-rc.5-ab785fc",
+    "hono": "^4.13.18",
+    "ts-japi": "^1.12.8",
+    "tweetnacl": "^1.0.3",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.4",
+    "typescript": "^7.0.2"
+  }
+}
