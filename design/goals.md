@@ -30,7 +30,7 @@ should write schema, not CRUD handlers.
 - Passwords never leave the client.
 - Generated migrations are not edited by hand.
 - Applied migrations are immutable.
-- The API is JSON:API 1.0; authentication success bodies are plain JSON.
+- The API is JSON:API 1.1; authentication success bodies are plain JSON.
 - `owner` always references `user.id`, never a group.
 
 ## Non-goals

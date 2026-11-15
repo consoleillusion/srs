@@ -26,7 +26,7 @@ Optional:
 
 ```bash
 SCHEMA_DIR=./schemas      # directory of .json or .yaml schema files
-SERBER_ADMINS=alice,bob   # usernames that always hold the admin role
+SRS_ADMINS=alice,bob      # usernames that always hold the admin role
 MIGRATE_ON_START=true     # set to false to apply migrations yourself
 ```
 

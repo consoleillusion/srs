@@ -68,7 +68,7 @@ Anonymous creates link only to public rows. A row created anonymously with
 ## Roles
 
 A user holds a role through a row in the system `user_role` resource, which only
-admins can create, read, or delete. Usernames listed in `SERBER_ADMINS` always
+admins can create, read, or delete. Usernames listed in `SRS_ADMINS` always
 hold `admin`, which is how the first admin is set up. A username is fixed at
 registration and cannot be changed through the API, so nobody can take an admin
 name by renaming. Register the admin accounts before opening registration to

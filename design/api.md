@@ -1,6 +1,6 @@
 # API
 
-SRS exposes a JSON:API 1.0 layer over Hono. Generic resource routes are
+SRS exposes a JSON:API 1.1 layer over Hono. Generic resource routes are
 generated from the exposed tables in the built schema. Authentication uses a
 small plain-JSON surface under `/key`.
 
@@ -153,7 +153,7 @@ A collection response:
 
 ```json
 {
-  "jsonapi": { "version": "1.0" },
+  "jsonapi": { "version": "1.1" },
   "data": [
     {
       "type": "article",

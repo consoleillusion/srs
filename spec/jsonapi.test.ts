@@ -100,6 +100,14 @@ describe('links and document structure', () => {
     expect(doc.included[0].links.self).toBe(`http://localhost/tag/${tag}`)
   })
 
+  test('error documents carry the same version', async () => {
+    const { app } = await createTestServer({ session: true })
+
+    const doc = await json(await app.request('/article'))
+    expect(doc.jsonapi).toEqual({ version: '1.1' })
+    expect(doc.errors[0].status).toBe('401')
+  })
+
   test('collections carry pagination links', async () => {
     const { alice } = await seed()
 
