@@ -149,7 +149,7 @@ workflow. It is not yet populated automatically.
 | `user_id` | blob | Foreign key to `user.id`, required, `ON DELETE CASCADE` |
 
 The pair `(user_id, role)` is unique. Only admins can create, read, or delete
-rows. Usernames in `SERBER_ADMINS` always hold `admin`.
+rows. Usernames in `SRS_ADMINS` always hold `admin`.
 
 ### `audit_log`
 

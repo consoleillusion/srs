@@ -60,7 +60,7 @@ export const errorDocument =
           , ...(parameter ? { source: { parameter } } : {})
           }
         ]
-    , jsonapi: { version: '1.0' }
+    , jsonapi: JSON_API_VERSION
     })
 
 /**

@@ -67,7 +67,7 @@ export const init =
       console.log(`\nAdd this to your .env (keep it secret; changing it locks every user out):\n\n  OPAQUE_SERVER_SETUP=${key.value}\n`)
     else
       console.log('\nOPAQUE_SERVER_SETUP is already set, so it was kept.')
-    console.log('Optional .env settings: DB_PATH (default .db), PORT (default 5734), SERBER_ADMINS (comma-separated usernames).')
+    console.log('Optional .env settings: DB_PATH (default .db), PORT (default 5734), SRS_ADMINS (comma-separated usernames).')
     console.log('\nThen run `srs serve`. Run init again after any schema change.')
   }
 

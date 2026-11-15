@@ -12,7 +12,7 @@ export const createServerApp =
     if (!opaqueServerSetup)
       throw new Error(
         'OPAQUE_SERVER_SETUP is required. '
-        + 'Run `resource-server init` and add the value it prints to .env.')
+        + 'Run `srs init` and add the value it prints to .env.')
 
     // Bring the database up to date before serving; a failure stops the server.
     if (process.env.MIGRATE_ON_START !== 'false')
@@ -23,6 +23,6 @@ export const createServerApp =
       , db: createRowDatabase(options.db)
       , opaqueServerSetup
       , requireSession: true
-      , admins: (process.env.SERBER_ADMINS ?? '').split(',').map(x => x.trim()).filter(Boolean)
+      , admins: (process.env.SRS_ADMINS ?? '').split(',').map(x => x.trim()).filter(Boolean)
       })
   }

@@ -47,7 +47,10 @@ beforeAll(async () => {
   await writeFile(join(project, 'schemas/magazine.yaml'), magazineYaml)
 })
 
-afterAll(() => rm(project, { recursive: true, force: true }))
+afterAll(async () => {
+  // Never call rm with an empty path: Bun's rm('') deletes the current directory.
+  if (project) await rm(project, { recursive: true, force: true })
+})
 
 describe('resource-server init and serve', () => {
   let key = ''
