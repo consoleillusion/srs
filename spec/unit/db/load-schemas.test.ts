@@ -18,7 +18,9 @@ const makeDir =
   }
 
 afterEach(async () => {
-  await rm(dir, { recursive: true, force: true })
+  // A test that never calls makeDir leaves dir empty. Bun's rm('') removes the
+  // contents of the current directory, so never call it with an empty path.
+  if (dir) await rm(dir, { recursive: true, force: true })
   dir = ''
 })
 
