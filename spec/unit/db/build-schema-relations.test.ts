@@ -119,6 +119,38 @@ describe('buildSchema relations', () => {
       })).toThrow('foreignKey must be a string')
   })
 
+  test('rejects x-link-any on an inverse-one many relation', () => {
+    expect(() => buildSchema(
+      [ loadedSchema(
+          { title: 'Member'
+          , type: 'object'
+          , properties: {}
+          , 'x-relations':
+            { group:
+              { table: 'group'
+              , column: 'id'
+              , cardinality: 'one'
+              , foreignKey: 'group_id'
+              }
+            }
+          })
+      , loadedSchema(
+          { title: 'Group'
+          , type: 'object'
+          , properties: {}
+          , 'x-relations':
+            { members:
+              { table: 'member'
+              , column: 'id'
+              , cardinality: 'many'
+              , 'x-link-any': true
+              }
+            }
+          })
+      ])).toThrow(
+        'relation "members" cannot use x-link-any without a through table')
+  })
+
   test('rejects relations to unknown tables and cyclic foreign keys', () => {
     expect(() => buildOne(
       { title: 'Widget'

@@ -85,8 +85,17 @@ export const buildTablePlan =
         `${schema.title}: multiple primary keys: ${primaryKeys.map(x => x.columnName).join(', ')}`)
 
     const relations = schema['x-relations'] ?? {}
-    for (const [label, relation] of Object.entries(relations))
+    for (const [label, relation] of Object.entries(relations)) {
       validateRelation(schema.title, label, relation)
+      // An inverse-one many relation rewrites target rows, so allowing targets
+      // outside the writer's scope would let them take over another user's row.
+      if (relation.cardinality === 'many'
+          && !relation.through
+          && relation['x-link-any'] === true)
+        throw new Error(
+          `${schema.title}: relation "${label}" cannot use x-link-any`
+          + ' without a through table')
+    }
 
     if (access.inherit && relations[access.inherit]?.cardinality !== 'one')
       throw new Error(

@@ -2,7 +2,11 @@
 
 This directory contains the detailed documentation for Serber's generated data
 model, HTTP API, access control, and authentication layer. The root
-[README](../README.md) is the project overview and quick start.
+[README](../README.md) is the project overview and quick start; the
+[design directory](../design/README.md) records goals and decisions.
+
+TypeDoc writes the generated TypeScript API reference into this directory
+(`bun run docs`).
 
 ## Reading order
 

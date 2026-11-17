@@ -114,6 +114,42 @@ describe('JSON:API application', () => {
     expect(document.data.attributes.heading).toBe('Hello')
   })
 
+  test('decodes stored attributes to their JSON Schema types', async () => {
+    const typedBuilt = buildSchema(
+      [ loadedSchema(
+          { title: 'Typed'
+          , type: 'object'
+          , properties:
+            { active: { type: 'boolean' }
+            , meta: { type: 'object' }
+            , tags: { type: 'array' }
+            , digest: { type: 'string', format: 'byte' }
+            }
+          })])
+    const typedRow: Row =
+      { id: '01900000-0000-7000-8000-000000000005'
+      , updated_at: 1
+      , owner: null
+      , visibility: 'private'
+      , active: 1
+      , meta: '{"size":2}'
+      , tags: '["a","b"]'
+      , digest: new Uint8Array([0, 1, 255])
+      }
+    const { db } = createDatabase([typedRow])
+    const app = createApp({ built: typedBuilt, db })
+
+    const response = await app.request('/typed')
+    const document = await response.json() as any
+
+    expect(document.data[0].attributes).toMatchObject(
+      { active: true
+      , meta: { size: 2 }
+      , tags: ['a', 'b']
+      , digest: '0001ff'
+      })
+  })
+
   test('includes related resources', async () => {
     const { db } = createDatabase([articleRow])
     const app = createApp({ built, db })
