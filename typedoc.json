@@ -1,7 +1,8 @@
 {
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": ["src/index.ts", "src/client/index.ts"],
-  "out": "docs/api",
+  "out": "doc",
+  "cleanOutputDir": false,
   "tsconfig": "tsconfig.json",
   "name": "resource-server",
   "readme": "README.md",

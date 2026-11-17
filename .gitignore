@@ -41,5 +41,8 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .DS_Store
 
 # generated API docs (bun run docs)
-docs/api
+doc/**/*.html
+doc/assets
+doc/media
+doc/.nojekyll
 tools/typedoc/node_modules

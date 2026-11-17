@@ -18,9 +18,10 @@ A view is a normal schema document with:
 - `x-source: "<base>"` naming the table it reads.
 - One property per output field, each with `x-source: "<base>.<path>"`.
 
-Paths follow relations, so `article.author.name` reads a column on a related
-row and `article.tag` exposes a to-many relation. A relation-valued property
-becomes a JSON:API relationship; a column-valued property becomes an attribute.
+Paths follow to-one relations, so `article.author.name` reads a column on a
+related row and `article.tag` exposes a to-many relation. A relation-valued
+property becomes a JSON:API relationship; a column-valued property becomes an
+attribute.
 
 Every view must expose `id`, `owner`, and `visibility` directly from its base
 row. `id` and `owner` use `format: uuid`. Row scoping therefore keeps working
@@ -93,6 +94,13 @@ Schema building fails when:
 - A path names a hidden table, column, relation, or join table.
 - A relation-valued property uses `type: array` for a to-one relation, or a
   non-array type for a to-many relation.
+- A relation-valued property names a relation of the base table. Nested
+  relation values are rejected because filters and related reads only carry
+  the base row's relation metadata; scalar paths such as `article.author.name`
+  may still follow to-one relations.
+- A column-valued property crosses a to-many relation. That path would produce
+  an array of scalars, which a single view column and attribute cannot
+  represent; expose the relation itself instead.
 - `id`, `owner`, or `visibility` is missing, hidden, sourced from another path,
   or not a uuid where required.
 - The view sets `x-relations`, rather than declaring relations as properties.
@@ -108,6 +116,8 @@ Schema building fails when:
 - Reads use `SELECT * FROM <view>`; the view already contains embedded
   relationship JSON, so no extra joins are needed for the resource itself.
 - Related filtering traverses the view's base table. `sourceTable` records it.
+- Reads inherit the base table's read policy: a view may be stricter, but it
+  cannot make reads public or drop the base table's signed or role requirements.
 - Writes to a view are rejected in the request guard with `405`.
 - `OPTIONS` advertises only `GET, HEAD, OPTIONS` for authored views.
 - Relationship targets and generated table relations are unchanged.
@@ -128,18 +138,22 @@ Schema building fails when:
 - `src/server/errors.ts`: `methodNotAllowed`.
 - `spec/unit/db/authored-views.test.ts`: build, SQL, registry, read, write, and
   validation coverage.
+- `src/schema/article_card.yaml`: the shipped example, projecting article
+  fields and its tags.
 - `README.md`, `doc/schema-reference.md`: user documentation.
 
 ## Status and follow-ups
 
 - The implementation and tests are committed together.
 - PR: <https://github.com/consoleillusion/resource-server/pull/2>
-- `bun test` and `bunx tsc --noEmit` could not be run in the authoring
-  environment: no Bun, Node, or `node_modules` was available. Run both before
-  merging.
-- No shipped example view was added under `src/schema/`, to avoid changing the
-  generated migrations and catalog fixtures. Add one when a stable demonstration
-  resource is wanted.
+- `bun run test` and `bunx tsc --noEmit` pass. `bun run test` generates the
+  git-ignored migrations before running the suite.
+- `src/schema/article_card.yaml` is a shipped example: it exposes an article's
+  scope columns, `heading`, `subheading`, and direct `tags` relation. Changing a
+  schema changes the generated migrations, so regenerate and review them.
 - Nested `include` through an authored view behaves like a generated table view:
   direct relations are embedded in the view, and deeper includes are expanded
   by the normal serializer path.
+- Relation-valued properties must be direct relations of the base table.
+  Allowing deeper hops would produce embedded JSON that filters and related
+  reads cannot traverse correctly.

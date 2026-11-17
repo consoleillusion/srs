@@ -1,3 +1,4 @@
+import type { ColumnDef } from '../db/schema-types.ts'
 import type { ApiDocument, ResourceObject } from './app/document.ts'
 import type { Row } from './database.ts'
 import type { Registry, RelationshipMeta, ResourceMeta } from './registry.ts'
@@ -58,6 +59,34 @@ const parseRelationValue =
 export type RowExpander =
   (resource: ResourceMeta, ids: string[], labels: string[]) => Promise<Row[]>
 
+const hex =
+  (value: Uint8Array) =>
+    Array.from(value, x => x.toString(16).padStart(2, '0')).join('')
+
+/** Turn one stored column value into the JSON value its schema describes. */
+const decodeAttribute =
+  (column: ColumnDef, value: unknown) => {
+    if (value === null || value === undefined) return value
+
+    const { type, format } = column.schema
+    if (format === 'byte') {
+      if (value instanceof Uint8Array) return hex(value)
+      if (value instanceof ArrayBuffer) return hex(new Uint8Array(value))
+      return value
+    }
+    if (type === 'boolean')
+      return value === true || value === 1 || value === '1'
+    if (type === 'object' || type === 'array') {
+      if (typeof value !== 'string') return value
+      try {
+        return JSON.parse(value)
+      } catch {
+        return value
+      }
+    }
+    return value
+  }
+
 const identifier = (target: ResourceMeta) => (row: Row) => ({ type: target.type, id: String(row.id) })
 
 /**
@@ -74,6 +103,24 @@ export const createSerializer =
   , read: RowReader
   , expand: RowExpander) => {
     const included = new Map<string, ResourceObject>()
+    const columnsByType = new Map<string, Map<string, ColumnDef>>()
+
+    const columnsOf =
+      (resource: ResourceMeta) => {
+        let columns = columnsByType.get(resource.type)
+        if (!columns) {
+          columns =
+            new Map(resource.definition.columns.map(x => [x.columnName, x]))
+          columnsByType.set(resource.type, columns)
+        }
+        return columns
+      }
+
+    const attribute =
+      (resource: ResourceMeta, name: string, value: unknown) => {
+        const column = columnsOf(resource).get(name)
+        return column ? decodeAttribute(column, value) : value
+      }
 
     const toObject =
       (resource: ResourceMeta, row: Row): ResourceObject => (
@@ -83,7 +130,7 @@ export const createSerializer =
             Object.fromEntries(
               selectedAttributes(resource, fields)
                 .filter(x => x in row)
-                .map(x => [x, row[x]]))
+                .map(x => [x, attribute(resource, x, row[x])]))
         , relationships: {}
         })
 

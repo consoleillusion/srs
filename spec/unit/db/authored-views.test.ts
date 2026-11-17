@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { buildSchema } from '../../../src/db/build-schema.ts'
+import { loadSchemas } from '../../../src/db/load-schemas.ts'
 import
   { snakeCase
   , type JSONSchema
@@ -127,6 +128,28 @@ describe('authored views', () => {
     expect(registry.get('article')!.readOnly).toBe(false)
   })
 
+  test('never relaxes the base table read restrictions', () => {
+    const restrictedArticle: JSONSchema =
+      { ...articleSchema
+      , 'x-access':
+          { read: 'session'
+          , signed: ['read']
+          , roles: { editor: ['read'] }
+          }
+      }
+    const publicPreview: JSONSchema =
+      { ...previewSchema, 'x-access': { read: 'public' } }
+    const built =
+      buildSchema(
+        [restrictedArticle, authorSchema, tagSchema, publicPreview]
+          .map(loadedSchema))
+    const access = built.authoredViews.article_preview!.access
+
+    expect(access.read).toBe('session')
+    expect(access.signed).toContain('read')
+    expect(access.roles).toEqual({ editor: ['read'] })
+  })
+
   test('reads rows straight from the view', async () => {
     const built = build(previewSchema)
     const registry = buildRegistry(built)
@@ -215,6 +238,20 @@ describe('authored views', () => {
     const tableOptions = await app.request('/article', { method: 'OPTIONS' })
     expect(tableOptions.headers.get('allow'))
       .toBe('GET, HEAD, POST, OPTIONS')
+  })
+})
+
+describe('shipped authored views', () => {
+  test('builds the article card over articles and tags', async () => {
+    const built = buildSchema(await loadSchemas())
+    const card = built.authoredViews.article_card!
+
+    expect(card.sourceTable).toBe('article')
+    expect(card.columns.map(x => x.columnName)).toEqual(
+      ['id', 'owner', 'visibility', 'heading', 'subheading'])
+    expect(Object.keys(card.relations)).toEqual(['tags'])
+    expect(built.views.article_card!.sql)
+      .toContain('CREATE VIEW `article_card` AS')
   })
 })
 
@@ -351,6 +388,28 @@ describe('authored view validation', () => {
       .toThrow('names hidden relation "author"')
   })
 
+  test('rejects a relation property reached through another relation', () => {
+    const authorWithTags: JSONSchema =
+      { ...authorSchema
+      , 'x-relations':
+          { tag: { table: 'tag', column: 'id', cardinality: 'many' } }
+      }
+    const nested: JSONSchema =
+      { ...previewSchema
+      , properties:
+          { ...scopeProperties
+          , tags: { type: 'array', 'x-source': 'article.author.tag' }
+          }
+      }
+
+    expect(
+      () =>
+        buildSchema(
+          [articleSchema, authorWithTags, tagSchema, nested].map(loadedSchema)))
+      .toThrow(
+        'relation property "tags" must name a relation of "article"')
+  })
+
   test('rejects a relation with the wrong cardinality type', () => {
     expect(
       () =>
@@ -361,11 +420,27 @@ describe('authored view validation', () => {
       .toThrow('relation property "tags" is to-many; its type must be array')
   })
 
+  test('rejects a column reached through a to-many relation', () => {
+    expect(
+      () =>
+        build(
+          withProperties(
+            scopeProperties
+            , { tagNames: { type: 'array', 'x-source': 'article.tag.name' } })))
+      .toThrow(
+        'property "tagNames" x-source crosses a to-many relation')
+  })
+
   test('rejects x-view on a table', () => {
     expect(
       () =>
         buildSchema(
-          [loadedSchema({ title: 'Table', type: 'object', 'x-view': 'yes' })]))
+          [ loadedSchema(
+              { title: 'Table'
+              , type: 'object'
+              , 'x-view': 'yes' as unknown as boolean
+              })
+          ]))
       .toThrow('Table: x-view must be a boolean')
   })
 })

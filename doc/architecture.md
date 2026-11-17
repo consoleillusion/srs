@@ -183,7 +183,8 @@ src/
   seed/          sample JSON:API documents
   server/        Hono app, registry, queries, serializers, mutations, guards
 spec/            end-to-end API, auth, and client tests
-doc/             detailed documentation
+design/          goals and important design decisions
+doc/             detailed documentation and generated TypeDoc output
 .migrations/     generated migrations and schema-state.json
 ```
 

@@ -3,6 +3,7 @@ import { normalizePropertyTypes } from '../derive/share.ts'
 import
   { pascalCase
   , snakeCase
+  , type AccessConfig
   , type ColumnDef
   , type JSONSchema
   , type LoadedSchema
@@ -269,10 +270,10 @@ export const buildAuthoredViews =
         throw new Error(
           `${title}: views declare relations as properties with x-source`)
 
-      const access = normalizeAccess(schema)
-      if (access.shareable)
+      const viewAccess = normalizeAccess(schema)
+      if (viewAccess.shareable)
         throw new Error(`${title}: views cannot be shareable`)
-      if (access.inherit)
+      if (viewAccess.inherit)
         throw new Error(`${title}: views cannot inherit access`)
       const rawAccess = (schema['x-access'] ?? {}) as Record<string, unknown>
       if (rawAccess.create !== undefined && rawAccess.create !== 'none')
@@ -293,6 +294,20 @@ export const buildAuthoredViews =
       if (!base.exposed)
         throw new Error(`${title}: x-source table "${sourceTable}" is hidden`)
 
+      // A view reads the base table's rows, so it must never relax that
+      // table's read policy. Stricter view settings still apply.
+      const access: AccessConfig =
+        { ...viewAccess
+        , read:
+            base.access.read === 'public' && viewAccess.read === 'public'
+              ? 'public'
+              : 'session'
+        , signed:
+            [...new Set([...base.access.signed, ...viewAccess.signed])]
+        , roles: base.access.roles
+        , create: 'none'
+        }
+
       const columns: ColumnDef[] = []
       const relations: Record<string, RelationConfig> = {}
       const selectEntries: string[] = []
@@ -310,6 +325,11 @@ export const buildAuthoredViews =
           const columnName = snakeCase(key)
           if (columnNames.has(columnName))
             throw new Error(`${title}: duplicate column "${columnName}"`)
+          // A scalar field cannot represent the array a to-many hop produces.
+          if (source.hops.some(x => x.relation.cardinality === 'many'))
+            throw new Error(
+              `${title}: property "${key}" x-source crosses a to-many `
+              + 'relation, which would produce an array of values')
           columnNames.add(columnName)
 
           const required = requiredNames.has(columnName)
@@ -346,6 +366,12 @@ export const buildAuthoredViews =
         relationLabels.add(label)
 
         const { relation } = source
+        // A relationship can only describe the base row's own relation: filters
+        // and related reads have no way to traverse the intermediate hops.
+        if (source.hops.length > 0)
+          throw new Error(
+            `${title}: relation property "${key}" must name a relation of `
+            + `"${base.tableName}"`)
         if (relation.cardinality === 'many' && property.type !== 'array')
           throw new Error(
             `${title}: relation property "${key}" is to-many; `
@@ -387,7 +413,7 @@ export const buildAuthoredViews =
         , isSystem: schema['x-system'] === true
         , derived: false
         , exposed: schema['x-exposed'] !== false
-        , access: { ...access, create: 'none' }
+        , access
         , relations
         , foreignKeys: []
         , uniqueConstraints: []

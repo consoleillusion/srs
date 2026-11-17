@@ -1,0 +1,28 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: Article Card
+type: object
+additionalProperties: false
+description: A compact, read-only article projection for lists and previews
+x-view: true
+x-source: article
+properties:
+  id:
+    type: string
+    format: uuid
+    x-source: article.id
+  owner:
+    type: string
+    format: uuid
+    x-source: article.owner
+  visibility:
+    type: string
+    x-source: article.visibility
+  heading:
+    type: string
+    x-source: article.heading
+  subheading:
+    type: string
+    x-source: article.subheading
+  tags:
+    type: array
+    x-source: article.tag

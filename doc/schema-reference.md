@@ -201,6 +201,11 @@ Relations are declared under `x-relations`.
 | `onUpdate` | Foreign-key update action |
 | `x-exposed` | `false` hides the relation |
 
+`x-link-any` is an internal escape hatch for system resources. A `many` relation
+may use it only with a `through` join table: inverse-one relations rewrite the
+target rows, so linking outside the writer's scope would let them take over
+another user's row.
+
 ### `one` relation
 
 A `one` relation adds a foreign-key column when it does not exist:
@@ -274,13 +279,26 @@ object is a `SELECT` view named `snakeCase(title)`.
 | `x-source` | Top level | The base table the view selects from |
 | `x-source` | Property | A `<base>.<path>` path to a column or relation |
 
+`x-view: true` is the discriminator. A top-level `x-source` is read only on a
+schema marked `x-view: true`; on a table it is ignored.
+
 - Every property needs an `x-source`, and the path starts with the base table.
-- Following a relation traverses it: `article.author.name` reads the author's
-  `name`; `article.tag.name` collects each tag's `name` into an array.
+- A column path may follow to-one relations, such as `article.author.name`. It
+  may not cross a to-many relation: `article.tag.name` would produce an array of
+  scalars and is rejected.
 - A property whose path ends at a column becomes an attribute. A path that ends
   at a relation becomes a JSON:API relationship, embedded as a JSON object
-  (`one`) or a JSON array (`many`). A path with a `many` step requires
-  `type: array`.
+  (`one`) or a JSON array (`many`). A property naming a to-many relation
+  requires `type: array`.
+- A relation-valued property must name a relation of the base table, such as
+  `article.tag`. Nested relation values are rejected because filters and related
+  reads only know the base row's relations. Scalar paths may still follow
+  to-one relations, such as `article.author.name`, but not to-many relations:
+  a path like `article.tag.name` would produce an array of scalars. Expose the
+  relation itself instead.
+- Reads keep the base table's read policy. A view may make access stricter, but
+  it cannot set `read` to `public` when the base is session-only or drop the
+  base's `signed` and `roles` restrictions.
 - `id`, `owner`, and `visibility` are mandatory. They must be exposed and source
   directly from `<base>.id`, `<base>.owner`, and `<base>.visibility`; `id` and
   `owner` must use `format: uuid`. Row scoping reads them from the view.
@@ -291,6 +309,8 @@ object is a `SELECT` view named `snakeCase(title)`.
 - A view can read only exposed tables, columns, relations, and join tables.
 - The view name must not collide with a table, a generated `<table>_view`, or
   another authored view.
+
+The repository ships `src/schema/article_card.yaml` as a working example.
 
 ## Complete example
 
@@ -339,11 +359,14 @@ Schema building fails when:
 - a relation foreign-key column does not exist;
 - a `many` relation is self-referential without `through`;
 - two join tables conflict;
+- an inverse-one `many` relation uses `x-link-any`;
 - a unique constraint references an unknown column;
 - `x-exposed` is not a boolean;
 - `x-unique` or `x-primary` markers conflict with the generated defaults;
 - an authored view is missing `x-source` or a property `x-source`;
 - an authored view path names a hidden table, column, or relation;
+- an authored view relation property names a relation reached through another
+  relation, or a column property crosses a to-many relation;
 - an authored view does not expose `id`, `owner`, and `visibility` from its
   base row, or uses the wrong format;
 - an authored view is shareable, inherits access, or is creatable;

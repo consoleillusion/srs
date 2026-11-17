@@ -135,7 +135,7 @@ Type mapping:
 | `enum` of strings | `text` with enum typing |
 | `[T, "null"]` | collapses to `T`; nullability comes from `required` |
 
-The keyword set is allowlisted. Unknown keywords, duplicate titles, missing relation targets, and conflicting constraints fail before any SQL runs. See [Schema reference](doc/schema-reference.md).
+Invalid relation, access, and view settings, duplicate titles, missing relation targets, and conflicting constraints fail before any SQL runs. See [Schema reference](doc/schema-reference.md).
 
 ## Relations
 
@@ -195,9 +195,10 @@ A schema with `x-view: true` is an authored, read-only resource over a base tabl
 ```
 
 - `title` becomes the view name (`article_card`) and the `/article_card` resource.
-- Every property has an `x-source` path from the base table. Paths follow relations: `article.author.name` reads a related column.
-- A path ending at a column is an attribute; one ending at a relation is a JSON:API relationship. Relation paths with a `many` step need `type: array`.
+- Every property has an `x-source` path from the base table. A column path may follow to-one relations: `article.author.name` reads a related column. It may not cross a to-many relation.
+- A path ending at a column is an attribute; one ending at a relation is a JSON:API relationship. A property naming a to-many relation needs `type: array`.
 - `id`, `owner`, and `visibility` are required and must come straight from the base row, so visibility rules still apply.
+- Reads keep the base table's read policy. A view may be stricter, but it cannot weaken `read`, `signed`, or `roles`.
 - Views are read-only: `GET`, `HEAD`, and `OPTIONS` are served, writes return `405`, and `x-relations`, `shareable`, `inherit`, and `create` are rejected. They cannot read hidden tables, columns, relations, or join tables.
 
 ## Access control
@@ -304,6 +305,7 @@ Invalid requests return `400`, unknown resources return `404`, failed auth retur
 
 ## Documentation
 
+- [Design](design/README.md) — goals, invariants, and the decisions behind the system.
 - [Architecture](doc/architecture.md) — generation pipeline, runtime, routes, and failure behavior.
 - [Data model](doc/data-model.md) — injected columns, system tables, relations, views, and the hidden key store.
 - [Schema reference](doc/schema-reference.md) — every supported keyword, relations, and validation rules.
@@ -314,6 +316,8 @@ Invalid requests return `400`, unknown resources return `404`, failed auth retur
 - [Security](doc/security.md) — threat model, non-repudiation, and key handling.
 - [Roadmap](doc/roadmap.md) — phases, deliverables, and exit criteria.
 - [Development](doc/development.md) — setup, commands, migrations, tests, and conventions.
+
+Generated TypeScript API reference is written to `doc/` by `bun run docs`.
 
 ## Development
 
