@@ -2,6 +2,7 @@ import { readdir, readFile, stat } from 'node:fs/promises'
 import { extname, join, relative, resolve, sep } from 'node:path'
 import $RefParser from '@apidevtools/json-schema-ref-parser'
 import { parseAllDocuments } from 'yaml'
+import { checkSchema } from './meta-schema.ts'
 import { isSchemaObject, type LoadedSchema } from './schema-types.ts'
 
 const packageRoot = join(import.meta.dir, '../..')
@@ -78,13 +79,16 @@ const loadFromFile =
           json
             ? `${where}: JSON schema file must hold one schema object with a title`
             : `${where} is not a schema object: it needs a title and either properties or type "object"`)
+      let schema: unknown
       try {
-        const schema =
-          await $RefParser.dereference(source, value, { dereference: { circular: false } })
-        return { schema: schema as LoadedSchema['schema'], source, importPath }
+        schema = await $RefParser.dereference(source, value, { dereference: { circular: false } })
       } catch (error) {
         throw new Error(`${where}: ${(error as Error).message}`)
       }
+      const problems = checkSchema(schema)
+      if (problems.length > 0)
+        throw new Error(`${where}: invalid schema\n  ${problems.join('\n  ')}`)
+      return { schema: schema as LoadedSchema['schema'], source, importPath }
     }))
   }
 

@@ -386,6 +386,19 @@ This produces:
 - the `/article` JSON:API resource with a `tag` relationship;
 - an `owner` attribute on `/article`.
 
+=== Meta-schema
+
+Each schema is checked against the meta-schema in `src/db/meta-schema.ts`
+before it is built. It accepts the standard JSON Schema keywords listed in
+@ref-schema and the SRS keywords above, and nothing else, so a typo such as
+`requried` or `x-acess` stops the build:
+
+```text
+schemas/book.yaml: document 1: invalid schema
+  /properties/title/maxLenght: unsupported keyword "maxLenght"
+  /x-access/read: must be one of "session", "public"
+```
+
 === Validation rules
 Schema building fails when:
 

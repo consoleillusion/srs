@@ -20,6 +20,11 @@ generator derives everything else.
   surface at build time.
 - `x-append-only: true` generates triggers that reject every `UPDATE` and
   `DELETE` on the table.
+- Every schema file is checked, after `$ref` resolution and before any SQL is
+  generated, against a meta-schema of the supported keywords
+  (`src/db/meta-schema.ts`). An unknown `x-` keyword, a misspelt standard
+  keyword, or a bad value fails with the file and the JSON pointer of each
+  problem, all reported at once.
 - Relation and access declarations are validated before any SQL is generated.
 - System schemas (`user`, `user_group`, `key`, `user_role`, `audit_log`,
   `request_nonce`, `auth_limit`, `schema`) are always loaded. Account and
