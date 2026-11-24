@@ -10,7 +10,6 @@ import { createRowDatabase } from './database.ts'
 /** Split a comma-separated setting into trimmed, non-empty entries. */
 const list =
   (value: string | undefined) => {
-    // Purpose: turn a comma-separated environment value into a clean list
     return (value ?? '').split(',').map(x => x.trim()).filter(Boolean)
   }
 

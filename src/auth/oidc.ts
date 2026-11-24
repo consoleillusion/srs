@@ -43,7 +43,6 @@ const DISCOVERY_TIMEOUT_MS = 5_000
 /** Fail unless the issuer is an https URL, or http on a loopback host. */
 const checkIssuer =
   (issuer: string) => {
-    // Purpose: refuse an issuer URL that would send keys or tokens over plain http
     let url: URL
     try {
       url = new URL(issuer)
@@ -58,7 +57,6 @@ const checkIssuer =
 /** Look up the provider's signing-key URL from its discovery document. */
 const discoverJwksUri =
   async (issuer: string) => {
-    // Purpose: read jwks_uri from the issuer's discovery document and confirm it names the same issuer
     const base = issuer.replace(/\/+$/, '')
     const response =
       await fetch(
@@ -87,7 +85,6 @@ const discoverJwksUri =
  */
 export const createOidcVerifier =
   async (options: OidcOptions): Promise<OidcVerifier> => {
-    // Purpose: validate the settings and return a verifier bound to the provider's signing keys
     checkIssuer(options.issuer)
     if (!options.audience)
       throw new Error('SRS_OIDC_AUDIENCE is required when SRS_OIDC_ISSUER is set')
@@ -101,7 +98,6 @@ export const createOidcVerifier =
     return (
       { issuer: options.issuer
       , verify: async token => {
-          // Purpose: verify one bearer token and return its claims, hiding why a bad token failed
           try {
             const { payload } =
               await jwtVerify(
@@ -142,10 +138,8 @@ const clip =
  */
 export const resolveOidcUser =
   async (db: RowDatabase, issuer: string, claims: OidcClaims): Promise<Uint8Array> => {
-    // Purpose: return the local user for an external identity, provisioning it on first sight
     const find =
       async () => {
-        // Purpose: look the user up by issuer and subject
         const row =
           await db.get(
             'SELECT `id` FROM `user` WHERE `oidc_issuer` = ? AND `oidc_subject` = ?'

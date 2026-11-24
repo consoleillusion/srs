@@ -40,7 +40,6 @@ const HEALTH_PATHS = new Set(['/healthz', '/readyz'])
  */
 export const clientAddress =
   (c: Context, hops = 0): string => {
-    // Purpose: pick the socket address, or the address a trusted proxy recorded, as the client identity
     let socket = 'unknown'
     try {
       socket = getConnInfo(c).remote.address ?? 'unknown'
@@ -62,11 +61,9 @@ export const clientAddress =
 /** Build the rate-limit middleware: a fixed window per client address, held in memory. */
 const rateLimiter =
   (perMinute: number, hops: number) => {
-    // Purpose: build a middleware that rejects a client after perMinute requests in one window
     const windows = new Map<string, { count: number, resetAt: number }>()
 
     return async (c: AppContext, next: Next) => {
-      // Purpose: count this request against its client and answer 429 when the window is full
       if (HEALTH_PATHS.has(c.req.path)) return next()
 
       const now = Date.now()
@@ -99,7 +96,6 @@ const rateLimiter =
 const requestLogger =
   (sink: (record: Record<string, unknown>) => void) =>
     async (c: AppContext, next: Next) => {
-      // Purpose: time the request, expose its id, and emit one structured record after it finishes
       const supplied = c.req.header('x-request-id')
       const id =
         supplied !== undefined && /^[A-Za-z0-9._-]{1,64}$/.test(supplied)
@@ -131,7 +127,6 @@ const requestLogger =
  */
 export const applyHttp =
   (app: Hono<Env>, db: RowDatabase, options: HttpOptions = {}) => {
-    // Purpose: register the cross-cutting middleware and the liveness and readiness routes
     const hops = options.trustedProxyHops ?? 0
     if (options.log) app.use('*', requestLogger(options.log))
 
@@ -175,7 +170,6 @@ export const applyHttp =
     app.get(
       '/readyz'
       , async c => {
-          // Purpose: report 200 when the database answers a trivial query and 503 when it does not
           try {
             await db.get('SELECT 1 AS ok')
             return c.json({ status: 'ready' })
@@ -198,10 +192,8 @@ export const applyHttp =
  */
 export const httpOptionsFromEnv =
   (env: Record<string, string | undefined> = process.env): HttpOptions => {
-    // Purpose: turn SRS_* environment variables into validated transport settings
     const integer =
       (name: string, fallback: number) => {
-        // Purpose: read a non-negative integer variable or fail with its name
         const raw = env[name]
         if (raw === undefined || raw === '') return fallback
         if (!/^\d+$/.test(raw))

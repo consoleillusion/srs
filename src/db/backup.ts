@@ -21,7 +21,6 @@ const literal = (value: string) => `'${value.replaceAll("'", "''")}'`
 /** Remove a database file's write-ahead log, which a closed copy no longer needs. */
 const removeLogs =
   async (path: string) => {
-    // Purpose: delete the -wal and -shm companions left beside a database file
     await Promise.all([rm(`${path}-wal`, { force: true }), rm(`${path}-shm`, { force: true })])
   }
 
@@ -34,7 +33,6 @@ const removeLogs =
  */
 export const verifyDatabase =
   async (path: string): Promise<void> => {
-    // Purpose: open the file read-through a fresh connection and confirm it is intact
     await stat(path)
     const db = await openDatabase(path)
     try {
@@ -66,7 +64,6 @@ export const backupName =
  */
 export const backupDatabase =
   async (db: Database, target: string): Promise<void> => {
-    // Purpose: copy the live database to target atomically and prove the copy is readable
     const finalPath = resolve(target)
     if (await stat(finalPath).then(() => true, () => false))
       throw new Error(`${finalPath} already exists; backups never overwrite a file`)
@@ -87,7 +84,6 @@ export const backupDatabase =
 /** List the backup files in a folder, newest first. */
 export const listBackups =
   async (dir: string): Promise<string[]> => {
-    // Purpose: return the SRS backup file names in dir ordered from newest to oldest
     const names = await readdir(dir).catch(() => [] as string[])
     return names.filter(x => x.startsWith(PREFIX) && x.endsWith(SUFFIX)).sort().reverse()
   }
@@ -95,7 +91,6 @@ export const listBackups =
 /** Delete all but the newest `keep` backups. */
 export const pruneBackups =
   async (dir: string, keep: number): Promise<void> => {
-    // Purpose: remove the oldest backups so at most keep remain
     for (const name of (await listBackups(dir)).slice(Math.max(keep, 1)))
       await rm(join(dir, name), { force: true })
   }
@@ -112,7 +107,6 @@ export const pruneBackups =
  */
 export const restoreDatabase =
   async (source: string, target: string, force = false): Promise<void> => {
-    // Purpose: verify the backup, then swap it in for the database file with a single rename
     await verifyDatabase(source)
     const finalPath = resolve(target)
     if (!force && await stat(finalPath).then(() => true, () => false))
@@ -142,7 +136,6 @@ export const restoreDatabase =
  */
 export const startBackupSchedule =
   async (db: Database, schedule: BackupSchedule): Promise<() => void> => {
-    // Purpose: run backups on a repeating timer, logging failures instead of crashing the server
     if (!Number.isFinite(schedule.intervalMs) || schedule.intervalMs < 60_000)
       throw new Error('SRS_BACKUP_INTERVAL_HOURS must be a number of hours of at least 1/60')
     if (!Number.isInteger(schedule.keep) || schedule.keep < 1)
@@ -151,7 +144,6 @@ export const startBackupSchedule =
 
     const run =
       async () => {
-        // Purpose: take one backup, prune old ones, and report the outcome
         try {
           const target = join(schedule.dir, backupName(new Date()))
           await backupDatabase(db, target)

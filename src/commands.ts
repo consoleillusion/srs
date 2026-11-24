@@ -116,7 +116,6 @@ export const serve =
 
     const shutdown =
       async () => {
-        // Purpose: stop accepting connections, drain active requests, and close the database
         stopBackups?.()
         await server.stop()
         await db.close()
@@ -130,7 +129,6 @@ export const serve =
 /** Copy the database to a new verified file. Run it with the server stopped, or use SRS_BACKUP_DIR while serving. */
 export const backup =
   async (options: { file: string }) => {
-    // Purpose: open the database and write one verified backup to the given file
     const db = await openDatabase()
     try {
       await backupDatabase(db, options.file)
@@ -143,7 +141,6 @@ export const backup =
 /** Replace the database with a verified backup. The server must be stopped. */
 export const restore =
   async (options: { file: string, force?: boolean }) => {
-    // Purpose: verify the backup and swap it in as the database file
     const target = resolve(process.env.DB_PATH ?? '.db')
     await restoreDatabase(options.file, target, options.force)
     console.log(`Restored ${resolve(options.file)} to ${target}`)

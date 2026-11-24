@@ -15,7 +15,6 @@ const other = await generateKeyPair('ES256')
 /** Sign a token with sensible defaults that each test can override. */
 const token =
   async (claims: Record<string, unknown> = {}, options: { key?: CryptoKey, issuer?: string, audience?: string, expires?: string } = {}) => {
-    // Purpose: mint a signed test token for the fake identity provider
     return await new SignJWT({ ...claims })
       .setProtectedHeader({ alg: 'ES256' })
       .setSubject(String(claims.sub ?? 'subject-1'))
@@ -29,7 +28,6 @@ const token =
 /** Run a query on the test connection and return every row. */
 const rows =
   async (connection: { prepare: (sql: string) => Promise<{ all: () => Promise<unknown[]> }> }, sql: string) => {
-    // Purpose: run one SELECT against the test database and return its rows
     return await (await connection.prepare(sql)).all()
   }
 
@@ -37,7 +35,6 @@ const verifier = () => createOidcVerifier({ issuer: ISSUER, audience: AUDIENCE, 
 
 const setup =
   async (extra: { oidcAdmins?: string[] } = {}) => {
-    // Purpose: start a session-enforcing server that trusts the fake identity provider
     const oidc = await verifier()
     return { oidc, ...(await createTestServer({ session: true, oidc, ...extra })) }
   }

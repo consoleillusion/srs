@@ -7,7 +7,6 @@ const db = { get: async () => ({ ok: 1 }) } as never
 
 /** Build an app with the transport layer and one echo route. */
 const build = (options: Parameters<typeof applyHttp>[2] = {}) => {
-  // Purpose: build a minimal app with the transport layer installed for testing
   const app = new Hono<Env>()
   applyHttp(app, db, options)
   app.post('/echo', async c => c.json(await c.req.json()))

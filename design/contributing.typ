@@ -66,9 +66,15 @@ The existing code sets the style; match it.
 - TypeScript, strict; no semicolons; single quotes; two-space indent.
 - Functions are `const` arrow functions. Multi-line objects, arrays and
   argument lists use leading commas.
-- Every function begins with a one-line `// Purpose:` comment saying what it is
-  for.
-- Every export has a TSDoc comment; `docs:check` fails otherwise.
+- Documentation flows one way: this book decides behaviour, code documents
+  itself with TSDoc comments, and TypeDoc generates the reference in `doc/`
+  from them. Nothing in `doc/` is written by hand.
+- Every exported function, type and constant has a TSDoc comment (summary,
+  `@param`, `@returns`, `@throws` where relevant, `@example` for public API);
+  `docs:check` fails otherwise. Internal functions get a TSDoc summary when
+  their purpose is not obvious from the name.
+- A TSDoc comment says what the code does and cites the book chapter for why,
+  rather than restating design rules.
 - Imports use explicit `.ts` extensions.
 - Errors returned to clients are created with the `ApiError` factories in
   `src/server/errors.ts`.

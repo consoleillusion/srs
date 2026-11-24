@@ -16,7 +16,6 @@ afterEach(async () => { await rm(dir, { recursive: true, force: true }) })
 /** Create a migrated database holding one user named after the argument. */
 const seeded =
   async (name: string, file = 'live.db') => {
-    // Purpose: build a migrated file database with a single user row for backup tests
     const db = await openDatabase(join(dir, file))
     await applyMigrations(db)
     await db.exec(`INSERT INTO user (id, username, owner) VALUES (${ID1}, '${name}', ${ID1})`)
@@ -26,7 +25,6 @@ const seeded =
 /** Read every username from a database file. */
 const usernames =
   async (file: string) => {
-    // Purpose: open a database file and list its usernames
     const db = await openDatabase(file)
     try {
       return ((await (await db.prepare('SELECT username FROM user')).all()) as { username: string }[]).map(x => x.username)
