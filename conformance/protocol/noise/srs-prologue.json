@@ -1,0 +1,9 @@
+{
+  "description": "The SRS prologue for a server key bundle",
+  "operation": "noise.srs-prologue",
+  "input": {
+    "x25519": "07b8c542487686a78301855fcb6d3f6a8a911cd7f1983a9b44dc9dcd22839d23",
+    "ed25519": "0f58c0669090176a7bd563a0c98b081587139d8c7e09aaad3455cc97060cf9a3"
+  },
+  "output": "7372732d6e6f6973652d763140d297e1a2b8e85252568161e4c200281c77bda36b9360286ec5ddcbe055922b"
+}

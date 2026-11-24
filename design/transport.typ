@@ -46,12 +46,15 @@ POST /noise/handshake   msg1: e, es  ───────►
                         ◄───────  msg2: e, ee ‖ payload { sid }
 ```
 
+- Both messages are sent as raw bytes with content type
+  `application/vnd.srs.noise`. Message 1 carries an empty payload, so it is
+  exactly 48 bytes; message 2 carries the 16-byte `sid` and is 64 bytes.
 - `sid` is 16 random bytes naming the channel. It is not a secret.
 - After `msg2`, both sides hold two transport keys, `k_c2s` and `k_s2c`, and
   the handshake hash `h`. `h` identifies this channel and is bound into login
   (@login) and into every signature (@requests).
 - A failed handshake returns `400` with no detail.
-- Handshakes are rate-limited per client address, like logins.
+- Handshakes are limited to 60 per client address per minute; more get `429`.
 - Channels that are not authenticated by a login within 10 minutes are
   dropped.
 

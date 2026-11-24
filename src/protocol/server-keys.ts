@@ -65,12 +65,34 @@ export const base32 =
  * @throws {@link ProtocolError} `invalid-length` when a key is not 32 bytes.
  */
 export const fingerprint =
-  (keys: PublicServerKeys): string => {
+  (keys: PublicServerKeys): string =>
+    FINGERPRINT_PREFIX + base32(fingerprintDigest(keys))
+
+/**
+ * The 32-byte SHA-256 digest behind the fingerprint.
+ *
+ * @param keys - The public keys.
+ * @throws {@link ProtocolError} `invalid-length` when a key is not 32 bytes.
+ */
+export const fingerprintDigest =
+  (keys: PublicServerKeys): Uint8Array => {
     if (keys.x25519.length !== 32 || keys.ed25519.length !== 32)
       throw new ProtocolError('invalid-length', 'server public keys are 32 bytes each')
-    return FINGERPRINT_PREFIX
-      + base32(sha256(concatBytes(utf8ToBytes(FINGERPRINT_TAG), keys.x25519, keys.ed25519)))
+    return sha256(concatBytes(utf8ToBytes(FINGERPRINT_TAG), keys.x25519, keys.ed25519))
   }
+
+/** The ASCII tag that starts the Noise prologue. */
+export const PROLOGUE_TAG = 'srs-noise-v1'
+
+/**
+ * The Noise prologue for a server: `srs-noise-v1` and the fingerprint digest,
+ * so a handshake only completes against the pinned key bundle.
+ *
+ * @param keys - The server's public keys.
+ */
+export const srsPrologue =
+  (keys: PublicServerKeys): Uint8Array =>
+    concatBytes(utf8ToBytes(PROLOGUE_TAG), fingerprintDigest(keys))
 
 /**
  * Check a fetched bundle against a pinned fingerprint, in constant time.

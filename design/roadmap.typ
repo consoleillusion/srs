@@ -78,7 +78,7 @@ its attack tests from the list in @status as it goes.
   table.header([*Version*], [*Task*], [*Done when*], [*State*]),
   [v0.3.0], [Encoding helpers], [Length-prefixed field encoding and the fixed certificate layout (@certificates), with fixtures in `conformance/protocol/encoding/`. Depends on v0.5.0, which defines the fixture format.], [Done],
   [v0.3.1], [Server key bundle], [`srs init` creates the bundle when `SRS_SERVER_KEYS` is unset and prints the `srs1:` fingerprint; `GET /noise/keys` serves the bundle; fingerprint fixtures exist.], [Done],
-  [v0.3.2], [Noise NK handshake], [`POST /noise/handshake` works; the implementation passes the published `Noise_NK_25519_ChaChaPoly_BLAKE2s` test vectors; handshake rate limit in place.], [Later],
+  [v0.3.2], [Noise NK handshake], [`POST /noise/handshake` works; the implementation passes the published `Noise_NK_25519_ChaChaPoly_BLAKE2s` test vectors; handshake rate limit in place.], [Done],
   [v0.3.3], [Envelope and replay window], [`POST /noise` decrypts into an ordinary request and encrypts the response; replay, reorder, truncation and cross-channel tests pass.], [Later],
   [v0.3.4], [Strict mode], [`SRS_TRANSPORT=noise` serves only the clear routes in @http-api; a downgrade test passes.], [Later],
   [v0.3.5], [Identity keys and registration], [Registration creates the wrapped identity key with proof of possession; a test shows a key without proof is refused.], [Later],

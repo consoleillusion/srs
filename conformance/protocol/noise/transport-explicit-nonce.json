@@ -1,0 +1,11 @@
+{
+  "description": "Transport encryption with an explicit nonce and associated data, as the envelope uses it",
+  "operation": "noise.encrypt",
+  "input": {
+    "key": "a8cb3e376f6fda7f0f54c9b68d0a179b2b690f755603cfb0bfc9fe2d9b8b8f8b",
+    "nonce": "5",
+    "ad": "53525331a0a1a2a3a4a5a6a7a8a9aaabacadaeaf0000000000000005",
+    "plaintext": "474554202f61727469636c65"
+  },
+  "output": "219ae8a74532bf989bc928e076b2ba6841f9db2b10cdc8639a9c8cd4"
+}

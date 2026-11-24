@@ -1,0 +1,25 @@
+{
+  "description": "The SRS handshake: prologue is srs-noise-v1 and the fingerprint digest; message 2 carries the channel id",
+  "operation": "noise.nk.run",
+  "input": {
+    "prologue": "7372732d6e6f6973652d763140d297e1a2b8e85252568161e4c200281c77bda36b9360286ec5ddcbe055922b",
+    "initiatorEphemeral": "4748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f60616263646566",
+    "responderStatic": "0708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20212223242526",
+    "responderEphemeral": "6768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f80818283848586",
+    "payloads": [
+      "",
+      "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+      "66697273742072657175657374",
+      "666972737420726573706f6e7365"
+    ]
+  },
+  "output": {
+    "messages": [
+      "eb048c490cce104c8b9db35b435bde05c74a86f3a2fc1c5b64d7d4222a5ffe3f2e541ef6665f9e189181074eb0463d82",
+      "cd8439107a1ccffec0b7649e78a4d74486b3961213750963af89d47b05caf471775c1110028abf2e7b5b9fb3c29301b5e21f7fa0996fac33314eed0cdc70a520",
+      "778d424f7f982557a5dc6ba523afb735b5bfe9e1c0d5d8780999800553",
+      "eeea794eeb907745fbebe0b2f817903c7b41428ad47928b0c34ecc65a4da"
+    ],
+    "handshakeHash": "1f962e2eebd47428dab6560eace1aa2f99e0b51d2c96e15bfce7e0035ab83eba"
+  }
+}

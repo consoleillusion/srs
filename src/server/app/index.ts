@@ -12,6 +12,8 @@ import { ApiError } from '../errors.ts'
 import type { Registry } from '../registry.ts'
 import { applyHttp, clientAddress, type HttpOptions } from '../http.ts'
 import { sessionMiddleware } from '../session.ts'
+import { createChannelStore } from '../channels.ts'
+import { registerHandshake } from '../noise-handshake.ts'
 import { crudHandlers } from './crud.ts'
 import { errorDocument, jsonApi } from './document.ts'
 import { createGuard } from './guard.ts'
@@ -82,9 +84,13 @@ export const createApp =
     const app = new Hono<Env>()
     applyHttp(app, db, http)
 
+    const channels = createChannelStore()
     if (serverKeys) {
       const bundle = publicBundle(serverKeys)
       app.get('/noise/keys', c => c.json(bundle))
+      registerHandshake(
+        app
+        , { serverKeys, channels, clientOf: c => clientAddress(c, http.trustedProxyHops) })
     }
 
     if (opaqueServerSetup)
