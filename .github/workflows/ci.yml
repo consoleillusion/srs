@@ -29,4 +29,14 @@ jobs:
           bun run db:generate | tee second.log
           grep -q "No schema changes" second.log
 
+      # Fixtures come from the independent Python reference; they must match it exactly.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Conformance fixtures match their generator
+        run: |
+          pip install cryptography pynacl
+          python3 conformance/tools/generate.py
+          git diff --exit-code -- conformance
+
       - run: bun test

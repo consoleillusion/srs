@@ -4,11 +4,22 @@ Status: *Implemented* — kept current with every change.
 
 === Built
 
-Schema generation, relations, views, migrations, the JSON:API, access
-control with sharing, roles, inheritance and audit, OPAQUE registration and
-login, per-resource signed requests, the bearer transport, OIDC bearer
-tokens, request limits, rate limiting, health checks, request logging,
-backups and restore.
+- Schema generation, relations, views, deterministic migrations, a meta-schema
+  check of every schema file, generated TypeScript types and a descriptive
+  catalog.
+- The JSON:API, and access control with visibility, sharing, roles,
+  inheritance, and an append-only audit log.
+- The Noise transport, the default: pinned server keys, the NK handshake,
+  sealed requests and responses, replay protection and strict mode.
+- Accounts over it: OPAQUE with identity keys, logins bound to the channel,
+  session certificates, resume, every request signed and retained, an offline
+  signature verifier, and the full account lifecycle, including revocation,
+  admin resets, disabling users and server key rotation.
+- The bearer transport for TLS deployments, with optional OIDC bearer tokens.
+- Operations: request limits, rate limiting, health checks, request logging,
+  metrics, backups and restore, graceful shutdown, CI and a container image.
+- Conformance: a protocol suite of independent fixtures from a Python
+  reference, including the published Noise vectors.
 
 === Specified, not built
 
@@ -21,6 +32,10 @@ Everything with state *Next*, *Later* or *Open* in @roadmap.
   transport requires TLS, which prevents this; the Noise transport removes the
   gap by design (@login).
 - A parent's owner cannot moderate inherited child rows.
+- The secure client has been run in Bun and over real HTTP, not yet in a real
+  browser (v0.3.13).
+- The container image, CI on GitHub and a real identity provider have not
+  been checked (v0.2.2 to v0.2.4).
 
 === Open questions
 

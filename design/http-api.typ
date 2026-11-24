@@ -1,7 +1,6 @@
 == HTTP API <http-api>
 
-Status: *Implemented* for the bearer transport. The Noise transport is
-*Specified* (@transport).
+Status: *Implemented* for both transports.
 
 === Decision
 
@@ -39,7 +38,7 @@ The same routes are reached in one of two ways, chosen with `SRS_TRANSPORT`.
   [Wire format], [Every request is `POST /noise` with an encrypted envelope], [Ordinary HTTP with `Authorization: Bearer`],
   [Signing], [Every request after login], [Per resource, with `x-srs-*` headers],
   [External identity providers], [Not available], [Available (@external-identity)],
-  [Status], [Specified], [Implemented],
+  [Status], [Implemented], [Implemented],
 )
 
 The HTTP end-to-end tests drive the server over HTTP only, so they serve as

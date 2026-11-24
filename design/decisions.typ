@@ -45,4 +45,12 @@ Add a row before changing a design rule. When a rule is replaced, mark its row
   [D035], [Rust pieces use vetted libraries for every primitive: `opaque-ke`, `snow`, `ed25519-dalek`, RustCrypto], [Rust is chosen because these exist; no primitive is written by hand],
   [D036], [Work is numbered by semantic version: a series is a minor version, a task is a patch version, and each finished task is tagged; `v1.0.0` is the stable TypeScript release], [Task ids are also release ids, so the roadmap, the code and the tags name work the same way],
   [D037], [Signed structures use fixed binary layouts with a version tag, or length-prefixed fields, never a general serialisation format], [Fixed layouts are canonical by construction; no library, and nothing for two implementations to serialise differently],
+  [D038], [Over the Noise transport, account routes live under `/account` and exist only inside a channel], [Keeps the bearer flows unchanged and impossible to reach the new protocol by accident],
+  [D039], [A certificate's `issued_at` must be within 5 minutes of the server clock; the server records when it accepted each certificate], [A stolen identity key cannot backdate a certificate to before a revocation],
+  [D040], [Strict mode answers every request outside a channel with `426 Upgrade Required`], [One unmistakable answer, whatever the request carried],
+  [D041], [`x-append-only: true` generates triggers that reject `UPDATE` and `DELETE`; `audit_log` uses it], [The audit log is append-only in the database, not only through the API],
+  [D042], [Schema files are checked against a meta-schema that rejects unknown keywords], [A typo must fail loudly instead of silently changing behaviour],
+  [D043], [Metrics are served on a separate listener bound to `127.0.0.1`], [Metrics never reach the network, under either transport],
+  [D044], [Admin password resets are on by default and can be turned off with `SRS_ALLOW_RESET=false`], [Recovery is expected by most deployments; the trade-off is recorded in @recovery],
+  [D045], [Server keys rotate through a transition statement signed by the old key, with a stop date; both keys work until then], [Pinned clients move without manual repinning, and a stolen-key forgery is no worse than the theft itself],
 )

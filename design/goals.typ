@@ -1,7 +1,7 @@
 == Goals <goals>
 
-Status: *Implemented*, except the transport goals, which are *Specified*
-(@transport).
+Status: *Implemented*, except the single Rust binary and pluggable databases,
+which are *Specified* (@implementation).
 
 === Product goal
 

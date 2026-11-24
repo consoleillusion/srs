@@ -1,6 +1,8 @@
 == Transport <transport>
 
-Status: *Specified*.
+Status: *Implemented* (`src/protocol/noise.ts`, `src/protocol/envelope.ts`,
+`src/server/noise-handshake.ts`, `src/server/noise-route.ts`,
+`src/client/channel.ts`).
 
 === Decision
 

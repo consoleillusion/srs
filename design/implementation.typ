@@ -1,6 +1,6 @@
 == Implementation plan <implementation>
 
-Status: *Specified*.
+Status: *Specified*; Stage 1 is in progress (@roadmap).
 
 === Decision
 

@@ -1,6 +1,6 @@
 == Operations <operations>
 
-Status: *Implemented*, except the Noise key files, which are *Specified*.
+Status: *Implemented*.
 
 === One process per database
 

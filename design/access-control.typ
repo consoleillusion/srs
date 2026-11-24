@@ -1,7 +1,7 @@
 == Access control <access-control>
 
-Status: *Implemented*. The meaning of `signed` under the Noise transport is
-*Specified* (@requests).
+Status: *Implemented*, including the meaning of `signed` under the Noise
+transport (@requests).
 
 === Decision
 

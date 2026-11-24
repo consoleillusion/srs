@@ -24,6 +24,9 @@ bun run docs:check
 bun run design
 ```
 
+Protocol conformance fixtures are generated, never edited:
+`pip install cryptography pynacl && python3 conformance/tools/generate.py`.
+
 When a task is done, update `design/roadmap.typ` (state and status lines) in
 the same change. Design rules change only with a new row in
 `design/decisions.typ`. If the book does not settle a question, record it in

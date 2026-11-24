@@ -1,8 +1,7 @@
 == Architecture <architecture>
 
-Status: *Implemented* in TypeScript on Bun. The transport layer is
-*Specified* (@transport); the Rust implementation is *Specified*
-(@implementation).
+Status: *Implemented* in TypeScript on Bun, including the Noise transport
+(@transport). The Rust implementation is *Specified* (@implementation).
 
 === Generation
 

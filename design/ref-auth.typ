@@ -1,6 +1,7 @@
 == Authentication routes <ref-auth>
 
-Status: *Implemented* for the bearer transport. The Noise transport replaces these flows as specified in @accounts.
+Status: *Implemented*. These are the bearer transport's routes; the Noise
+transport uses the routes in @accounts instead.
 
 SRS uses OPAQUE for password-authenticated key exchange and Ed25519 JWKs
 from tweetnacl for authentication keypairs. The application is stateless: every

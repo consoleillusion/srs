@@ -1,6 +1,6 @@
 == Stack <stack>
 
-Status: *Implemented* for the current stack; the planned libraries are
+Status: *Implemented* for the TypeScript stack; the Rust stack is
 *Specified*.
 
 === Current stack

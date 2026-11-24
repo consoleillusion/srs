@@ -1,6 +1,7 @@
 == API reference <ref-api>
 
-Status: *Implemented* for the bearer transport. Under the Noise transport the same routes and documents are carried inside the channel (@transport).
+Status: *Implemented*. In the Noise transport the same routes and documents
+are carried inside the channel (@transport).
 
 SRS exposes a JSON:API 1.0 layer over Hono. Generic resource routes are
 generated from the exposed tables in the built schema. Authentication uses a
