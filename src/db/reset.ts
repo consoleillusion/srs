@@ -24,7 +24,7 @@ const exists =
 const main =
   async () => {
     const stamp = new Date().toISOString().replace(/[:.]/g, '-')
-    const backupDir = join(backupRoot, `serber-reset-${stamp}`)
+    const backupDir = join(backupRoot, `srs-reset-${stamp}`)
     await mkdir(backupDir, { recursive: true })
 
     for (const relativePath of paths) {

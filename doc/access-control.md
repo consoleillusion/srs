@@ -119,14 +119,14 @@ Signed requests add three headers to a session request:
 
 | Header | Value |
 | --- | --- |
-| `x-serber-timestamp` | Unix time in milliseconds, within 60 s of the server clock |
-| `x-serber-nonce` | 16–128 URL-safe random characters, never reused by a session |
-| `x-serber-signature` | base64url Ed25519 signature, made with the private key whose public key was sent as `clientPublicKey` at login |
+| `x-srs-timestamp` | Unix time in milliseconds, within 60 s of the server clock |
+| `x-srs-nonce` | 16–128 URL-safe random characters, never reused by a session |
+| `x-srs-signature` | base64url Ed25519 signature, made with the private key whose public key was sent as `clientPublicKey` at login |
 
 The signed message is these lines joined by `\n`:
 
 ```text
-serber-signature-v1
+srs-signature-v1
 <METHOD>
 <path with query string>
 <session id, lowercased>

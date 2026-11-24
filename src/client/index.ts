@@ -164,10 +164,10 @@ export const createResourceServerClient =
               , body: bodyBytes(rest.body)
               })
 
-          headers.set('x-serber-timestamp', timestamp)
-          headers.set('x-serber-nonce', nonce)
+          headers.set('x-srs-timestamp', timestamp)
+          headers.set('x-srs-nonce', nonce)
           headers.set(
-            'x-serber-signature', sign(message, current.secretKey))
+            'x-srs-signature', sign(message, current.secretKey))
         }
 
         return await http.request(path, { ...rest, headers })

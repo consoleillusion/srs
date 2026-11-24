@@ -10,9 +10,9 @@ import { parsePublicJwk } from './keys.ts'
 export { signingMessage }
 
 export const SIGNATURE_WINDOW_MS = 60_000
-export const SIGNATURE_HEADER = 'x-serber-signature'
-export const TIMESTAMP_HEADER = 'x-serber-timestamp'
-export const NONCE_HEADER = 'x-serber-nonce'
+export const SIGNATURE_HEADER = 'x-srs-signature'
+export const TIMESTAMP_HEADER = 'x-srs-timestamp'
+export const NONCE_HEADER = 'x-srs-nonce'
 
 const NONCE_PATTERN = /^[A-Za-z0-9_-]{16,128}$/
 

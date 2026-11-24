@@ -9,7 +9,7 @@ import type { LoadedSchema } from './db/schema-types.ts'
 import { openDatabase } from './db/open.ts'
 import { createServerApp } from './server/start.ts'
 
-export const defaultDir = '.resource-server'
+export const defaultDir = '.srs'
 
 type ProjectConfig =
   { version: 1
@@ -31,7 +31,7 @@ const readConfig =
   async (dir: string): Promise<ProjectConfig> => {
     const text = await readFile(configPath(dir), 'utf8').catch(() => undefined)
     if (text === undefined)
-      throw new Error(`No ${configPath(dir)}. Run \`resource-server init <schema…>\` first.`)
+      throw new Error(`No ${configPath(dir)}. Run \`srs init <schema…>\` first.`)
     return JSON.parse(text) as ProjectConfig
   }
 
@@ -49,7 +49,7 @@ export const init =
   async (options: { schemas: string[], dir?: string }) => {
     const dir = resolve(options.dir ?? defaultDir)
     if (options.schemas.length === 0)
-      throw new Error('Give init a schema folder or files, e.g. `resource-server init schemas`.')
+      throw new Error('Give init a schema folder or files, e.g. `srs init schemas`.')
 
     const loaded = await loadSchemas({ schemaDir: options.schemas })
     const { built } = await generateMigrations(join(dir, 'migrations'), loaded)
@@ -68,7 +68,7 @@ export const init =
     else
       console.log('\nOPAQUE_SERVER_SETUP is already set, so it was kept.')
     console.log('Optional .env settings: DB_PATH (default .db), PORT (default 5734), SERBER_ADMINS (comma-separated usernames).')
-    console.log('\nThen run `resource-server serve`. Run init again after any schema change.')
+    console.log('\nThen run `srs serve`. Run init again after any schema change.')
   }
 
 /** Start the server for the schemas recorded by init, refusing to run if they changed since. */
@@ -79,7 +79,7 @@ export const serve =
     const loaded = await loadSchemas({ schemaDir: config.schemas })
     if (schemaHash(loaded) !== config.schemaHash)
       throw new Error(
-        'The schemas changed since `init`. Run `resource-server init '
+        'The schemas changed since `init`. Run `srs init '
         + `${config.schemas.join(' ')}\` again, then serve.`)
 
     const app = await createServerApp(

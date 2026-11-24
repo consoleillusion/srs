@@ -1,7 +1,8 @@
-# Schema Resource Server
+# SRS
 
-Serber turns JSON Schema files into a secure backend. Describe your data, and
-it generates the database, API, migrations, authentication, and authorization.
+Secure Resource Server — turn JSON Schema files into a secure backend.
+Describe your data, and it generates the database, API, migrations,
+authentication, and authorization.
 
 No CRUD handlers. No hand-written SQL.
 
@@ -21,7 +22,7 @@ You write a schema:
 }
 ```
 
-Serber gives you:
+SRS gives you:
 
 - **Tables and relations** in Turso / SQLite, generated from the schema.
 - **Migrations** that are deterministic and only change when the schema changes.
@@ -35,7 +36,7 @@ and readable only according to its access rules.
 
 ## What you can use it for
 
-Serber is a good fit when you need a backend quickly and mostly need standard
+SRS is a good fit when you need a backend quickly and mostly need standard
 resource CRUD:
 
 - prototypes, internal tools, and admin panels;
@@ -51,19 +52,18 @@ unusual.
 ## Quick start
 
 ```bash
-bun add github:<your-user>/resource-server
+bun add github:<your-user>/srs
 
 # 1. Generate migrations from your schema folder.
-bun resource-server init schemas
+bun srs init schemas
 
 # 2. Add the printed OPAQUE_SERVER_SETUP line to .env.
 # 3. Apply migrations and start the server.
-bun resource-server serve
+bun srs serve
 ```
 
-`init` writes generated migrations and a schema fingerprint to
-`.resource-server/`. Commit that directory. Run `init` again after any schema
-change or package upgrade.
+`srs init` writes generated migrations and a schema fingerprint to `.srs/`.
+Commit that directory. Run `init` again after any schema change or package upgrade.
 
 After that, every exposed table is available under its snake_case name:
 

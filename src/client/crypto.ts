@@ -77,7 +77,7 @@ export const signingMessage =
   (parts: SigningParts) => {
     const digest = sha256Base64Url(parts.body)
     return new TextEncoder().encode(
-      [ 'serber-signature-v1'
+      [ 'srs-signature-v1'
       , parts.method.toUpperCase()
       , parts.path
       , parts.sessionId.toLowerCase()

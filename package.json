@@ -4,7 +4,7 @@
   "description": "JSON Schema in, JSON:API server out (Bun, Hono, Turso/SQLite)",
   "type": "module",
   "bin": {
-    "resource-server": "./src/cli.ts"
+    "srs": "./src/cli.ts"
   },
   "exports": {
     ".": "./src/index.ts",

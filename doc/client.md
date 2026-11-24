@@ -1,6 +1,6 @@
 # Client
 
-`resource-server/client` is a small client library for Serber. It performs the
+`resource-server/client` is a small client library for SRS. It performs the
 OPAQUE registration and login exchange, keeps the resulting session, adds the
 bearer header, and signs requests when a resource requires it. It runs in
 browsers, Bun, and Node without server code or Node built-ins.
@@ -171,8 +171,8 @@ Or sign every request from this client:
 const client = createResourceServerClient({ autoSign: true })
 ```
 
-A signed request adds `X-Serber-Timestamp`, `X-Serber-Nonce`, and
-`X-Serber-Signature`. The signature covers the method, path with query, session
+A signed request adds `X-SRS-Timestamp`, `X-SRS-Nonce`, and
+`X-SRS-Signature`. The signature covers the method, path with query, session
 id, timestamp, nonce, and the SHA-256 of the body. Signing needs a session and
 throws a `401 ResourceServerError` otherwise. The client hashes in pure JavaScript
 (`@noble/hashes`), never Web Crypto, so signing works over plain HTTP on internal
@@ -238,5 +238,5 @@ It uses `tweetnacl`, `@noble/hashes`, and standard fetch types (never Web Crypto
 in a browser and on a Bun or Node server. The one server-only piece is OPAQUE,
 which `@serenity-kit/opaque` provides in both environments.
 
-The client currently targets the Serber auth and JSON:API surface only. It does
+The client currently targets the SRS auth and JSON:API surface only. It does
 not cache resources, retry requests, or refresh sessions.
