@@ -51,6 +51,11 @@ export const databaseObjects =
       { key: `trigger:${table.tableName}_updated`
       , statements: [table.trigger]
       })),
+    ...built.orderedTables.flatMap(table =>
+      Object.entries(table.guardTriggers).map(([name, sql]) => (
+        { key: `trigger:${name}`
+        , statements: [sql]
+        }))),
     ...Object.values(built.views).map(view => (
       { key: `view:${view.name}`
       , statements: [view.sql]

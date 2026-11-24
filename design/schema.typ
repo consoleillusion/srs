@@ -18,6 +18,8 @@ generator derives everything else.
 - `many` relations use a join table unless an inverse `one` relation exists.
 - `x-exposed: false` removes a table, column or relation from every API
   surface at build time.
+- `x-append-only: true` generates triggers that reject every `UPDATE` and
+  `DELETE` on the table.
 - Relation and access declarations are validated before any SQL is generated.
 - System schemas (`user`, `user_group`, `key`, `user_role`, `audit_log`,
   `request_nonce`, `auth_limit`, `schema`) are always loaded. Account and

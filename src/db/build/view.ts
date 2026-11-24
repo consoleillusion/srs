@@ -419,6 +419,7 @@ export const buildAuthoredViews =
         , uniqueConstraints: []
         , indexes: []
         , trigger: ''
+        , guardTriggers: {}
         , sourceTable: base.tableName
         }
 

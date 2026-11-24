@@ -4,6 +4,7 @@ type: object
 additionalProperties: false
 description: Append-only record of audited actions. Written by the server; readable by admins
 x-system: true
+x-append-only: true
 x-access:
   create: role
   visibility:

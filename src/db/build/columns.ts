@@ -19,6 +19,24 @@ BEGIN
     WHERE id = OLD.id;
 END;`.trim()
 
+/**
+ * Build the triggers that make a table append-only (`x-append-only: true`):
+ * any `UPDATE` or `DELETE` on it fails. See the design book, Access control.
+ *
+ * @param tableName - The table to protect.
+ * @returns Trigger name to `CREATE TRIGGER` statement.
+ */
+export const createAppendOnlyTriggers =
+  (tableName: string): Record<string, string> =>
+    Object.fromEntries(
+      (['update', 'delete'] as const).map(operation => [
+        `${tableName}_no_${operation}`,
+        `CREATE TRIGGER IF NOT EXISTS \`${tableName}_no_${operation}\`\n`
+        + `BEFORE ${operation.toUpperCase()} ON \`${tableName}\`\n`
+        + 'FOR EACH ROW\n'
+        + `BEGIN SELECT RAISE(ABORT, '${tableName} is append-only'); END;`,
+      ]))
+
 export const validateExposure =
   (title: string, value: unknown, label: string) => {
     if (value !== undefined && typeof value !== 'boolean')

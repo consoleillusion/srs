@@ -96,6 +96,8 @@ export type JSONSchema =
   , 'x-unique-constraints'?: string[][]
   // Raw SQL CHECK expressions; used by derived tables
   , 'x-checks'?: string[]
+  /** `true` makes the table reject every `UPDATE` and `DELETE`. */
+  , 'x-append-only'?: boolean
   , [key: string]: unknown
   }
 
@@ -143,6 +145,8 @@ export type TableDef =
   , uniqueConstraints: string[][]
   , indexes: string[]
   , trigger: string
+  /** Extra triggers by name, such as the append-only guards. */
+  , guardTriggers: Record<string, string>
   // For an authored view, the base table its columns and relations come from
   , sourceTable?: string
   }

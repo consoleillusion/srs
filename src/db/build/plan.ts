@@ -1,7 +1,7 @@
 import { DERIVED_SOURCE } from '../derive/helpers.ts'
 import { pascalCase, snakeCase, type ColumnDef, type ForeignKeyDef, type JSONSchemaProperty, type LoadedSchema, type TableDef } from '../schema-types.ts'
 import { normalizeAccess } from '../access.ts'
-import { createUpdatedTrigger, validateExposure, buildColumn } from './columns.ts'
+import { createAppendOnlyTriggers, createUpdatedTrigger, validateExposure, buildColumn } from './columns.ts'
 import { validateRelation, foreignKeyColumnOf, buildUniqueConstraints } from './relations.ts'
 
 
@@ -126,6 +126,9 @@ export const buildTablePlan =
       [...new Set([...foreignKeys.flatMap(x => x.columns), 'owner'])]
 
     const tableName = snakeCase(schema.title)
+    if (schema['x-append-only'] !== undefined
+        && typeof schema['x-append-only'] !== 'boolean')
+      throw new Error(`${schema.title}: x-append-only must be a boolean`)
 
     return (
       { key: pascalCase(schema.title)
@@ -144,5 +147,7 @@ export const buildTablePlan =
       , uniqueConstraints
       , indexes
       , trigger: createUpdatedTrigger(tableName)
+      , guardTriggers:
+          schema['x-append-only'] === true ? createAppendOnlyTriggers(tableName) : {}
       })
   }

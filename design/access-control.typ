@@ -36,9 +36,9 @@ object; every key is optional and its absence gives the secure default.
   configured admin list. Groups never confer roles.
 - Inheritance applies to reads only, to at most three levels.
 - Audited writes and their audit rows commit in one transaction.
+- `audit_log` is append-only: the schema sets `x-append-only: true`, which
+  generates triggers that make every `UPDATE` and `DELETE` on it fail.
 
 === Known limits
 
 - A parent's owner cannot moderate child rows they do not own.
-- `audit_log` is append-only through the API but not protected by database
-  triggers.
