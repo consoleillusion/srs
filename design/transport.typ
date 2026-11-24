@@ -30,7 +30,7 @@ channel by OPAQUE (@accounts), not by Noise.
 
 The fingerprint is SHA-256 of `srs-keys-v1 ‖ x25519_public ‖ ed25519_public`,
 written as `srs1:` followed by base32. Clients are configured with it:
-`createClient({ url, serverKey: "srs1:…" })`. `GET /noise/keys` returns the
+`createSecureClient({ baseUrl, serverKey: "srs1:…" })`. `GET /noise/keys` returns the
 public bundle in the clear as JSON (`version`, `x25519`, `ed25519` in
 base64url, and `fingerprint`); the client accepts it only if it hashes to the pinned
 fingerprint. The bundle is held in the `SRS_SERVER_KEYS` setting as `srs-keys-v1:`

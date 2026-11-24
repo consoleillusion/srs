@@ -9,6 +9,8 @@ import type { LoadedSchema } from './db/schema-types.ts'
 import { openDatabase } from './db/open.ts'
 import { backupDatabase, restoreDatabase, startBackupSchedule } from './db/backup.ts'
 import { createMetrics, serveMetrics } from './server/metrics.ts'
+import { verifyRetainedSignatures } from './db/verify-signatures.ts'
+import { createRowDatabase } from './server/database.ts'
 import { DEFAULT_MAX_BODY_BYTES, httpOptionsFromEnv } from './server/http.ts'
 import { createServerApp } from './server/start.ts'
 import { createServerKeys, parseServerKeys } from './auth/server-keys.ts'
@@ -164,4 +166,22 @@ export const restore =
     const target = resolve(process.env.DB_PATH ?? '.db')
     await restoreDatabase(options.file, target, options.force)
     console.log(`Restored ${resolve(options.file)} to ${target}`)
+  }
+
+/** Check every retained request signature in the database. The server must be stopped. */
+export const verifySignatures =
+  async () => {
+    const db = await openDatabase()
+    try {
+      const results = await verifyRetainedSignatures(createRowDatabase(db))
+      const invalid = results.filter(x => !x.valid)
+      for (const result of results)
+        console.log(
+          `${result.valid ? 'ok     ' : 'INVALID'} ${result.auditId} ${result.action} ${result.resource}`
+          + (result.reason ? ` (${result.reason})` : ''))
+      console.log(`\n${results.length} retained signatures, ${invalid.length} invalid.`)
+      if (invalid.length > 0) process.exitCode = 1
+    } finally {
+      await db.close()
+    }
   }

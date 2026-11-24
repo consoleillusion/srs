@@ -4,7 +4,7 @@ import { config } from 'dotenv'
 
 config({ quiet: true })
 
-const { backup, defaultDir, init, restore, serve } = await import('./commands.ts')
+const { backup, defaultDir, init, restore, serve, verifySignatures } = await import('./commands.ts')
 
 const usage = `srs: JSON Schema in, JSON:API server out
 
@@ -19,6 +19,10 @@ const usage = `srs: JSON Schema in, JSON:API server out
 
   srs backup <file>
       Write a verified copy of the database (DB_PATH). Needs the server stopped.
+
+  srs verify-signatures
+      Check every retained request signature against its certificate and the
+      user's identity key, from the database alone. Needs the server stopped.
 
   srs restore <file> [--force]
       Replace the database (DB_PATH) with a verified backup. Needs the server stopped.
@@ -45,6 +49,7 @@ const main =
         { dir: values.dir
         , port: values.port === undefined ? undefined : Number(values.port)
         })
+    if (command === 'verify-signatures') return verifySignatures()
     if (command === 'backup' || command === 'restore') {
       const [file] = rest
       if (!file) throw new Error(`Give ${command} a backup file path.`)

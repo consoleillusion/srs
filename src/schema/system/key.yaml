@@ -14,6 +14,10 @@ properties:
       - opaque_registration
       - opaque_login_state
       - session
+      - identity
+      - login
+      - certificate
+      - reset_token
     default: jwk
   jwk:
     description: JSON Web Key representation
@@ -26,6 +30,14 @@ properties:
     type: string
   expires_at:
     description: Expiry time for temporary authentication state
+    type: string
+    format: date-time
+  revoked_at:
+    description: When an identity key was revoked; signatures after it are refused
+    type: string
+    format: date-time
+  retired_at:
+    description: When an identity key was replaced by an admin reset; earlier signatures stay valid
     type: string
     format: date-time
   consumed_at:

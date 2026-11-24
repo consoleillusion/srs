@@ -1,8 +1,8 @@
 == Accounts and login <accounts>
 
-Status: OPAQUE registration and login are *Implemented* over the bearer
-transport. The identity key, channel binding, session certificates and resume
-are *Specified*.
+Status: *Implemented* over the Noise transport (`src/auth/channel-accounts.ts`,
+`src/protocol/accounts.ts`, `src/client/secure.ts`). The bearer transport's
+OPAQUE flows are described in @ref-auth.
 
 === Decision
 
@@ -31,13 +31,33 @@ restart without retyping the password (@resume).
 The wrapped identity key is
 `XChaCha20-Poly1305(wrap_key, random 24-byte nonce, ad = user_id ‖ identity_public, identity_private)`.
 
+=== Routes
+
+These routes exist only inside a Noise channel; outside one they answer `404`.
+Bodies are plain JSON; binary values are base64url.
+
+#table(
+  columns: (auto, 1fr),
+  table.header([*Route*], [*Step*]),
+  [`POST /account/registration`], [Start registration: `username`, optional `displayName`, `registrationRequest`. Answers `id`, `userId`, `registrationResponse`, `expiresAt`.],
+  [`PUT /account/registration/:id`], [Finish registration: `registrationRecord`, `identityPublic`, `wrappedIdentity`, `proof`. Answers `userId`.],
+  [`POST /account/login`], [Start login: `username`, `startLoginRequest`. Answers `id`, `loginResponse`, `expiresAt`.],
+  [`PUT /account/login/:id`], [Finish login: `finishLoginRequest`, `binder`. Answers `loginId`, `userId`, `expiresAt`, `identityPublic`, `wrappedIdentity`.],
+  [`POST /account/session`], [Authenticate the channel: `certificate`, `signature`. Used after login and to resume. Answers `certificateId`, `expiresAt`.],
+)
+
+The lifecycle routes are in @lifecycle. The TypeScript client for all of them
+is `createSecureClient` in `resource-server/client`.
+
 === Registration <registration>
 
 All steps run inside a channel (@transport).
 
-+ The client sends the username and an OPAQUE registration request. The server
-  answers with the registration response and a pending registration id that
-  expires in 10 minutes.
++ The client sends the username, lowercased, and an OPAQUE registration
+  request. The server chooses the new user's id and answers with it, the
+  registration response, and a pending registration id that expires in 10
+  minutes. The client needs the user id now, because the wrap and the proof
+  are bound to it.
 + The client completes OPAQUE, getting the registration record and the export
   key. It generates the identity key, derives the wrap key and wraps the
   identity key.
@@ -60,7 +80,9 @@ pending registration is consumed once; a second finish fails.
 + The client completes OPAQUE, getting `finishLoginRequest`, the OPAQUE
   session key `K` and the export key. It sends `finishLoginRequest` and the
   binder `HMAC-SHA256(K, "srs-bind-v1" ‖ h ‖ sid)`.
-+ The server completes OPAQUE, getting its own `K`, and checks the binder.
++ The server completes OPAQUE, getting its own `K`, and checks the binder in
+  constant time. `@serenity-kit/opaque` has no way to bind a context into the
+  OPAQUE exchange itself, so the binder is the only channel binding.
   This proves the login ran in this channel: a login relayed from another
   channel has a different `h` and fails. The server then creates a _login
   record_ (id, user, created, expires in 24 hours) and returns the login id and
@@ -88,9 +110,14 @@ The server accepts a certificate only if:
 - `h` and `sid` are this channel's;
 - `login_id` names an unexpired, unended login record of the same user;
 - `expires_at` is no later than the login record's expiry;
-- the identity key is not revoked (@revocation).
+- the identity key is not revoked (@revocation);
+- `issued_at` is within 5 minutes of the server clock, so a certificate cannot
+  be backdated to before a revocation;
+- the channel is not already logged in.
 
-Certificates are stored and never deleted, because retained signatures
+Every failure is the same `401`. An accepted certificate is stored with its
+signature, the id of the identity key that signed it, and the server time it
+was accepted. Certificates are never deleted, because retained signatures
 (@requests) need them for later verification.
 
 === Resuming a login <resume>
@@ -121,10 +148,10 @@ is accepted in exchange for stopping password guessing.
   columns: (auto, 1fr),
   table.header([*Row*], [*Contents*]),
   [`user`], [id, username (fixed at registration), display name],
-  [`key`, type `opaque_record`], [the OPAQUE registration record],
+  [`key`, type `opaque_registration`, consumed], [the OPAQUE registration record],
   [`key`, type `identity`], [identity public key, wrapped private key, created, revoked or retired time],
   [`key`, type `login`], [login record: user, created, expires, ended],
-  [`key`, type `certificate`], [session certificate and its signature],
+  [`key`, type `certificate`], [session certificate, its signature, the signing identity key's id, and when it was accepted],
   [`key`, pending types], [pending registration and login state, consumed once, expiring in 10 minutes],
 )
 

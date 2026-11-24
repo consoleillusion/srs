@@ -24,8 +24,6 @@ Everything with state *Next*, *Later* or *Open* in @roadmap.
 
 === Open questions
 
-- Whether `@serenity-kit/opaque` accepts a context value, which would bind the
-  channel inside OPAQUE itself in addition to the binder.
 - Whether providers likely to be used with SRS support DPoP, which would let
   provider users sign requests (@external-identity).
 

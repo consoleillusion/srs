@@ -30,6 +30,16 @@ properties:
   signature:
     description: Request signature, when the request was signed
     type: string
+  certificate_id:
+    description: Session certificate whose key made the signature (Noise transport)
+    type: string
+    format: uuid
+  signed_message:
+    description: The exact signed bytes, base64url, so the signature can be checked later
+    type: string
+  body:
+    description: The signed request body, kept so the signed content can be shown later
+    type: string
 required:
   - action
   - resource

@@ -1,7 +1,6 @@
 == Signed requests <requests>
 
-Status: *Specified* for the Noise transport. Per-resource header signing in the
-bearer transport is *Implemented*.
+Status: *Implemented* for both transports.
 
 === Decision
 
@@ -17,8 +16,8 @@ signature.
 "srs-req-v1" ‖ h ‖ sid ‖ n ‖ method ‖ path_with_query ‖ content_type ‖ SHA-256(body)
 ```
 
-Each variable-length field is prefixed with its length as a 4-byte big-endian
-integer. The signature (64 bytes) is placed inside the encrypted envelope
+Every field is prefixed with its length as a 4-byte big-endian integer; `n`
+is 8 bytes big-endian; `content_type` is empty when the request has none. The signature (64 bytes) is placed inside the encrypted envelope
 (@transport), so it is not visible on the wire. Including `h`, `sid` and `n`
 ties each signature to one message in one channel: it cannot be replayed in
 another channel or at another position.
@@ -45,19 +44,25 @@ A signature proves nothing later unless it is kept. The server retains, in the
   shown later (bodies are bounded by the request size limit).
 
 Reads are verified but not retained unless listed in `x-access.signed`. With
-`SRS_RETAIN_READS=true`, every read is retained too.
+`SRS_RETAIN_READS=true`, every signed read is retained too.
+
+The audit row holds `signature` (base64url), `certificate_id`,
+`signed_message` (the exact signed bytes, base64url) and `body`. `audit_log`
+is append-only (@access-control).
 
 === Verifying a retained signature
 
 Anyone holding the database can check a retained signature without trusting the
-server:
+server. `srs verify-signatures` does this for every retained signature, with
+the server stopped, and exits non-zero if any fails:
 
 + Rebuild the signed message from the retained fields and body.
 + Check the signature against the certificate's `session_public`.
 + Check the certificate's signature against the user's identity public key.
-+ Check that the identity key was registered by the user (its registration
-  proof) and was not revoked before the certificate's `issued_at`
-  (@revocation).
++ Check that the identity key belongs to the certificate's user and was not
+  revoked before the certificate was accepted (@revocation).
++ Check that the signed message names the certificate's channel, and that its
+  body hash matches the retained body.
 
 === Responses
 

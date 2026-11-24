@@ -61,6 +61,7 @@ export const createServerApp =
       , http: { ...httpOptionsFromEnv(), metrics: options.metrics }
       , serverKeys: process.env.SRS_SERVER_KEYS ? parseServerKeys(process.env.SRS_SERVER_KEYS) : undefined
       , transport
+      , retainReads: process.env.SRS_RETAIN_READS === 'true'
       , admins: list(process.env.SRS_ADMINS)
       })
   }

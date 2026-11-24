@@ -17,8 +17,10 @@ export type InnerRequest =
   , signed: boolean
   /** The signature, kept for the audit log. */
   , signature?: Uint8Array
-  /** SHA-256 of the signed message, kept for the audit log. */
-  , signedDigest?: Uint8Array
+  /** The exact signed bytes, kept for the audit log. */
+  , signedMessage?: Uint8Array
+  /** The request body, kept for the audit log. */
+  , body?: Uint8Array
   }
 
 /**

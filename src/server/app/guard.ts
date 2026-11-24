@@ -3,7 +3,9 @@ import { innerOf, type AppContext, type Next } from '../context.ts'
 import type { RowDatabase } from '../database.ts'
 import { methodNotAllowed, unauthorized } from '../errors.ts'
 import type { Registry } from '../registry.ts'
-import { uuidToBuffer } from '../uuid.ts'
+import { UUID_PATTERN, uuidToBuffer } from '../uuid.ts'
+import { insert } from '../sql.ts'
+import { retainedSignature } from './services.ts'
 import { negotiate, operationOf } from './negotiate.ts'
 import { pathParam } from '../context.ts'
 
@@ -19,6 +21,8 @@ export type GuardOptions =
   , oidcIssuer?: string
   /** The session middleware, or undefined when sessions are not enforced. */
   , requireAuth?: (c: AppContext, next: Next) => Promise<void>
+  /** Keep a signed read's signature even when the resource does not list `read` in `x-access.signed`. */
+  , retainReads?: boolean
   }
 
 /**
@@ -94,6 +98,18 @@ export const createGuard =
         }
         c.set('roles', await rolesOf(options, c.get('userId') ?? ''))
         await next()
+        // A signed read is retained when the resource asks for it (design book, Retention).
+        if (inner?.signed && operation === 'read' && c.res.status < 300 && registry.get('audit_log')
+            && (signed || options.retainReads)) {
+          const id = c.req.param('id')
+          await insert(db, 'audit_log',
+            { actor: uuidToBuffer(c.get('userId') ?? '')
+            , action: 'read'
+            , resource: type
+            , resource_id: id && UUID_PATTERN.test(id) ? uuidToBuffer(id) : null
+            , ...retainedSignature(inner)
+            })
+        }
       })
     }
   }

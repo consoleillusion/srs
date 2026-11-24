@@ -23,7 +23,8 @@ const INNER_ORIGIN = 'http://srs.channel'
  * Returns what the inner request records about signing.
  */
 export type SignatureCheck =
-  (channel: Channel, request: SealedRequest, n: bigint) => Pick<InnerRequest, 'signed' | 'signature' | 'signedDigest'>
+  (channel: Channel, request: SealedRequest, n: bigint) =>
+    Pick<InnerRequest, 'signed' | 'signature' | 'signedMessage'> & { rejected?: boolean }
 
 /**
  * Register `POST /noise`: open an envelope, check its counter, hand the
@@ -79,7 +80,10 @@ export const registerEnvelopeRoute =
       if (request.path.startsWith('/noise'))
         return reply(404, [], new Uint8Array(0))
 
-      const signing = options.checkSignature(channel, request, envelope.n)
+      const { rejected, ...signing } = options.checkSignature(channel, request, envelope.n)
+      // A logged-in channel accepts only signed requests (design book, Signed requests).
+      if (rejected) return reply(401, [['content-type', 'application/vnd.api+json']], new TextEncoder().encode(
+        JSON.stringify(errorDocument(401, 'Unauthorized', 'This request must be signed'))))
       const headers = new Headers()
       for (const [name, value] of request.headers)
         if ((REQUEST_HEADERS as readonly string[]).includes(name)) headers.set(name, value)
@@ -88,7 +92,7 @@ export const registerEnvelopeRoute =
         new Request(
           INNER_ORIGIN + request.path
           , { method: request.method, headers, body: withBody ? request.body.slice() : undefined })
-      const marker: InnerRequest = { channel, client: options.clientOf(c), ...signing }
+      const marker: InnerRequest = { channel, client: options.clientOf(c), body: request.body, ...signing }
       const response = await app.fetch(inner, { [INNER]: marker })
 
       const kept: [string, string][] = []

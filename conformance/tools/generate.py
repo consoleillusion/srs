@@ -18,6 +18,9 @@ import struct
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519, x25519
 from cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305
+from cryptography.hazmat.primitives.hashes import SHA256
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+import nacl.bindings
 
 ROOT = os.path.join(os.path.dirname(__file__), '..')
 
@@ -402,9 +405,91 @@ def envelope():
         'error': 'invalid-encoding',
     })
 
+# ── accounts ──────────────────────────────────────────────────────────────
+
+def ed25519_sign(seed, message):
+    return ed25519.Ed25519PrivateKey.from_private_bytes(seed).sign(message)
+
+
+def accounts():
+    s = 'protocol/accounts'
+    hh, sid, user_id = seq(32, 0x11), seq(16, 0x22), seq(16, 0x33)
+    identity_seed = seq(32, 0x44)
+    identity_public = ed25519_public(identity_seed)
+
+    proof = length_prefixed(b'srs-register-v1', hh, user_id, b'alice', identity_public)
+    write(s, 'registration-proof', {
+        'description': 'The registration proof message and its identity-key signature',
+        'operation': 'accounts.registration-proof',
+        'input': {'h': h(hh), 'userId': h(user_id), 'username': 'alice', 'identitySeed': h(identity_seed)},
+        'output': {'message': h(proof), 'signature': h(ed25519_sign(identity_seed, proof))},
+    })
+
+    k = seq(64, 0x55)
+    write(s, 'login-binder', {
+        'description': 'HMAC-SHA256 of the channel under the OPAQUE session key',
+        'operation': 'accounts.binder',
+        'input': {'sessionKey': h(k), 'h': h(hh), 'sid': h(sid)},
+        'output': h(hmac.new(k, b'srs-bind-v1' + hh + sid, hashlib.sha256).digest()),
+    })
+
+    export_key = seq(64, 0x66)
+    wrap_key = HKDF(algorithm=SHA256(), length=32, salt=None, info=b'srs-identity-wrap-v1').derive(export_key)
+    nonce = seq(24, 0x77)
+    wrapped = nonce + nacl.bindings.crypto_aead_xchacha20poly1305_ietf_encrypt(
+        identity_seed, user_id + identity_public, nonce, wrap_key)
+    case_input = {'exportKey': h(export_key), 'userId': h(user_id), 'identitySeed': h(identity_seed), 'nonce': h(nonce)}
+    write(s, 'wrap-identity', {
+        'description': 'The identity key wrapped with XChaCha20-Poly1305 under HKDF of the export key',
+        'operation': 'accounts.wrap',
+        'input': case_input,
+        'output': h(wrapped),
+    })
+    write(s, 'unwrap-identity', {
+        'description': 'Unwrapping returns the identity seed',
+        'operation': 'accounts.unwrap',
+        'input': {'exportKey': h(export_key), 'userId': h(user_id), 'identityPublic': h(identity_public), 'wrapped': h(wrapped)},
+        'output': h(identity_seed),
+    })
+    write(s, 'unwrap-wrong-password', {
+        'description': 'A different export key (wrong password) cannot unwrap',
+        'operation': 'accounts.unwrap',
+        'input': {'exportKey': h(seq(64, 0x67)), 'userId': h(user_id), 'identityPublic': h(identity_public), 'wrapped': h(wrapped)},
+        'error': 'unwrap-failed',
+    })
+    write(s, 'unwrap-other-user', {
+        'description': 'A wrapped key moved to another user cannot be unwrapped',
+        'operation': 'accounts.unwrap',
+        'input': {'exportKey': h(export_key), 'userId': h(seq(16, 0x34)), 'identityPublic': h(identity_public), 'wrapped': h(wrapped)},
+        'error': 'unwrap-failed',
+    })
+
+    session_seed = seq(32, 0x88)
+    cert = certificate(user_id, seq(16, 0x99), sid, hh, ed25519_public(session_seed), 1764000000000, 1764086400000)
+    write(s, 'certificate-signature', {
+        'description': 'A session certificate signed by the identity key',
+        'operation': 'accounts.sign-certificate',
+        'input': {'identitySeed': h(identity_seed), 'userId': h(user_id), 'loginId': h(seq(16, 0x99)), 'sid': h(sid),
+                  'h': h(hh), 'sessionPublic': h(ed25519_public(session_seed)),
+                  'issuedAt': 1764000000000, 'expiresAt': 1764086400000},
+        'output': {'certificate': h(cert), 'signature': h(ed25519_sign(identity_seed, cert))},
+    })
+
+    body = b'{"data":{"type":"note","attributes":{"text":"hi"}}}'
+    message = length_prefixed(b'srs-req-v1', hh, sid, struct.pack('>Q', 3), b'POST', b'/note',
+                              b'application/vnd.api+json', hashlib.sha256(body).digest())
+    write(s, 'request-signature', {
+        'description': 'The signed message of a request and its session-key signature',
+        'operation': 'accounts.sign-request',
+        'input': {'sessionSeed': h(session_seed), 'h': h(hh), 'sid': h(sid), 'n': '3', 'method': 'POST',
+                  'path': '/note', 'contentType': 'application/vnd.api+json', 'body': h(body)},
+        'output': {'message': h(message), 'signature': h(ed25519_sign(session_seed, message))},
+    })
+
 
 if __name__ == '__main__':
     encoding()
     server_keys()
     noise()
     envelope()
+    accounts()

@@ -53,8 +53,9 @@ be downgraded to an unencrypted route.
 
 === Account routes
 
-Registration and login use a small plain-JSON surface under `/key`. Under
-`noise`, these requests travel inside the channel (@accounts).
+In the bearer transport, registration and login use a small plain-JSON
+surface under `/key` (@ref-auth). In the Noise transport they use the routes
+under `/account`, which exist only inside a channel (@accounts).
 
 === Request limits
 

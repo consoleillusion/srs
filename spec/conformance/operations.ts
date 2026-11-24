@@ -9,6 +9,15 @@ import
 import { checkFingerprint, serverKeysFromSecret, srsPrologue } from '../../src/protocol/server-keys.ts'
 import { encryptWithNonce, initiator, keyPairFromPrivate, responder } from '../../src/protocol/noise.ts'
 import { decodeRequest, encodeRequest, encodeResponse, seal } from '../../src/protocol/envelope.ts'
+import
+  { loginBinder
+  , registrationProofMessage
+  , requestMessage
+  , signCertificate
+  , unwrapIdentity
+  , wrapIdentity
+  } from '../../src/protocol/accounts.ts'
+import { ed25519PublicKey, ed25519Sign } from '../../src/client/crypto.ts'
 import type { Operation } from './runner.ts'
 
 type CertificateInput =
@@ -105,5 +114,40 @@ export const operations: Record<string, Operation> =
   , 'envelope.decode-request': (input: { plaintext: string }) => {
       const request = decodeRequest(hexToBytes(input.plaintext))
       return { method: request.method, path: request.path, headers: request.headers }
+    }
+    , 'accounts.registration-proof': (input: { h: string, userId: string, username: string, identitySeed: string }) => {
+      const seed = hexToBytes(input.identitySeed)
+      const message =
+        registrationProofMessage(hexToBytes(input.h), hexToBytes(input.userId), input.username, ed25519PublicKey(seed))
+      return { message: bytesToHex(message), signature: bytesToHex(ed25519Sign(message, seed)) }
+    }
+  , 'accounts.binder': (input: { sessionKey: string, h: string, sid: string }) =>
+      bytesToHex(loginBinder(hexToBytes(input.sessionKey), hexToBytes(input.h), hexToBytes(input.sid)))
+  , 'accounts.wrap': (input: { exportKey: string, userId: string, identitySeed: string, nonce: string }) => {
+      const seed = hexToBytes(input.identitySeed)
+      return bytesToHex(wrapIdentity(
+        { exportKey: hexToBytes(input.exportKey), userId: hexToBytes(input.userId)
+        , identityPublic: ed25519PublicKey(seed), identityPrivate: seed, nonce: hexToBytes(input.nonce) }))
+    }
+  , 'accounts.unwrap': (input: { exportKey: string, userId: string, identityPublic: string, wrapped: string }) =>
+      bytesToHex(unwrapIdentity(
+        { exportKey: hexToBytes(input.exportKey), userId: hexToBytes(input.userId)
+        , identityPublic: hexToBytes(input.identityPublic), wrapped: hexToBytes(input.wrapped) }))
+  , 'accounts.sign-certificate': (input:
+      { identitySeed: string, userId: string, loginId: string, sid: string, h: string
+      , sessionPublic: string, issuedAt: number, expiresAt: number }) => {
+      const signed = signCertificate(hexToBytes(input.identitySeed),
+        { userId: hexToBytes(input.userId), loginId: hexToBytes(input.loginId), sid: hexToBytes(input.sid)
+        , h: hexToBytes(input.h), sessionPublic: hexToBytes(input.sessionPublic)
+        , issuedAt: input.issuedAt, expiresAt: input.expiresAt })
+      return { certificate: bytesToHex(signed.certificate), signature: bytesToHex(signed.signature) }
+    }
+  , 'accounts.sign-request': (input:
+      { sessionSeed: string, h: string, sid: string, n: string, method: string, path: string
+      , contentType: string, body: string }) => {
+      const message = requestMessage(
+        { h: hexToBytes(input.h), sid: hexToBytes(input.sid), n: BigInt(input.n), method: input.method
+        , path: input.path, contentType: input.contentType, body: hexToBytes(input.body) })
+      return { message: bytesToHex(message), signature: bytesToHex(ed25519Sign(message, hexToBytes(input.sessionSeed))) }
     }
   }

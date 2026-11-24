@@ -15,6 +15,9 @@ import { sessionMiddleware } from '../session.ts'
 import { createChannelStore } from '../channels.ts'
 import { registerHandshake } from '../noise-handshake.ts'
 import { registerEnvelopeRoute } from '../noise-route.ts'
+import { registerChannelAccounts } from '../../auth/channel-accounts.ts'
+import { requestMessage } from '../../protocol/accounts.ts'
+import { ed25519Verify } from '../../client/crypto.ts'
 import { crudHandlers } from './crud.ts'
 import { errorDocument, jsonApi } from './document.ts'
 import { createGuard } from './guard.ts'
@@ -47,6 +50,8 @@ export type AppOptions =
    * and needs TLS. Defaults to `noise` when `serverKeys` is set.
    */
   , transport?: 'noise' | 'bearer'
+  /** Retain every signed read, not only reads listed in `x-access.signed`. */
+  , retainReads?: boolean
   }
 
 /** Routes served outside a Noise channel in strict mode. */
@@ -90,7 +95,7 @@ const optionsFor =
  * @returns A Hono app serving every exposed resource.
  */
 export const createApp =
-  ({ built, db, opaqueServerSetup, requireSession, admins = [], oidc, oidcAdmins = [], http = {}, serverKeys, transport = serverKeys ? 'noise' : 'bearer' }: AppOptions): Hono => {
+  ({ built, db, opaqueServerSetup, requireSession, admins = [], oidc, oidcAdmins = [], http = {}, serverKeys, transport = serverKeys ? 'noise' : 'bearer', retainReads = false }: AppOptions): Hono => {
     const s = createServices(built, db)
     const app = new Hono<Env>()
     applyHttp(app, db, http)
@@ -120,7 +125,17 @@ export const createApp =
         app
         , { channels
           , clientOf: c => clientAddress(c, http.trustedProxyHops)
-          , checkSignature: () => ({ signed: false })
+          , checkSignature: (channel, request, n) => {
+              if (!channel.login) return { signed: false }
+              const contentType = request.headers.find(([name]) => name === 'content-type')?.[1] ?? ''
+              const signedMessage =
+                requestMessage(
+                  { h: channel.handshakeHash, sid: channel.sid, n, method: request.method
+                  , path: request.path, contentType, body: request.body })
+              return ed25519Verify(request.signature, signedMessage, channel.login.sessionPublic)
+                ? { signed: true, signature: request.signature, signedMessage }
+                : { signed: false, rejected: true }
+            }
           })
     }
 
@@ -135,6 +150,16 @@ export const createApp =
             , onLogin: http.metrics?.login
             }))
 
+    if (opaqueServerSetup && serverKeys)
+      registerChannelAccounts(
+        app
+        , { db
+          , serverSetup: opaqueServerSetup
+          , channels
+          , audit: s.registry.get('audit_log') !== undefined
+          , onLogin: http.metrics?.login
+          })
+
     const requireAuth = requireSession ? sessionMiddleware(db, oidc) : undefined
     const guard =
       createGuard(
@@ -143,6 +168,7 @@ export const createApp =
         , adminNames: admins.map(x => x.toLowerCase())
         , adminSubjects: oidcAdmins
         , oidcIssuer: oidc?.issuer
+        , retainReads
         , requireAuth
         })
     for (const path of Object.values(paths)) app.use(path, guard)

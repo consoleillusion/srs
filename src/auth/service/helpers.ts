@@ -8,7 +8,8 @@ export const REGISTRATION_TTL_MS = 10 * MINUTE
 export const LOGIN_TTL_MS = 10 * MINUTE
 export const SESSION_TTL_MS = 24 * 60 * MINUTE
 
-export type KeyType = 'opaque_registration' | 'opaque_login_state' | 'session'
+export type KeyType =
+  'opaque_registration' | 'opaque_login_state' | 'session' | 'identity' | 'login' | 'certificate' | 'reset_token'
 
 export type AuthService =
   { startRegistration: (body: unknown, client?: string) => Promise<{ id: string }>

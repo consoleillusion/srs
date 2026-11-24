@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { createResourceServerClient, memoryStorage } from '../../src/client/index.ts'
+import { createResourceServerClient, createSecureClient, memoryStorage } from '../../src/client/index.ts'
 
 const cli = join(import.meta.dir, '../../src/cli.ts')
 let project = ''
@@ -119,6 +119,40 @@ describe('resource-server init and serve', () => {
       // Both YAML documents from one file become their own tables
       expect(types).toContain('magazine')
       expect(types).toContain('issue')
+    } finally {
+      child.kill()
+    }
+  }, 30_000)
+
+  test('serve speaks the Noise transport by default, end to end over HTTP', async () => {
+    const port = 5900 + Math.floor(Math.random() * 90)
+    const baseUrl = `http://localhost:${port}`
+    const child =
+      Bun.spawn(
+        [process.execPath, cli, 'serve', '--port', String(port)],
+        { cwd: project
+        , env: { PATH: process.env.PATH ?? '', OPAQUE_SERVER_SETUP: key, SRS_SERVER_KEYS: serverKeys }
+        , stdout: 'ignore'
+        , stderr: 'ignore'
+        })
+    try {
+      let status: number | undefined
+      for (let i = 0; i < 50 && status === undefined; i++) {
+        status = await fetch(`${baseUrl}/tag`).then(x => x.status).catch(() => undefined)
+        if (status === undefined) await Bun.sleep(200)
+      }
+      // Nothing is served in the clear.
+      expect(status).toBe(426)
+
+      const fingerprint = (await (await fetch(`${baseUrl}/noise/keys`)).json() as { fingerprint: string }).fingerprint
+      const client = createSecureClient({ baseUrl, serverKey: fingerprint })
+      await client.register({ username: 'noise-tester', password: 'correct horse battery staple' })
+      const catalog = await client.get<{ meta: { resources: { type: string }[] } }>('/')
+      expect(catalog.meta.resources.map(x => x.type)).toContain('book')
+
+      // A client pinned to another key refuses to talk to this server.
+      const wrong = createSecureClient({ baseUrl, serverKey: 'srs1:' + 'a'.repeat(52) })
+      await expect(wrong.get('/')).rejects.toThrow()
     } finally {
       child.kill()
     }
