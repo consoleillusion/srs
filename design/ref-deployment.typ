@@ -13,13 +13,20 @@ up rather than out. The container image declares `/data` and `/backups` as
 volumes for this reason.
 
 === Container
+The image is built from `Containerfile`. Run it from your project folder:
+
 ```bash
-docker build -t srs .
-docker run -p 5734:5734 --env-file .env \
-  -v "$PWD":/project:ro -v srs-data:/data -v srs-backups:/backups srs
+podman build -t srs -f /path/to/srs/Containerfile /path/to/srs
+podman run -p 5734:5734 --env-file .env --userns=keep-id \
+  -v "$PWD":/project:ro,z -v srs-data:/data -v srs-backups:/backups srs
 ```
 
 `/project` holds your schema files and the `.srs/` folder written by `srs init`.
+`:z` relabels the mount so the container may read it on SELinux systems (Fedora,
+RHEL), and `--userns=keep-id` runs the server as your own user under rootless
+Podman, so it can read the files you own. Without them, the server cannot read
+`.srs/config.json` and stops with `Cannot read /project/.srs/config.json`. Docker
+takes the same command without `--userns=keep-id`.
 The image runs as a non-root user, sets `DB_PATH=/data/srs.db` and
 `SRS_BACKUP_DIR=/backups`, and reports health through `/readyz`.
 

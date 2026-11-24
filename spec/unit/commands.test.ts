@@ -170,3 +170,25 @@ describe('resource-server init and serve', () => {
     expect(again.out).toContain('was kept')
   }, 60_000)
 })
+
+describe('config errors', () => {
+  test('an unreadable config is reported as unreadable, not as missing', async () => {
+    const { mkdtemp, mkdir, rm } = await import('node:fs/promises')
+    const { tmpdir } = await import('node:os')
+    const project = await mkdtemp(join(tmpdir(), 'srs-unreadable-'))
+    try {
+      // A directory where the file should be cannot be read, like a mount the container may not read.
+      await mkdir(join(project, '.srs', 'config.json'), { recursive: true })
+      const result =
+        Bun.spawnSync(
+          [process.execPath, cli, 'serve']
+          , { cwd: project, env: { PATH: process.env.PATH ?? '', SRS_TRANSPORT: 'bearer', OPAQUE_SERVER_SETUP: 'x' } })
+      const out = new TextDecoder().decode(result.stdout) + new TextDecoder().decode(result.stderr)
+      expect(out).toContain('Cannot read')
+      expect(out).toContain('EISDIR')
+      expect(out).not.toContain('Run `srs init')
+    } finally {
+      await rm(project, { recursive: true, force: true })
+    }
+  })
+})

@@ -36,9 +36,19 @@ export const schemaHash =
 /** Read the settings written by init, or fail with the command to run. */
 const readConfig =
   async (dir: string): Promise<ProjectConfig> => {
-    const text = await readFile(configPath(dir), 'utf8').catch(() => undefined)
-    if (text === undefined)
-      throw new Error(`No ${configPath(dir)}. Run \`srs init <schema…>\` first.`)
+    let text: string
+    try {
+      text = await readFile(configPath(dir), 'utf8')
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code
+      if (code === 'ENOENT')
+        throw new Error(`No ${configPath(dir)}. Run \`srs init <schema…>\` first, in ${process.cwd()}.`)
+      // Anything else (permission denied, a bad mount) must not be reported as a missing file.
+      throw new Error(
+        `Cannot read ${configPath(dir)}: ${code ?? String(error)}. If the project is mounted into a `
+        + 'container, check that the container user can read it (with Podman: add :z to the mount '
+        + 'on SELinux systems, and run rootless with --userns=keep-id).')
+    }
     return JSON.parse(text) as ProjectConfig
   }
 

@@ -33,7 +33,7 @@ conformance/       language-neutral conformance suites
 crates/            planned: Rust crates (v1.1)
 verification/      planned: the protocol model (v0.6.0)
 .github/workflows/ CI
-Dockerfile         container image
+Containerfile      container image (Podman or Docker)
 .env.example       every setting, with defaults
 AGENTS.md          entry point for agents; CLAUDE.md is a copy
 ```

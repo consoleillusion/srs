@@ -1,8 +1,13 @@
 # SRS server image. Mount your project (schemas plus the `.srs/` folder written
-# by `srs init`) at /project and your data at /data:
+# by `srs init`) at /project and your data at /data. From the project folder:
 #
-#   docker run -p 5734:5734 --env-file .env \
-#     -v "$PWD":/project:ro -v srs-data:/data -v srs-backups:/backups srs
+#   podman build -t srs -f /path/to/srs/Containerfile /path/to/srs
+#   podman run -p 5734:5734 --env-file .env --userns=keep-id \
+#     -v "$PWD":/project:ro,z -v srs-data:/data -v srs-backups:/backups srs
+#
+# `:z` lets the container read the mount on SELinux systems; `--userns=keep-id`
+# runs the server as your own user in rootless Podman, so it can read files you
+# own. Docker takes the same command without `--userns=keep-id`.
 #
 # Run one container per database: the database file is locked by the process
 # that opens it, so a second container on the same volume cannot start.
