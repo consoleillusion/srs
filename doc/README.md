@@ -3,7 +3,9 @@
 This directory contains the detailed documentation for SRS's generated data
 model, HTTP API, access control, and authentication layer. The root
 [README](../README.md) is the project overview and quick start; the
-[design directory](../design/README.md) records goals and decisions.
+[design book](../design/README.md) decides goals, rules and the security
+protocol; where this reference and the book differ, the book describes the
+intended design and this reference describes what is built.
 
 TypeDoc writes the generated TypeScript API reference into this directory
 (`bun run docs`).

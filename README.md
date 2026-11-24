@@ -79,7 +79,7 @@ DELETE /article/:id    delete an article
 
 ## Learn more
 
-- [Design](design/README.md) — goals, invariants, and key decisions.
+- [Design book](design/README.md) — goals, rules, the security protocol, and the decision log (Typst; build with `bun run design`).
 - [Documentation](doc/README.md) — schema reference, API, auth, access control, client, and operations.
 - [Deployment](doc/deployment.md) — settings, reverse proxy, health checks, backups, and the container image.
 - [Development](doc/development.md) — setup, commands, migrations, and tests.

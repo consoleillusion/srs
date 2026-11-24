@@ -46,3 +46,6 @@ doc/assets
 doc/media
 doc/.nojekyll
 tools/typedoc/node_modules
+
+# built design book (./design/build.sh)
+design/book.pdf

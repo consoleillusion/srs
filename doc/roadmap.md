@@ -239,6 +239,32 @@ Exit criteria:
 - CI rejects non-idempotent or non-deterministic generation;
 - security checklist is complete.
 
+## Phase 9 — Secure transport and accountable accounts
+
+**Goal:** be secure on networks without TLS, with every request encrypted and
+signed.
+
+Status: specified in the design book (sections Threat model, Transport,
+Accounts and login, Signed requests, Account lifecycle); not built.
+
+Deliverables:
+
+- a Noise NK channel authenticated by a pinned server key, with strict mode;
+- per-user identity keys wrapped under the OPAQUE export key;
+- login bound to the channel, session certificates, and resume;
+- every request signed and encrypted; signature retention;
+- logout, device list, password change, revocation, admin reset, and server key
+  rotation;
+- `key.user` changed to `onDelete: restrict`.
+
+Exit criteria:
+
+- the handshake passes the published Noise test vectors;
+- every attack case listed in the design book has a test;
+- the handshake, binding, and certificate steps are modelled and proved in a
+  protocol analysis tool;
+- an external protocol review is complete.
+
 ## Current status
 
 The generator is split into schema loading, relation derivation, deterministic

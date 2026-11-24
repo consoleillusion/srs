@@ -183,8 +183,8 @@ src/
   seed/          sample JSON:API documents
   server/        Hono app, registry, queries, serializers, mutations, guards
 spec/            end-to-end API, auth, and client tests
-design/          goals and important design decisions
-doc/             generated TypeDoc API reference (hand-written in design/)
+design/          design book in Typst: goals, rules, protocol, decision log
+doc/             reference documentation and the generated TypeDoc API reference
 .migrations/     generated migrations and schema-state.json
 ```
 

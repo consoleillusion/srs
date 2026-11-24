@@ -140,7 +140,7 @@ Schema building fails when:
   validation coverage.
 - `src/schema/article_card.yaml`: the shipped example, projecting article
   fields and its tags.
-- `README.md`, `design/schema-reference.md`: user documentation.
+- `README.md`, `doc/schema-reference.md`: user documentation.
 
 ## Status and follow-ups
 

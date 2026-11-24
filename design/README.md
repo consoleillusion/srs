@@ -1,15 +1,16 @@
 # SRS design
 
-Goals, constraints and the decisions behind SRS. The detailed reference for
-the schema, API, authentication and operations is in [doc](../doc/README.md);
-the project overview and quick start are in the [root README](../README.md).
+The design book records SRS's goals, rules, security protocol and decision
+log. It is written in [Typst](https://typst.app): one file per section, joined
+by `book.typ`.
 
-| Document | What it records |
-| --- | --- |
-| [Goals](./goals.md) | What SRS is for, its constraints, and what it leaves out |
-| [Decisions](./decisions.md) | The numbered decision log; add a row before changing a rule |
-| [Schema](./schema.md) | JSON Schema as the source of truth |
-| [Migrations](./migrations.md) | Deterministic, immutable, generated migrations |
-| [Authentication](./authentication.md) | OPAQUE, request signing and external identity providers |
-| [HTTP API](./http-api.md) | The generated JSON:API surface |
-| [Authored views](./authored-views.md) | Read-only views declared in schema |
+```bash
+./design/build.sh           # writes design/book.pdf
+./design/build.sh --watch   # rebuilds on save
+bun run design              # same as the first line
+```
+
+`build.sh` uses the `typst` command if installed, otherwise the `typst` Python
+package.
+
+The reference documentation for what is built today is in [doc](../doc/README.md).

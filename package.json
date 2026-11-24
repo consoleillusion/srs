@@ -32,7 +32,8 @@
     "docs": "bunx typedoc",
     "docs:check": "bunx typedoc --emit none",
     "typecheck": "tsc --noEmit",
-    "audit": "bun audit"
+    "audit": "bun audit",
+    "design": "sh design/build.sh"
   },
   "dependencies": {
     "@apidevtools/json-schema-ref-parser": "^16.0.7",

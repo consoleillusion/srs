@@ -59,8 +59,11 @@ Non-repudiation requires that:
 - signatures can be verified later;
 - key rotation is explicit and auditable.
 
-This is why the default `Key.user` foreign key uses `onDelete: "restrict"`
-rather than cascade. Soft-deletion and key revocation APIs remain future work.
+The design book requires the `key.user` foreign key to use `onDelete:
+"restrict"`. The system schema declares `cascade`, so deleting a user deletes
+its key history; this must be changed before signatures are relied on.
+Soft-deletion and key revocation APIs are specified in the design book and not
+built.
 
 ## External identity providers
 
@@ -102,6 +105,10 @@ transaction. See [access-control.md](./access-control.md).
 
 ## Known gaps
 
+- The session public key sent at login is not bound to the OPAQUE exchange,
+  so an active attacker without TLS can replace it. Run with TLS. The design
+  book's Noise transport removes this by binding login to the channel.
+- Session ids are bearer tokens and travel in clear text without TLS.
 - No key rotation or revocation API.
 - No multi-device session management or refresh tokens.
 - The audit trail is append-only through the API but is not protected by
