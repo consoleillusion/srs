@@ -386,6 +386,33 @@ This produces:
 - the `/article` JSON:API resource with a `tag` relationship;
 - an `owner` attribute on `/article`.
 
+=== Changing a schema that already has data
+
+Any change to a table's definition rebuilds that table: a new table is
+created, the columns that exist in both the old and new definitions are copied
+across by name, and the old table is dropped. Each migration runs in one
+transaction, so a migration that fails changes nothing. Before running
+`srs init` against a schema change for a database with real data, take a backup
+(`srs backup`) and read the generated SQL in `.srs/migrations/`.
+
+#table(
+  columns: (1fr, 2fr),
+  table.header([*Change*], [*Effect on existing rows*]),
+  [Add an optional column], [Kept; the new column is null, or its `default`.],
+  [Add a required column with a `default`], [Kept; the new column takes the default.],
+  [Add a required column without a `default`], [The migration fails if the table has rows, and nothing changes. Add it as optional, fill it in, then make it required.],
+  [Remove a column], [Its values are dropped.],
+  [Rename a column], [The same as removing one and adding another: the old values are dropped. Add the new column, copy the values, then remove the old one.],
+  [Rename a resource (`title`)], [A new, empty table is created and the old one is dropped with its rows.],
+  [Remove a resource], [Its table is dropped with its rows.],
+  [Change a column's `type` or `format`], [Values are copied as stored; check they still suit the new type.],
+  [Tighten a constraint (`x-unique`, `enum`, required, visibility values)], [The migration fails if existing rows break it, and nothing changes.],
+  [Change a relation from `one` to `many` (or back)], [The foreign-key column or join table is replaced; existing links are lost.],
+  [Change `x-access`, `x-exposed`, descriptions or limits enforced only on writes], [No data change.],
+)
+
+These behaviours are tested in `spec/unit/db/schema-changes.test.ts`.
+
 === Templates
 
 `templates/` holds schema folders for common patterns. Copy one into a project

@@ -103,7 +103,7 @@ Makes adding a resource reliable for people and AI models. Independent of v0.3.
   [v0.4.1], [Type generation], [`srs init` writes TypeScript types for every exposed resource, used by the client.], [Done],
   [v0.4.2], [Schema catalog], [The resource catalog at `GET /` describes each resource's attributes and relations.], [Done],
   [v0.4.3], [Templates], [Example schemas for common patterns (owned notes, shared documents, public catalog, chat with inherited messages) with tests that load them.], [Done],
-  [v0.4.4], [Schema change guidance], [The schema reference explains which changes rebuild tables and which lose data.], [Next],
+  [v0.4.4], [Schema change guidance], [The schema reference explains which changes rebuild tables and which lose data.], [Done],
 )
 
 === v0.5 — Conformance suites
