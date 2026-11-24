@@ -1,9 +1,9 @@
-= Access control <access-control>
+== Access control <access-control>
 
 Status: *Implemented*. The meaning of `signed` under the Noise transport is
 *Specified* (@requests).
 
-== Decision
+=== Decision
 
 Authorization is declarative and central. Each resource carries an `x-access`
 object; every key is optional and its absence gives the secure default.
@@ -22,7 +22,7 @@ object; every key is optional and its absence gives the secure default.
   [`audited`], [`false`], [Operations recorded in `audit_log`.],
 )
 
-== Rules
+=== Rules
 
 - The owner is the creator and is never set by a client.
 - Updates need ownership or a write share. Deletes, visibility changes and
@@ -37,7 +37,7 @@ object; every key is optional and its absence gives the secure default.
 - Inheritance applies to reads only, to at most three levels.
 - Audited writes and their audit rows commit in one transaction.
 
-== Known limits
+=== Known limits
 
 - A parent's owner cannot moderate child rows they do not own.
 - `audit_log` is append-only through the API but not protected by database

@@ -28,28 +28,21 @@ TypeDoc writes the generated TypeScript API reference into this directory
    sessions, storage, requests, and signing.
 8. [Security](./security.md) — key ownership, non-repudiation, threat model, and
    known gaps.
-9. [Roadmap](./roadmap.md) — phases, deliverables, exit criteria, and status.
-10. [Development](./development.md) — setup, commands, migrations, tests, and
-    conventions.
-11. [Deployment](./deployment.md) — settings, reverse proxy, health checks,
+9. [Development](./development.md) — setup, commands, migrations, tests, and
+   conventions.
+10. [Deployment](./deployment.md) — settings, reverse proxy, health checks,
     backups, restore, and the container image.
 
 ## Current status
 
-Phases 0–6 are complete. The server generates tables, relations, join tables,
-views, migrations, and JSON:API endpoints from JSON Schema. It also implements
-stateless OPAQUE registration and login, with all temporary authentication state
-stored in the hidden `key` table.
+The server generates tables, relations, join tables, views, migrations, and
+JSON:API endpoints from JSON Schema. It implements OPAQUE registration and
+login, owner-based authorization with per-row visibility, sharing, roles,
+inherited read access, audit trails and opt-in request signing, and accepts
+bearer tokens from an OpenID Connect provider. A browser-safe client is
+available at `resource-server/client`. The server ships with request limits,
+security headers, CORS, rate limiting, health checks, request logging,
+scheduled verified backups, a restore command, a container image and CI.
 
-Authorization is owner-based, with per-row visibility, sharing, roles, inherited
-read access, audit trails, and opt-in request signing. A browser-safe client is
-available at `resource-server/client`; it wraps registration, login, sessions,
-and JSON:API requests.
-
-Authentication also accepts bearer tokens from an OpenID Connect provider. The
-server ships with request limits, security headers, CORS, rate limiting, health
-checks, request logging, scheduled verified backups, a restore command, a
-container image and CI.
-
-Remaining work is key rotation and revocation, moderation of inherited rows, and
-the Phase 7 items and the open Phase 8 items in the [roadmap](./roadmap.md).
+Planned work, its order, and what counts as done are in the roadmap chapter of
+the [design book](../design/README.md), which is the only roadmap.

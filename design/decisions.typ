@@ -1,4 +1,4 @@
-= Decision log <decisions>
+== Decision log <decisions>
 
 Status: *Implemented* for the log itself.
 

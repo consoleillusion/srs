@@ -1,9 +1,9 @@
-= Signed requests <requests>
+== Signed requests <requests>
 
 Status: *Specified* for the Noise transport. Per-resource header signing in the
 bearer transport is *Implemented*.
 
-== Decision
+=== Decision
 
 Under `noise`, every request after login is signed with the session key, then
 encrypted. Encryption already proves to the server that a request came through
@@ -11,7 +11,7 @@ the channel; the signature adds proof to a third party, because the server
 holds the channel keys and could forge a channel message, but cannot forge a
 signature.
 
-== Signed message
+=== Signed message
 
 ```text
 "srs-req-v1" ‖ h ‖ sid ‖ n ‖ method ‖ path_with_query ‖ content_type ‖ SHA-256(body)
@@ -27,14 +27,14 @@ The server verifies the signature with the channel's certified session key
 before the request reaches the application. A missing or invalid signature
 returns `401`.
 
-== Unsigned messages
+=== Unsigned messages
 
 The handshake, registration, login and resume messages are sent before a
 session key is certified, so they are not signed. All of them except the
 handshake travel encrypted in the channel, and OPAQUE and the certificate
 checks authenticate them.
 
-== Retention <retention>
+=== Retention <retention>
 
 A signature proves nothing later unless it is kept. The server retains, in the
 `audit_log` row of the request:
@@ -47,7 +47,7 @@ A signature proves nothing later unless it is kept. The server retains, in the
 Reads are verified but not retained unless listed in `x-access.signed`. With
 `SRS_RETAIN_READS=true`, every read is retained too.
 
-== Verifying a retained signature
+=== Verifying a retained signature
 
 Anyone holding the database can check a retained signature without trusting the
 server:
@@ -59,14 +59,14 @@ server:
   proof) and was not revoked before the certificate's `issued_at`
   (@revocation).
 
-== Responses
+=== Responses
 
 Responses are encrypted and authenticated by the channel. With
 `SRS_SIGN_RESPONSES=true`, the server also signs
 `"srs-res-v1" ‖ h ‖ sid ‖ n ‖ status ‖ SHA-256(body)` with its server signing
 key, giving the client proof of what the server returned.
 
-== Bearer transport
+=== Bearer transport
 
 In the bearer transport, signing is per resource: operations listed in
 `x-access.signed` need `x-srs-timestamp`, `x-srs-nonce` and `x-srs-signature`

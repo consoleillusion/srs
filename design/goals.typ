@@ -1,14 +1,14 @@
-= Goals <goals>
+== Goals <goals>
 
 Status: *Implemented*, except the transport goals, which are *Specified*
 (@transport).
 
-== Product goal
+=== Product goal
 
 Turn a folder of JSON Schema files into a secured backend that anyone can run
 with one command, on the internet or on an internal network without TLS.
 
-== Goals
+=== Goals
 
 - *Schema is the source of truth.* Tables, relations, views, migrations and API
   resources are derived from schema files.
@@ -36,7 +36,7 @@ with one command, on the internet or on an internal network without TLS.
   Language-neutral conformance suites define correct behaviour for every
   replaceable piece, so any implementation can be checked against them.
 
-== Constraints
+=== Constraints
 
 - No raw user SQL is executed.
 - Passwords never leave the client.
@@ -48,7 +48,7 @@ with one command, on the internet or on an internal network without TLS.
   option that is weaker than the default stays opt-in and is documented as
   weaker (@external-identity).
 
-== Non-goals
+=== Non-goals
 
 - A general-purpose ORM, SQL console or query builder.
 - A policy language beyond the `x-access` model.

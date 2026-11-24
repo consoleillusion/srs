@@ -1,14 +1,14 @@
-= Transport <transport>
+== Transport <transport>
 
 Status: *Specified*.
 
-== Decision
+=== Decision
 
 Under `SRS_TRANSPORT=noise`, all traffic after the handshake runs through a
 Noise channel that authenticates the server by a pinned key, encrypts every
 request and response, and carries forward secrecy. TLS is not required.
 
-== Primitives
+=== Primitives
 
 - Handshake: `Noise_NK_25519_ChaChaPoly_BLAKE2s`.
 - Prologue: the ASCII string `srs-noise-v1` followed by the 32-byte server key
@@ -20,7 +20,7 @@ NK is the pattern for a client that knows the server's static key in advance
 and has none of its own. The client's identity is established inside the
 channel by OPAQUE (@accounts), not by Noise.
 
-== Server keys <server-keys>
+=== Server keys <server-keys>
 
 `srs init` creates a server key bundle and prints its fingerprint:
 
@@ -32,10 +32,11 @@ The fingerprint is SHA-256 of `srs-keys-v1 ‖ x25519_public ‖ ed25519_public`
 written as `srs1:` followed by base32. Clients are configured with it:
 `createClient({ url, serverKey: "srs1:…" })`. `GET /noise/keys` returns the
 bundle in the clear; the client accepts it only if it hashes to the pinned
-fingerprint. The private keys are stored outside the database, like
-`OPAQUE_SERVER_SETUP`, and backed up separately.
+fingerprint. The bundle, including private keys, is held in the `SRS_SERVER_KEYS`
+setting, outside the database like `OPAQUE_SERVER_SETUP`, and backed up
+separately.
 
-== Handshake
+=== Handshake
 
 ```text
 client                                        server
@@ -52,7 +53,7 @@ POST /noise/handshake   msg1: e, es  ───────►
 - Channels that are not authenticated by a login within 10 minutes are
   dropped.
 
-== Envelope
+=== Envelope
 
 Every later request is `POST /noise` with content type
 `application/vnd.srs.noise` and this body:
@@ -82,7 +83,7 @@ is that case. Each key encrypts a given nonce at most once, because a request
 counter is accepted at most once and a response reuses only its own request's
 counter under the other key.
 
-== Replay and ordering <replay>
+=== Replay and ordering <replay>
 
 The server keeps, per channel, the highest counter seen and a 1024-bit window
 of the counters below it, as WireGuard does.
@@ -96,7 +97,7 @@ of the counters below it, as WireGuard does.
 - A rejected envelope is answered `409` in the clear without detail, and the
   client starts a new request.
 
-== Channel lifetime
+=== Channel lifetime
 
 - A channel ends after 24 hours, after $2^32$ requests, after its login ends,
   or when the server restarts. Channel keys and windows live only in memory.
@@ -106,7 +107,7 @@ of the counters below it, as WireGuard does.
   is not authenticated, an active attacker can forge it; the only effect is an
   extra handshake.
 
-== Strict mode
+=== Strict mode
 
 Under `noise`, the server refuses every request that is not one of the clear
 routes listed in @http-api, and the client refuses to send anything outside the

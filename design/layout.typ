@@ -1,0 +1,54 @@
+== Repository layout <layout>
+
+Status: *Implemented*, except the folders marked _planned_.
+
+```text
+src/
+  auth/            OPAQUE service, /key routes, signing, limits, OIDC, keys
+    service/         registration, login and key handlers
+  client/          browser-safe TypeScript client
+  db/              schema loading, derivation, building, views, migrations,
+                   backup and restore
+    build/           columns, relations, DDL, plans, views
+    derive/          join tables and inverse relations
+  helper/          database connection
+  schema/          sample user schemas
+    system/          system schemas, always loaded
+  seed/            sample JSON:API documents for tests
+  server/          Hono app, transport layer, registry, queries, mutations
+    app/             routes, guard, CRUD and relationship handlers
+    mutations/       write-document parsing and row writes
+  cli.ts           `srs` command: init, serve, backup, restore
+  commands.ts      the commands behind the CLI
+  index.ts         public library exports
+spec/              end-to-end tests through the app
+  helpers/         test server, sign-in and client helpers
+  unit/            unit tests by module
+design/            this book: one .typ file per chapter, book.typ, build.sh
+doc/               reference documentation for what is built
+conformance/       planned: language-neutral conformance suites (M5)
+crates/            planned: Rust crates (M6)
+.github/workflows/ CI
+Dockerfile         container image
+.env.example       every setting, with defaults
+AGENTS.md          entry point for agents; CLAUDE.md is a copy
+```
+
+Generated and local files are not committed: `node_modules/`, `.migrations/`
+(the library's own development migrations), databases, `.env`,
+`design/book.pdf`. A project using SRS commits its `.srs/` folder, written by
+`srs init`.
+
+=== Design book files
+
+#table(
+  columns: (1fr, auto),
+  table.header([*File*], [*Contents*]),
+  [`book.typ`], [Title page, styles, parts and the order of chapters],
+  [`build.sh`], [Compiles the book to `book.pdf`],
+  [`introduction.typ`, `goals.typ`, `stack.typ`, `architecture.typ`], [Part I],
+  [`schema.typ`, `migrations.typ`, `authored-views.typ`, `access-control.typ`, `http-api.typ`], [Part II],
+  [`threat-model.typ`, `transport.typ`, `accounts.typ`, `requests.typ`, `lifecycle.typ`, `external-identity.typ`], [Part III],
+  [`operations.typ`, `implementation.typ`, `roadmap.typ`], [Part IV],
+  [`contributing.typ`, `layout.typ`, `decisions.typ`, `status.typ`], [Part V],
+)

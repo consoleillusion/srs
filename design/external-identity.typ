@@ -1,8 +1,8 @@
-= External identity providers <external-identity>
+== External identity providers <external-identity>
 
 Status: *Implemented* in the bearer transport.
 
-== Decision
+=== Decision
 
 In the bearer transport, SRS can also accept bearer JWTs from one OpenID
 Connect provider, such as Keycloak, Kanidm, Authentik, Zitadel, Auth0 or Entra
@@ -21,7 +21,7 @@ It is not available under `noise`. A standards-based way to bind provider
 tokens to a client key, DPoP (RFC 9449), would close the gap if the chosen
 provider supports it; that is *Open* (@status).
 
-== Rules
+=== Rules
 
 - `SRS_OIDC_ISSUER` and `SRS_OIDC_AUDIENCE` turn the mode on. The issuer must
   be https, except on localhost, and its discovery document is fetched at

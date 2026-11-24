@@ -1,14 +1,14 @@
-= HTTP API <http-api>
+== HTTP API <http-api>
 
 Status: *Implemented* for the bearer transport. The Noise transport is
 *Specified* (@transport).
 
-== Decision
+=== Decision
 
 SRS serves JSON:API 1.0 over Hono. Routes are generated from the exposed
 resources in the built schema; there are no per-resource controllers.
 
-== Resource routes
+=== Resource routes
 
 ```text
 GET, HEAD   /                          resource catalog
@@ -28,7 +28,7 @@ GET, HEAD   /:type/:id/:rel            related resources
 - Unknown or unreadable resources return `404`, invalid input `400`,
   constraint violations `409`.
 
-== Transports
+=== Transports
 
 The same routes are reached in one of two ways, chosen with `SRS_TRANSPORT`.
 
@@ -50,12 +50,12 @@ only these routes in the clear: `/healthz`, `/readyz`, `/noise/keys`,
 `/noise/handshake` and `/noise`. Every other request is refused, so nothing can
 be downgraded to an unencrypted route.
 
-== Account routes
+=== Account routes
 
 Registration and login use a small plain-JSON surface under `/key`. Under
 `noise`, these requests travel inside the channel (@accounts).
 
-== Request limits
+=== Request limits
 
 Bodies over the configured limit return `413`. Requests over the per-client
 rate limit return `429` with `Retry-After`. Responses carry standard security

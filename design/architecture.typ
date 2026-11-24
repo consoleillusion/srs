@@ -1,10 +1,10 @@
-= Architecture <architecture>
+== Architecture <architecture>
 
 Status: *Implemented* in TypeScript on Bun. The transport layer is
 *Specified* (@transport); the Rust implementation is *Specified*
 (@implementation).
 
-== Generation
+=== Generation
 
 ```text
 schema files ─► loadSchemas ─► deriveSchemas ─► buildSchema ─┬─► views
@@ -21,7 +21,7 @@ schema files ─► loadSchemas ─► deriveSchemas ─► buildSchema ─┬�
 - `planMigration` compares the built schema with the recorded database state
   (@migrations).
 
-== Runtime
+=== Runtime
 
 A request passes through these layers in order:
 
@@ -38,7 +38,7 @@ A request passes through these layers in order:
 The Noise layer turns an encrypted envelope into an ordinary request and hands
 it to the same application, so resource routes do not depend on the transport.
 
-== Storage
+=== Storage
 
 One SQLite-compatible database file (Turso), opened by one process.
 PostgreSQL and MySQL are planned once Rust owns storage (@implementation). Users,
@@ -46,7 +46,7 @@ OPAQUE records, identity public keys, login records, session certificates,
 retained signatures and the audit log are stored there. Channel keys and replay
 windows are held in memory only.
 
-== Module boundaries
+=== Module boundaries
 
 Generation, storage, HTTP, transport and accounts are separate modules. The
 transport knows nothing about resources; resource handlers know nothing about

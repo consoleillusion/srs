@@ -1,23 +1,23 @@
-= Account lifecycle <lifecycle>
+== Account lifecycle <lifecycle>
 
 Status: *Specified*. Ending one bearer session is *Implemented*.
 
 All operations here are signed requests in a logged-in channel unless stated
 otherwise, and all are audited.
 
-== Logout
+=== Logout
 
 The client sends `DELETE /login/current`. The server marks the login record
 ended and drops every channel using it. The client discards its session key,
 identity key and login id.
 
-== Devices
+=== Devices
 
 `GET /login` lists the user's unended logins (created, expires, last used).
 `DELETE /login/:id` ends one, dropping its channels. Ending every other login
 is `DELETE /login?others=true`.
 
-== Password change
+=== Password change
 
 + The client runs OPAQUE registration again inside the channel, getting a new
   registration record and export key.
@@ -28,7 +28,7 @@ is `DELETE /login?others=true`.
 
 The identity key does not change, so every earlier signature stays valid.
 
-== Revocation <revocation>
+=== Revocation <revocation>
 
 A user who believes their identity key or password is compromised revokes the
 identity key. Revocation is signed by the current session, or done by an admin.
@@ -46,7 +46,7 @@ identity key. Revocation is signed by the current session, or done by an admin.
 If an attacker also knows the password, they can race the user to this step.
 An admin reset (@recovery) settles the race.
 
-== Forgotten password <recovery>
+=== Forgotten password <recovery>
 
 OPAQUE cannot recover a password, and without the password the identity key
 cannot be unlocked. Recovery therefore creates a new identity key:
@@ -69,7 +69,7 @@ an admin reset as accountable to the reset as well as to the user.
 Deployments that need stronger guarantees can disable admin resets with
 `SRS_ALLOW_RESET=false`; a forgotten password then means a new account.
 
-== Server key rotation <server-key-rotation>
+=== Server key rotation <server-key-rotation>
 
 + The operator runs `srs rotate-keys`, which creates a new key bundle and a
   _transition statement_: the new bundle and the date the old one stops being
@@ -83,7 +83,7 @@ If a server key is stolen, a transition statement cannot be trusted, because
 the thief can sign one. Clients must then be given the new fingerprint out of
 band.
 
-== Accounts are not deleted
+=== Accounts are not deleted
 
 Users that own keys cannot be deleted (@schema), so that retained signatures
 stay attributable. An admin can _disable_ a user: every login ends and logins

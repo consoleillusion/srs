@@ -92,6 +92,10 @@ The core is complete: schema generation, relations, views, migrations,
 JSON:API, OPAQUE and OpenID Connect authentication, and owner-based
 authorization with sharing, roles, and signing. It runs as a single process per
 database, with request limits, health checks, request logging, scheduled
-verified backups and a restore command. Key rotation and revocation, metrics
-and an external security review are still open; see the
-[roadmap](doc/roadmap.md).
+verified backups and a restore command.
+
+The direction, roadmap, stack and protocol are defined in the
+[design book](design/README.md), which is the project's source of truth. Next
+on the roadmap: an encrypted, signed transport that is secure without TLS,
+built and stabilised in TypeScript, then a piece-by-piece move to a single Rust
+binary with a pluggable database.

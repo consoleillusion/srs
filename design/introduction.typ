@@ -1,36 +1,54 @@
-= Introduction <introduction>
+== Introduction <introduction>
+
+Status: *Implemented* — this book is maintained.
 
 SRS (Secure Resource Server) turns a folder of JSON Schema files into a
 backend: database tables, relations, views, migrations, a JSON:API, user
 accounts and per-row access control. Application authors write schema, not
-CRUD handlers.
+CRUD handlers. It is meant to be run by anyone with one command, including on
+internal networks without TLS.
 
-This book records what SRS is for, the rules it follows and the reasons for
-them. The reference documentation in `doc/` describes how to use what is built
-today; this book is where design rules are decided, and the reference follows
-it.
+=== This book is the source of truth
 
-== Status markers
+This book decides what SRS is, how it must behave, how it is built and what
+is done next. It is written for maintainers, contributors and AI agents alike,
+and must be complete enough that any of them can pick up the next task without
+other context.
 
-Each section starts with a status line:
+- Where code and this book disagree, the book describes the intended
+  behaviour. The difference is a defect to be listed under known gaps
+  (@status) and fixed, unless the book is changed first through the decision
+  log (@decisions).
+- `doc/` is the reference for what is built today and how to use it. It
+  follows this book and never contradicts it about intent.
+- The roadmap (@roadmap) is the only list of planned work. Work not on it is
+  added to it before it starts.
+- How to work on SRS, including conventions and the checks every change must
+  pass, is in @contributing.
 
-- *Implemented* — the code follows this section.
+=== Status markers
+
+Every chapter starts with a status line:
+
+- *Implemented* — the code follows this chapter.
 - *Specified* — the design is settled and the code does not follow it yet.
-- *Open* — the design is not settled.
+- *Open* — the design is not settled; do not build it.
 
-== Conventions
+=== Conventions
 
-The words _must_, _must not_, _should_ and _may_ have their usual
-specification meanings. Identifiers, settings and wire values are written in
-`monospace`. Byte strings are joined with `‖`.
+_Must_, _must not_, _should_ and _may_ have their usual specification
+meanings. Identifiers, settings and wire values are in `monospace`. Byte
+strings are joined with `‖`. Lengths in byte layouts are in bytes.
 
-== Reading order
+=== How the book is organised
 
-@goals and @architecture give the overall shape. @schema to @http-api cover
-the data and API layers. @threat-model to @external-identity specify security:
-the attacker model, the encrypted transport, accounts and login, signed
-requests, the account lifecycle and the optional identity-provider mode.
-@operations covers running SRS. @implementation sets the build order: a
-stable TypeScript implementation first, then Rust piece by piece. @decisions
-is the decision log, and @status lists what is built, what is specified and
-how the protocol will be verified.
+- *Part I, Project* — goals, stack and architecture.
+- *Part II, Data and API* — schema, migrations, views, access control and the
+  HTTP API.
+- *Part III, Security* — the threat model and the protocol: transport, accounts,
+  signed requests, account lifecycle, and the optional identity-provider mode.
+- *Part IV, Delivery* — operations, the implementation plan and the roadmap.
+- *Part V, Working on SRS* — contributor rules, repository layout, the
+  decision log and current status.
+
+A newcomer should read Parts I and V first, then the chapters their task cites.

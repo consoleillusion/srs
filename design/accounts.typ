@@ -1,10 +1,10 @@
-= Accounts and login <accounts>
+== Accounts and login <accounts>
 
 Status: OPAQUE registration and login are *Implemented* over the bearer
 transport. The identity key, channel binding, session certificates and resume
 are *Specified*.
 
-== Decision
+=== Decision
 
 Passwords are handled by OPAQUE (RFC 9807), through `@serenity-kit/opaque`.
 Each user also has a long-term Ed25519 _identity key_. Its private half is
@@ -16,7 +16,7 @@ OPAQUE alone authenticates a password. The identity key adds accountability
 that survives a dishonest server (@requests), and lets a client resume after a
 restart without retyping the password (@resume).
 
-== Keys
+=== Keys
 
 #table(
   columns: (auto, 1fr, 1.6fr),
@@ -31,7 +31,7 @@ restart without retyping the password (@resume).
 The wrapped identity key is
 `XChaCha20-Poly1305(wrap_key, random 24-byte nonce, ad = user_id ‖ identity_public, identity_private)`.
 
-== Registration <registration>
+=== Registration <registration>
 
 All steps run inside a channel (@transport).
 
@@ -51,7 +51,7 @@ All steps run inside a channel (@transport).
 The proof stops a client from registering a public key it does not hold. The
 pending registration is consumed once; a second finish fails.
 
-== Login <login>
+=== Login <login>
 
 + The client sends the username and an OPAQUE login request.
 + The server answers with the OPAQUE login response and a pending login id.
@@ -71,7 +71,7 @@ pending registration is consumed once; a second finish fails.
 
 Failures return the same `401` and count towards the throttle (@rate-limits).
 
-== Session certificates <certificates>
+=== Session certificates <certificates>
 
 ```text
 cert = { v: 1, user_id, login_id, sid, h, session_public, issued_at, expires_at }
@@ -90,7 +90,7 @@ Certificates are stored and never deleted, because retained signatures
 (@requests) need them for later verification. `canonical` is deterministic
 CBOR with sorted keys.
 
-== Resuming a login <resume>
+=== Resuming a login <resume>
 
 When a channel ends (@transport), the client keeps its identity key and login
 id in memory, runs a new handshake, and sends a new session certificate naming
@@ -98,13 +98,13 @@ the same login and the new `h`. No password is needed, and the login's expiry
 does not move. The identity key is held in memory only, never persisted, so
 closing the client ends the ability to resume.
 
-== Username enumeration <enumeration>
+=== Username enumeration <enumeration>
 
 Login start answers known and unknown usernames with responses of the same
 shape and timing. Registration start necessarily reveals that a username is
 taken; it is rate-limited like login.
 
-== Rate limits <rate-limits>
+=== Rate limits <rate-limits>
 
 Handshakes, registration starts and login starts are limited per client
 address and per username; five failed logins lock a username for 15 minutes.
@@ -112,7 +112,7 @@ Counters are stored in the database, so they survive restarts. Locking by
 username lets anyone who knows a username lock that user out temporarily; this
 is accepted in exchange for stopping password guessing.
 
-== Storage
+=== Storage
 
 #table(
   columns: (auto, 1fr),

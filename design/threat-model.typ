@@ -1,14 +1,14 @@
-= Threat model <threat-model>
+== Threat model <threat-model>
 
 Status: *Specified*.
 
-== Deployment assumed
+=== Deployment assumed
 
 SRS runs on a network the operator does not fully trust, possibly without TLS.
 Clients are configured with the server's key fingerprint (@server-keys) before
 first contact.
 
-== Attackers
+=== Attackers
 
 #table(
   columns: (auto, 1fr),
@@ -21,7 +21,7 @@ first contact.
   [Dishonest operator], [Run modified server code and write to the database, then claim a user signed something.],
 )
 
-== Properties required
+=== Properties required
 
 #table(
   columns: (1fr, 1fr),
@@ -36,7 +36,7 @@ first contact.
   [Login rate limits cannot be bypassed by forging an address], [Malicious client.],
 )
 
-== Outside the model
+=== Outside the model
 
 - *Client code delivered over the untrusted network.* If a browser loads the
   application's JavaScript over plain HTTP, an active attacker can replace it

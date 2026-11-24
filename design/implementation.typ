@@ -1,8 +1,11 @@
-= Implementation plan <implementation>
+== Implementation plan <implementation>
 
 Status: *Specified*.
 
-== Decision
+=== Decision
+
+The tasks for each stage are in @roadmap: Stage 1 is milestones M2 to M5,
+Stage 2 is M6 and Stage 3 is M7.
 
 SRS is finished and stabilised in TypeScript first. The TypeScript server then
 becomes the reference implementation, and a Rust server replaces it piece by
@@ -14,7 +17,7 @@ changes are cheap, and every Rust piece has a working implementation to be
 checked against. Replacing piece by piece means SRS works at every step, and a
 faulty piece can be switched back.
 
-== Stage 1: stable TypeScript
+=== Stage 1: stable TypeScript
 
 Build everything specified in this book on the current TypeScript server and
 client: the Noise transport (@transport), accounts and identity keys
@@ -33,7 +36,7 @@ The stage is complete when:
   them;
 - SRS has run in at least one real deployment without a protocol change.
 
-== Conformance suites
+=== Conformance suites
 
 Each replaceable piece has a language-neutral conformance suite: input and
 expected-output files in a shared folder (`conformance/<piece>/`), with a
@@ -55,7 +58,7 @@ small runner in each language. Both implementations must pass the same files.
 In addition, while both implementations of a piece exist, CI runs randomised
 differential tests: the same inputs through both, failing on any difference.
 
-== Stage 2: Rust, piece by piece
+=== Stage 2: Rust, piece by piece
 
 The database file is locked by the process that opens it, so the Rust and
 TypeScript code cannot run as two processes on the same database. During
@@ -84,7 +87,7 @@ interface, so each can be swapped without touching the others.
   routing, OPAQUE handling and the remaining handlers. Bun is no longer needed.
   The result is one static binary.
 
-== Stage 3: pluggable databases
+=== Stage 3: pluggable databases
 
 Only after Rust owns storage, `srs-store` gains a dialect layer for PostgreSQL
 and MySQL alongside SQLite. The differences it has to cover are known: JSON
@@ -97,7 +100,7 @@ With a database server, more than one SRS process becomes possible. That needs
 replay windows, channel state and rate limits moved to shared storage; until
 it is designed, one process per database remains the rule (@operations).
 
-== The client
+=== The client
 
 The client's public API stays TypeScript. Its cryptography is TypeScript
 (`@noble/*` and `@serenity-kit/opaque`) during Stage 1. Once `srs-protocol`
@@ -105,7 +108,7 @@ passes the protocol conformance suite, the client may use its WebAssembly
 build instead, so client and server run the same protocol code. Either way the
 client must pass the same suite.
 
-== Libraries
+=== Libraries
 
 Rust pieces use vetted libraries for every cryptographic primitive: `opaque-ke`
 for OPAQUE (the library `@serenity-kit/opaque` is built from, so both sides can

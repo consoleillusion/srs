@@ -1,14 +1,14 @@
-= Schema <schema>
+== Schema <schema>
 
 Status: *Implemented*.
 
-== Decision
+=== Decision
 
 JSON Schema is the only source of truth for the database and the API. Schema
 files declare columns, relations, access rules and read-only views; the
 generator derives everything else.
 
-== Rules
+=== Rules
 
 - A schema `title` becomes a snake_case table name and resource type.
 - Table, column and relation names are snake_case.
@@ -26,7 +26,7 @@ generator derives everything else.
   (`onDelete: restrict`), so every retained signature stays attributable
   (@requests).
 
-== Consequences
+=== Consequences
 
 The build is deterministic and migration generation is idempotent. The same
 built schema drives the migration writer and the running application. The full
