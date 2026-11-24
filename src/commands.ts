@@ -10,6 +10,7 @@ import { openDatabase } from './db/open.ts'
 import { backupDatabase, restoreDatabase, startBackupSchedule } from './db/backup.ts'
 import { createMetrics, serveMetrics } from './server/metrics.ts'
 import { verifyRetainedSignatures } from './db/verify-signatures.ts'
+import { generateTypes } from './db/types.ts'
 import { createRowDatabase } from './server/database.ts'
 import { DEFAULT_MAX_BODY_BYTES, httpOptionsFromEnv } from './server/http.ts'
 import { createServerApp } from './server/start.ts'
@@ -66,6 +67,7 @@ export const init =
       , schemaHash: schemaHash(loaded)
       }
     await writeIfChanged(configPath(dir), JSON.stringify(config, null, 2) + '\n')
+    await writeIfChanged(join(dir, 'types.ts'), generateTypes(built))
 
     const key = await serverKey()
     console.log(`\nInitialised ${relative(process.cwd(), dir) || '.'} (${built.orderedTables.length} tables).`)

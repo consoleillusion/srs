@@ -64,6 +64,7 @@ describe('resource-server init and serve', () => {
     const config = JSON.parse(await readFile(join(project, '.srs/config.json'), 'utf8'))
     expect(config.schemas).toEqual(['schemas'])
     expect(await readFile(join(project, '.srs/migrations/schema-state.json'), 'utf8')).toContain('table:book')
+    expect(await readFile(join(project, '.srs/types.ts'), 'utf8')).toContain('export type BookAttributes')
   }, 60_000)
 
   test('init again keeps an existing key and prints none', () => {

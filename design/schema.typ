@@ -33,6 +33,14 @@ generator derives everything else.
   (`onDelete: restrict`), so every retained signature stays attributable
   (@requests).
 
+=== Generated types
+
+`srs init` writes `.srs/types.ts`: for each exposed resource, its attributes
+(read-only columns marked `readonly`, optional columns as `T | null`), its
+relationships, and a resource-object type, plus `Collection<T>` and `Single<T>`
+document types. The client uses them as type arguments:
+`client.get<Collection<'article'>>('/article')`.
+
 === Consequences
 
 The build is deterministic and migration generation is idempotent. The same
