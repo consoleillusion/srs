@@ -8,6 +8,7 @@ import
   } from '../../src/protocol/encoding.ts'
 import { checkFingerprint, serverKeysFromSecret, srsPrologue } from '../../src/protocol/server-keys.ts'
 import { encryptWithNonce, initiator, keyPairFromPrivate, responder } from '../../src/protocol/noise.ts'
+import { decodeRequest, encodeRequest, encodeResponse, seal } from '../../src/protocol/envelope.ts'
 import type { Operation } from './runner.ts'
 
 type CertificateInput =
@@ -90,4 +91,19 @@ export const operations: Record<string, Operation> =
           .readMessage1(hexToBytes(input.message1)))
   , 'noise.encrypt': (input: { key: string, nonce: string, ad: string, plaintext: string }) =>
       bytesToHex(encryptWithNonce(hexToBytes(input.key), BigInt(input.nonce), hexToBytes(input.ad), hexToBytes(input.plaintext)))
+    , 'envelope.encode-request': (input:
+      { method: string, path: string, headers: [string, string][], body: string, signature: string }) =>
+      bytesToHex(encodeRequest(
+        { method: input.method, path: input.path, headers: input.headers
+        , body: hexToBytes(input.body), signature: hexToBytes(input.signature) }))
+  , 'envelope.encode-response': (input:
+      { status: number, headers: [string, string][], body: string, signature: string }) =>
+      bytesToHex(encodeResponse(
+        { status: input.status, headers: input.headers, body: hexToBytes(input.body), signature: hexToBytes(input.signature) }))
+  , 'envelope.seal': (input: { key: string, sid: string, n: string, plaintext: string }) =>
+      bytesToHex(seal(hexToBytes(input.key), hexToBytes(input.sid), BigInt(input.n), hexToBytes(input.plaintext)))
+  , 'envelope.decode-request': (input: { plaintext: string }) => {
+      const request = decodeRequest(hexToBytes(input.plaintext))
+      return { method: request.method, path: request.path, headers: request.headers }
+    }
   }

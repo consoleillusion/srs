@@ -74,6 +74,31 @@ export const lengthPrefixed =
       }))
 
 /**
+ * Split bytes made by {@link lengthPrefixed} back into exactly `count` fields.
+ *
+ * @param bytes - The encoded fields.
+ * @param count - How many fields there must be.
+ * @throws {@link ProtocolError} `invalid-encoding` when the bytes do not hold exactly that many fields.
+ */
+export const splitLengthPrefixed =
+  (bytes: Uint8Array, count: number): Uint8Array[] => {
+    const fields: Uint8Array[] = []
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+    let at = 0
+    while (at < bytes.length) {
+      if (at + 4 > bytes.length) throw new ProtocolError('invalid-encoding', 'truncated length')
+      const length = view.getUint32(at)
+      at += 4
+      if (at + length > bytes.length) throw new ProtocolError('invalid-encoding', 'truncated field')
+      fields.push(bytes.slice(at, at + length))
+      at += length
+    }
+    if (fields.length !== count)
+      throw new ProtocolError('invalid-encoding', `expected ${count} fields, got ${fields.length}`)
+    return fields
+  }
+
+/**
  * Check that a value is exactly the expected number of bytes.
  *
  * @param bytes - The value.

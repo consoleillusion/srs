@@ -1,0 +1,8 @@
+{
+  "description": "A header name without a value is refused",
+  "operation": "envelope.decode-request",
+  "input": {
+    "plaintext": "00000003474554000000042f7461670000000a000000066163636570740000000000000000"
+  },
+  "error": "invalid-encoding"
+}

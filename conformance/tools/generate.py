@@ -344,7 +344,67 @@ def noise():
     })
 
 
+# ── envelope ──────────────────────────────────────────────────────────────
+
+def envelope_ad(sid, n):
+    return b'SRS1' + sid + struct.pack('>Q', n)
+
+
+def encode_headers(pairs):
+    return length_prefixed(*[x for name, value in pairs for x in (name.lower().encode(), value.encode())])
+
+
+def envelope():
+    s = 'protocol/envelope'
+    key, sid = seq(32, 9), seq(16, 0xb0)
+    request = length_prefixed(b'POST', b'/article?include=tag',
+                              encode_headers([('content-type', 'application/vnd.api+json'), ('accept', 'application/vnd.api+json')]),
+                              b'{"data":{"type":"article"}}', seq(64, 200))
+    write(s, 'request-encoding', {
+        'description': 'A request as length-prefixed method, path, headers, body and signature',
+        'operation': 'envelope.encode-request',
+        'input': {'method': 'POST', 'path': '/article?include=tag',
+                  'headers': [['content-type', 'application/vnd.api+json'], ['accept', 'application/vnd.api+json']],
+                  'body': h(b'{"data":{"type":"article"}}'), 'signature': h(seq(64, 200))},
+        'output': h(request),
+    })
+    response = length_prefixed(b'201', encode_headers([('location', '/article/1')]), b'{}', b'')
+    write(s, 'response-encoding', {
+        'description': 'A response as length-prefixed status, headers, body and signature',
+        'operation': 'envelope.encode-response',
+        'input': {'status': 201, 'headers': [['location', '/article/1']], 'body': h(b'{}'), 'signature': ''},
+        'output': h(response),
+    })
+    for n in (0, 7, 2**40):
+        ad = envelope_ad(sid, n)
+        write(s, f'seal-{n}', {
+            'description': 'An envelope: magic, channel id, counter, then the ciphertext under that counter',
+            'operation': 'envelope.seal',
+            'input': {'key': h(key), 'sid': h(sid), 'n': str(n), 'plaintext': h(request)},
+            'output': h(ad + ChaCha20Poly1305(key).encrypt(chacha_nonce(n), request, ad)),
+        })
+    write(s, 'decode-request-odd-headers', {
+        'description': 'A header name without a value is refused',
+        'operation': 'envelope.decode-request',
+        'input': {'plaintext': h(length_prefixed(b'GET', b'/tag', length_prefixed(b'accept'), b'', b''))},
+        'error': 'invalid-encoding',
+    })
+    write(s, 'decode-request-bad-signature-length', {
+        'description': 'A signature that is neither empty nor 64 bytes is refused',
+        'operation': 'envelope.decode-request',
+        'input': {'plaintext': h(length_prefixed(b'GET', b'/tag', b'', b'', seq(63)))},
+        'error': 'invalid-encoding',
+    })
+    write(s, 'decode-request-relative-path', {
+        'description': 'A path that does not start with / is refused',
+        'operation': 'envelope.decode-request',
+        'input': {'plaintext': h(length_prefixed(b'GET', b'tag', b'', b'', b''))},
+        'error': 'invalid-encoding',
+    })
+
+
 if __name__ == '__main__':
-    noise()
     encoding()
     server_keys()
+    noise()
+    envelope()

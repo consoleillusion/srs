@@ -5,7 +5,7 @@ import { cors } from 'hono/cors'
 import { secureHeaders } from 'hono/secure-headers'
 import { NONCE_HEADER, SIGNATURE_HEADER, TIMESTAMP_HEADER } from '../auth/signing.ts'
 import { errorDocument, jsonApi } from './app/document.ts'
-import type { AppContext, Env, Next } from './context.ts'
+import { innerOf, type AppContext, type Env, type Next } from './context.ts'
 import type { RowDatabase } from './database.ts'
 import { routePath } from 'hono/route'
 import type { Metrics } from './metrics.ts'
@@ -44,6 +44,9 @@ const HEALTH_PATHS = new Set(['/healthz', '/readyz'])
  */
 export const clientAddress =
   (c: Context, hops = 0): string => {
+    // A request decrypted from a Noise envelope uses its outer request's address.
+    const inner = innerOf(c)
+    if (inner) return inner.client
     let socket = 'unknown'
     try {
       socket = getConnInfo(c).remote.address ?? 'unknown'
@@ -68,7 +71,8 @@ const rateLimiter =
     const windows = new Map<string, { count: number, resetAt: number }>()
 
     return async (c: AppContext, next: Next) => {
-      if (HEALTH_PATHS.has(c.req.path)) return next()
+      // Health checks are never limited; decrypted requests were counted as their envelope.
+      if (HEALTH_PATHS.has(c.req.path) || innerOf(c)) return next()
 
       const now = Date.now()
       if (windows.size >= MAX_TRACKED_CLIENTS)
@@ -100,6 +104,8 @@ const rateLimiter =
 const requestLogger =
   (sink: (record: Record<string, unknown>) => void) =>
     async (c: AppContext, next: Next) => {
+      // An envelope is logged as the request it carries, not as POST /noise.
+      if (c.req.path === '/noise' && !innerOf(c)) return next()
       const supplied = c.req.header('x-request-id')
       const id =
         supplied !== undefined && /^[A-Za-z0-9._-]{1,64}$/.test(supplied)

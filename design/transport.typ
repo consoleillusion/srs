@@ -68,9 +68,18 @@ Every later request is `POST /noise` with content type
 ciphertext = ChaCha20-Poly1305(k_c2s, nonce = n, ad = "SRS1" ‖ sid ‖ n, plaintext)
 ```
 
-The plaintext holds the method, path with query string, the headers the
-application needs (`content-type`, `accept`), the body, and, once logged in,
-the request signature (@requests). Paths are therefore hidden from the network.
+The request plaintext is five length-prefixed fields (each a 4-byte
+big-endian length, then the bytes):
+
+```text
+method ‖ path_with_query ‖ headers ‖ body ‖ signature
+headers = name ‖ value ‖ name ‖ value …   (each length-prefixed, names lowercase)
+```
+
+Only `accept`, `content-type` and `x-request-id` are carried; any other header
+is dropped, so nothing such as a bearer token can be smuggled in. `signature`
+is empty before login and 64 bytes after (@requests). Paths are therefore
+hidden from the network.
 
 The server decrypts, checks the counter (@replay), and passes an ordinary
 request to the application. The response is:
@@ -80,8 +89,15 @@ request to the application. The response is:
 ```
 
 using the same `n` as the request, so a response cannot be attached to another
-request or another channel. The response plaintext holds the status, the
-headers the client needs, and the body.
+request or another channel. The response plaintext is four length-prefixed
+fields: the status as three ASCII digits, the headers (`allow`,
+`content-type`, `location`, `retry-after`, `x-request-id` only), the body, and
+the server's response signature, empty unless responses are signed.
+
+The decrypted request is handed to the same application with its channel
+attached out of band, never as a header. It is rate-limited and logged once,
+under its own path, with the outer request's client address. A request inside a
+channel for a path under `/noise` gets `404`.
 
 Noise permits explicit nonces for transports that deliver out of order; this
 is that case. Each key encrypts a given nonce at most once, because a request
@@ -99,8 +115,10 @@ of the counters below it, as WireGuard does.
 - The client increments its counter for every request, including retries. A
   retry is a new request; whether repeating a write is safe is the
   application's concern.
-- A rejected envelope is answered `409` in the clear without detail, and the
-  client starts a new request.
+- A replayed counter is answered `409` in the clear without detail, and the
+  client starts a new request. An envelope that is malformed or does not
+  authenticate is answered `400`, and its counter is not used up, so a forged
+  envelope cannot block a real one.
 
 === Channel lifetime
 

@@ -1,0 +1,8 @@
+{
+  "description": "A signature that is neither empty nor 64 bytes is refused",
+  "operation": "envelope.decode-request",
+  "input": {
+    "plaintext": "00000003474554000000042f74616700000000000000000000003f000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e"
+  },
+  "error": "invalid-encoding"
+}

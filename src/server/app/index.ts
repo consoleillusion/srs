@@ -14,6 +14,7 @@ import { applyHttp, clientAddress, type HttpOptions } from '../http.ts'
 import { sessionMiddleware } from '../session.ts'
 import { createChannelStore } from '../channels.ts'
 import { registerHandshake } from '../noise-handshake.ts'
+import { registerEnvelopeRoute } from '../noise-route.ts'
 import { crudHandlers } from './crud.ts'
 import { errorDocument, jsonApi } from './document.ts'
 import { createGuard } from './guard.ts'
@@ -91,6 +92,12 @@ export const createApp =
       registerHandshake(
         app
         , { serverKeys, channels, clientOf: c => clientAddress(c, http.trustedProxyHops) })
+      registerEnvelopeRoute(
+        app
+        , { channels
+          , clientOf: c => clientAddress(c, http.trustedProxyHops)
+          , checkSignature: () => ({ signed: false })
+          })
     }
 
     if (opaqueServerSetup)

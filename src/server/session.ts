@@ -1,4 +1,4 @@
-import type { AppContext, Next } from './context.ts'
+import { innerOf, type AppContext, type Next } from './context.ts'
 import type { RowDatabase } from './database.ts'
 import { unauthorized } from './errors.ts'
 import { sessionKeyId } from '../auth/session-key.ts'
@@ -16,6 +16,14 @@ import { resolveOidcUser, type OidcVerifier } from '../auth/oidc.ts'
 export const sessionMiddleware =
   (db: RowDatabase, oidc?: OidcVerifier) =>
   async (c: AppContext, next: Next) => {
+    // A request from a Noise channel is authenticated by the channel's login.
+    const inner = innerOf(c)
+    if (inner) {
+      const login = inner.channel.login
+      if (!login) throw unauthorized('Session is required')
+      c.set('userId', login.userId)
+      return next()
+    }
     const header = c.req.header('authorization') ?? ''
     if (!header.startsWith('Bearer '))
       throw unauthorized('Session is required')

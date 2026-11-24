@@ -1,7 +1,7 @@
 import { verifySignedRequest } from '../../auth/signing.ts'
-import type { AppContext, Next } from '../context.ts'
+import { innerOf, type AppContext, type Next } from '../context.ts'
 import type { RowDatabase } from '../database.ts'
-import { methodNotAllowed } from '../errors.ts'
+import { methodNotAllowed, unauthorized } from '../errors.ts'
 import type { Registry } from '../registry.ts'
 import { uuidToBuffer } from '../uuid.ts'
 import { negotiate, operationOf } from './negotiate.ts'
@@ -79,12 +79,19 @@ export const createGuard =
         !signed
         && ((operation === 'read' && access?.read === 'public')
             || (operation === 'create' && access?.create === 'public'))
-      if (open && !c.req.header('authorization')) {
+      const inner = innerOf(c)
+      if (open && !c.req.header('authorization') && !inner?.channel.login) {
         c.set('anonymous', true)
         return next()
       }
       return requireAuth(c, async () => {
-        c.set('signed', await verifySignedRequest(c, db, signed))
+        if (inner) {
+          // Signatures inside a channel were checked when the envelope was opened.
+          if (signed && !inner.signed) throw unauthorized('This request must be signed')
+          c.set('signed', inner.signed)
+        } else {
+          c.set('signed', await verifySignedRequest(c, db, signed))
+        }
         c.set('roles', await rolesOf(options, c.get('userId') ?? ''))
         await next()
       })
