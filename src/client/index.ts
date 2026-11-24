@@ -304,5 +304,5 @@ export const createResourceServerClient =
         }
       })
   }
-export { createSecureClient, type SecureClient, type SecureClientOptions, type SecureLogin } from './secure.ts'
+export { createSecureClient, type KeyChangeListener, type SecureClient, type SecureClientOptions, type SecureLogin } from './secure.ts'
 export type { ChannelResponse } from './channel.ts'

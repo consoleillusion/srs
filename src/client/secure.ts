@@ -37,6 +37,9 @@ const JSON_TYPE = 'application/json'
 /** How long a session certificate is valid; the login's expiry caps it. */
 const CERTIFICATE_TTL_MS = 24 * 60 * 60_000
 
+/** Receives the new fingerprint after the client follows a signed key rotation. */
+export type KeyChangeListener = (fingerprint: string) => void
+
 /** Settings for {@link createSecureClient}. */
 export type SecureClientOptions =
   { /** The server's base URL; defaults to the current origin. */
@@ -49,7 +52,7 @@ export type SecureClientOptions =
    * Called when the client follows a server key rotation signed by the pinned
    * keys, with the new fingerprint to pin from now on. Store it.
    */
-  , onServerKeyChange?: (fingerprint: string) => void
+  , onServerKeyChange?: KeyChangeListener
   }
 
 /** Who the client is logged in as. */
