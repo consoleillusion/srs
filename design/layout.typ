@@ -26,8 +26,8 @@ spec/              end-to-end tests through the app
   unit/            unit tests by module
 design/            this book: one .typ file per chapter, book.typ, build.sh
 doc/               reference documentation for what is built
-conformance/       planned: language-neutral conformance suites (M5)
-crates/            planned: Rust crates (M6)
+conformance/       planned: language-neutral conformance suites (v0.5)
+crates/            planned: Rust crates (v1.1)
 .github/workflows/ CI
 Dockerfile         container image
 .env.example       every setting, with defaults

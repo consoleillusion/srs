@@ -27,15 +27,15 @@ Status: *Implemented* for the current stack; the planned libraries are
 
 === Planned TypeScript libraries
 
-Needed for the transport and accounts (@roadmap, milestone M2).
+Needed for the transport and accounts (@roadmap, series v0.3).
 
 #table(
   columns: (auto, 1fr),
   table.header([*Library*], [*Use*]),
-  [`@noble/curves`], [X25519 for Noise; Ed25519 for identity and session keys, replacing `tweetnacl` (M1.7).],
+  [`@noble/curves`], [X25519 for Noise; Ed25519 for identity and session keys, replacing `tweetnacl` (v0.2.7).],
   [`@noble/ciphers`], [ChaCha20-Poly1305 for Noise; XChaCha20-Poly1305 for identity-key wrapping.],
   [`@noble/hashes`], [BLAKE2s for Noise; HKDF-SHA256 and HMAC-SHA256.],
-  [A CBOR library], [Deterministic CBOR for certificates. To be chosen in M2.1: it must produce deterministic encoding, sorted map keys and shortest integers.],
+  [A CBOR library], [Deterministic CBOR for certificates. To be chosen in v0.3.0: it must produce deterministic encoding, sorted map keys and shortest integers.],
 )
 
 The Noise NK handshake is implemented in SRS on these primitives rather than
@@ -44,7 +44,7 @@ vectors before anything is built on it.
 
 === Planned Rust stack
 
-Used from milestone M6 (@implementation).
+Used from series v1.1 (@implementation).
 
 #table(
   columns: (auto, 1fr),
@@ -58,8 +58,8 @@ Used from milestone M6 (@implementation).
   [`zeroize`], [Wipes secrets from memory after use.],
   [`ciborium`], [CBOR; deterministic output to be confirmed against the certificate fixtures.],
   [`axum` on `hyper`], [HTTP, when Rust takes over the socket.],
-  [`sqlx` or `sea-query`], [Database access and SQL building for several dialects (M7). To be chosen in M7.1.],
-  [Turso's Rust crate], [SQLite-compatible storage, matching the TypeScript side. To be confirmed in M6.5.],
+  [`sqlx` or `sea-query`], [Database access and SQL building for several dialects (v1.2). To be chosen in v1.2.0.],
+  [Turso's Rust crate], [SQLite-compatible storage, matching the TypeScript side. To be confirmed in v1.1.5.],
 )
 
 === Library policy

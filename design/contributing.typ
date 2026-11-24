@@ -33,7 +33,9 @@ bun run design      # the book compiles
 - the book is updated: the task set to *Done*, chapter status lines corrected,
   new gaps listed in @status;
 - `doc/` describes any changed user-visible behaviour;
-- the commit message names the task, for example `M2.3: Noise NK handshake`.
+- the commit message names the task, for example `v0.3.2: Noise NK handshake`;
+- `package.json` carries the task's version and the commit is tagged with it
+  (@roadmap).
 
 === Changing the design
 
@@ -79,7 +81,7 @@ The existing code sets the style; match it.
 - `spec/` holds end-to-end tests that drive the app through
   `app.request(...)` with a migrated in-memory database (`spec/helpers/`).
 - `spec/unit/` holds unit tests, organised by module.
-- Protocol and schema behaviour also gets conformance fixtures (@roadmap, M5).
+- Protocol and schema behaviour also gets conformance fixtures (@roadmap, v0.5).
 - Tests must not depend on network access or on the order they run in.
 
 === The book

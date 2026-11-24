@@ -21,10 +21,10 @@ Everything with state *Next*, *Later* or *Open* in @roadmap.
   transport requires TLS, which prevents this; the Noise transport removes the
   gap by design (@login).
 - `src/schema/system/key.yaml` declares `onDelete: cascade` for `key.user`,
-  which contradicts @schema (M1.1).
-- `audit_log` is not protected by database triggers (M1.6).
+  which contradicts @schema (v0.2.1).
+- `audit_log` is not protected by database triggers (v0.2.6).
 - A parent's owner cannot moderate inherited child rows.
-- There are no metrics (M1.5).
+- There are no metrics (v0.2.5).
 
 === Open questions
 
@@ -36,7 +36,7 @@ Everything with state *Next*, *Later* or *Open* in @roadmap.
 === Verification plan
 
 The transport and account protocol is a new composition of standard parts. It
-is accepted when the following hold; @roadmap tracks them as M2 and M3.
+is accepted when the following hold; @roadmap tracks them as v0.3 and v0.6.
 
 + The Noise handshake passes the published Noise test vectors for
   `Noise_NK_25519_ChaChaPoly_BLAKE2s`.

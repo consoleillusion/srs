@@ -4,8 +4,8 @@ Status: *Specified*.
 
 === Decision
 
-The tasks for each stage are in @roadmap: Stage 1 is milestones M2 to M5,
-Stage 2 is M6 and Stage 3 is M7.
+The tasks for each stage are in @roadmap: Stage 1 is the series v0.2 to v0.6
+and ends with the `v1.0.0` release, Stage 2 is v1.1 and Stage 3 is v1.2.
 
 SRS is finished and stabilised in TypeScript first. The TypeScript server then
 becomes the reference implementation, and a Rust server replaces it piece by
