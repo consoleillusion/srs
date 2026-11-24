@@ -88,11 +88,9 @@ The existing code sets the style; match it.
 - `spec/` holds end-to-end tests that drive the app through
   `app.request(...)` with a migrated in-memory database (`spec/helpers/`).
 - `spec/unit/` holds unit tests, organised by module.
-- Protocol behaviour also gets conformance fixtures. They are written by the
-  independent Python reference, never by hand: change
-  `conformance/tools/generate.py`, then run it (it needs `pip install
-  cryptography pynacl`) and commit the regenerated files. CI fails when the
-  committed fixtures differ from what the generator writes.
+- Protocol behaviour also gets conformance fixtures: frozen JSON cases in
+  `conformance/`, checked by hand before they are committed and changed only
+  when the behaviour they pin changes (@implementation).
 - Tests must not depend on network access or on the order they run in.
 
 === The book

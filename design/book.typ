@@ -8,6 +8,9 @@
 #let rule = rgb(28, 24, 20).transparentize(80%)
 #let shade = rgb("#e9e2d3")
 #let accent = rgb("#7a2e1d").transparentize(8%)
+#let charcoal = rgb("#1f1e1c")
+#let paper-light = rgb("#ece6d8").transparentize(12%)
+#let paper-quiet = rgb("#ece6d8").transparentize(45%)
 
 #let sans = ("Inter", "Source Sans 3", "Fira Sans", "Noto Sans", "DejaVu Sans", "Liberation Sans", "Arial")
 
@@ -65,14 +68,14 @@
 
 // A title group: a small line above a large one, with a small line below,
 // set close together because they read as one unit.
-#let title-group(above, title, below, size: 34pt) = {
+#let title-group(above, title, below, size: 34pt, quiet: muted) = {
   set text(top-edge: "cap-height", bottom-edge: "baseline")
   set par(spacing: 0pt)
   stack(
     spacing: 14pt,
     text(size: 12pt, weight: 600, above),
     text(size: size, weight: 300, title),
-    if below != none { block(width: 75%, text(size: 12pt, fill: muted, below)) },
+    if below != none { block(width: 75%, text(size: 12pt, fill: quiet, below)) },
   )
 }
 
@@ -128,9 +131,11 @@
 }
 
 // ── Title page ─────────────────────────────────────────────────────────
-#page(header: none, footer: none)[
+#page(header: none, footer: none, fill: charcoal)[
+  #set text(fill: paper-light)
   #place(bottom + left, title-group(
-    [Standard Resource Server], [SRS design], [Goals, rules, protocol and roadmap], size: 44pt,
+    [Standard Resource Server], [SRS design], [Goals, rules, protocol and roadmap],
+    size: 44pt, quiet: paper-quiet,
   ))
 ]
 

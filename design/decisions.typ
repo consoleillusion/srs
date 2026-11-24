@@ -53,4 +53,6 @@ Add a row before changing a design rule. When a rule is replaced, mark its row
   [D043], [Metrics are served on a separate listener bound to `127.0.0.1`], [Metrics never reach the network, under either transport],
   [D044], [Admin password resets are on by default and can be turned off with `SRS_ALLOW_RESET=false`], [Recovery is expected by most deployments; the trade-off is recorded in @recovery],
   [D045], [Server keys rotate through a transition statement signed by the old key, with a stop date; both keys work until then], [Pinned clients move without manual repinning, and a stolen-key forgery is no worse than the theft itself],
+  [D046], [The protocol is checked by published test vectors, attack tests, conformance suites and real use; there is no formal model or outside review at this stage], [SRS is grassroots: a working implementation, checked over time, matters more than ceremony],
+  [D047], [Conformance fixtures are frozen files checked by hand; no second implementation is kept to produce them], [Fewer moving parts and no extra language; published vectors still anchor the cryptography],
 )

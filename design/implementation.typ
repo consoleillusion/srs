@@ -27,8 +27,8 @@ client: the Noise transport (@transport), accounts and identity keys
 The stage is complete when:
 
 - every specified feature is built and every rule has a test;
-- the protocol has passed the verification plan in @status: Noise test
-  vectors, attack tests, the protocol model, and an external review;
+- the protocol passes the checks in @status: the published Noise test
+  vectors, the attack tests and the conformance suites;
 - the wire format is frozen. Every protocol string carries a version
   (`srs-noise-v1`, `srs-req-v1`, `srs-cert-v1` and so on), and a frozen
   version is never changed, only replaced by a new one;
@@ -82,14 +82,16 @@ needed:
 - Results are compared as canonical JSON, so field order in an `output` object
   matters and is fixed by the case.
 
-=== Independent fixtures
+=== Fixtures
 
-Fixtures are never produced by the implementation they test. They are written
-by `conformance/tools/generate.py`, a separate reference implementation in
-Python using the `cryptography` package, and are committed. Changing a fixture
-means changing the generator and regenerating; a fixture is never edited by
-hand. The TypeScript runner is `spec/conformance.test.ts` and runs with the
-rest of the tests.
+Fixtures are frozen files. Once a case is committed it changes only when the
+protocol or behaviour it pins changes, and that change is reviewed like any
+other. New cases may be written by hand or produced by a short script; either
+way they are read and checked before they are committed, because an
+implementation cannot check itself against output it just produced. Published
+vectors, such as the Noise test vectors, are included as cases and name their
+source. The TypeScript runner is `spec/conformance.test.ts` and runs with the
+rest of the tests; a later implementation must pass the same files.
 
 === Stage 2: Rust, piece by piece
 

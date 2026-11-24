@@ -33,7 +33,7 @@ Status: *Implemented* — this is the live list of work.
   [v0.3], [Secure transport and accountable accounts, in TypeScript], [Next],
   [v0.4], [Schema authoring workflow], [Next, alongside v0.3],
   [v0.5], [Conformance suites], [Later; protocol fixtures start in v0.3],
-  [v0.6], [Verification and wire-format freeze], [Later],
+  [v0.6], [Wire-format freeze and real use], [Later],
   [v1.0], [Stable TypeScript release], [Later],
   [v1.1], [Rust, piece by piece], [Later],
   [v1.2], [Pluggable databases], [Later],
@@ -108,29 +108,25 @@ Makes adding a resource reliable for people and AI models. Independent of v0.3.
 
 === v0.5 — Conformance suites
 
-Defined in @implementation. Protocol fixtures are written during v0.3. v0.5.2
-to v0.5.4 wait on the open question in @status about where their expected
-outputs come from.
+Defined in @implementation. Protocol fixtures are written during v0.3.
 
 #table(
   columns: (auto, 1fr, 1.3fr, auto),
   table.header([*Version*], [*Task*], [*Done when*], [*State*]),
-  [v0.5.0], [Suite format and runner], [The book defines the case format (@implementation); an independent Python generator writes the fixtures; a TypeScript runner runs every suite with the tests.], [Done],
+  [v0.5.0], [Suite format and runner], [The book defines the case format (@implementation); a TypeScript runner runs every suite with the tests.], [Done],
   [v0.5.1], [Protocol suite], [Complete for every message in Part III, including invalid inputs.], [Done],
-  [v0.5.2], [Schema engine suite], [Schema folders with expected built schema, SQL and migration state.], [Open],
-  [v0.5.3], [Query compiler and access suites], [Expected SQL, parameters and access decisions.], [Open],
-  [v0.5.4], [HTTP suite], [The end-to-end tests drive the server over HTTP only, against a server started as a process.], [Open],
+  [v0.5.2], [Schema engine suite], [Schema folders with expected built schema, SQL and migration state.], [Next],
+  [v0.5.3], [Query compiler and access suites], [Expected SQL, parameters and access decisions.], [Next],
+  [v0.5.4], [HTTP suite], [The end-to-end tests drive the server over HTTP only, against a server started as a process.], [Next],
 )
 
-=== v0.6 — Verification and freeze
+=== v0.6 — Freeze
 
 #table(
   columns: (auto, 1fr, 1.3fr, auto),
   table.header([*Version*], [*Task*], [*Done when*], [*State*]),
-  [v0.6.0], [Protocol model], [A Tamarin or ProVerif model of the handshake, binding and certificates is in `verification/`, and proves the properties in @threat-model. Depends on v0.3.6.], [Later],
-  [v0.6.1], [External review], [A protocol reviewer has reviewed this book and the v0.3 code; every finding is fixed or recorded as a decision.], [Later],
-  [v0.6.2], [Freeze the wire format], [Every protocol string carries `v1`; the protocol fixtures are complete; the freeze is a decision row.], [Later],
-  [v0.6.3], [Production soak], [One real deployment runs without a protocol change; findings are fixed.], [Later],
+  [v0.6.0], [Freeze the wire format], [Every protocol string carries `v1`; the protocol fixtures are complete; the freeze is a decision row.], [Later],
+  [v0.6.1], [Real use], [At least one real deployment runs without a protocol change; findings are fixed.], [Later],
 )
 
 === v1.0 — Stable TypeScript release

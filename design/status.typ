@@ -18,8 +18,8 @@ Status: *Implemented* — kept current with every change.
 - The bearer transport for TLS deployments, with optional OIDC bearer tokens.
 - Operations: request limits, rate limiting, health checks, request logging,
   metrics, backups and restore, graceful shutdown, CI and a container image.
-- Conformance: a protocol suite of independent fixtures from a Python
-  reference, including the published Noise vectors.
+- Conformance: a protocol suite of frozen fixtures, including the published
+  Noise vectors.
 
 === Specified, not built
 
@@ -39,21 +39,14 @@ Everything with state *Next*, *Later* or *Open* in @roadmap.
 
 === Open questions
 
-- Where the expected outputs of the schema-engine, query-compiler and access
-  suites (v0.5.2 to v0.5.4) come from. @implementation requires fixtures to
-  come from an implementation other than the one under test, as the protocol
-  fixtures do. For these suites that means a second schema engine and query
-  compiler, in Python, which is a large piece of work. The alternative is
-  approved golden files: produced once by the TypeScript implementation, read
-  and approved by a person, and changed only through review. That would need a
-  decision row relaxing the rule for these suites.
 - Whether providers likely to be used with SRS support DPoP, which would let
   provider users sign requests (@external-identity).
 
-=== Verification plan
+=== How the protocol is checked
 
-The transport and account protocol is a new composition of standard parts. It
-is accepted when the following hold; @roadmap tracks them as v0.3 and v0.6.
+SRS is checked by working code, tests and use over time, not by outside
+review. The transport and account protocol is accepted while all of these
+hold:
 
 + The Noise handshake passes the published Noise test vectors for
   `Noise_NK_25519_ChaChaPoly_BLAKE2s`.
@@ -63,8 +56,5 @@ is accepted when the following hold; @roadmap tracks them as v0.3 and v0.6.
   channel; a swapped session key; a certificate from another channel or
   login; a revoked identity key; a downgrade to a clear route; a forged
   key-rotation statement.
-+ The handshake, binding and certificate steps are modelled in a protocol
-  analysis tool (Tamarin or ProVerif), and the properties in @threat-model are
-  proved for that model.
-+ An external reviewer who does protocol review has read this book and the
-  code.
++ The protocol conformance suite passes.
++ Every problem found in real use gets a test that would have caught it.

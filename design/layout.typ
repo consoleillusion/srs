@@ -29,9 +29,7 @@ templates/         example schema folders for common patterns
 doc/               generated API reference (bun run docs); not committed
 conformance/       language-neutral conformance suites
   protocol/          protocol cases by topic
-  tools/             independent fixture generator (Python)
 crates/            planned: Rust crates (v1.1)
-verification/      planned: the protocol model (v0.6.0)
 .github/workflows/ CI
 Containerfile      container image (Podman or Docker)
 .env.example       every setting, with defaults

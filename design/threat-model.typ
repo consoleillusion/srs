@@ -1,7 +1,7 @@
 == Threat model <threat-model>
 
-Status: *Implemented*: the Noise transport is built to it. The properties are
-checked by the attack tests and will be proved in the protocol model (v0.6.0).
+Status: *Implemented*: the Noise transport is built to it, and the attack
+tests check each property (@status).
 
 === Deployment assumed
 
