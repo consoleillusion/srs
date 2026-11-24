@@ -30,4 +30,4 @@ RESTRICT`, so deleting a user cannot silently erase key history.
 Refresh tokens, multi-device session management, and key rotation or revocation
 APIs.
 
-See [auth.md](../doc/auth.md) and [security.md](../doc/security.md) for details.
+See [auth.md](./auth.md) and [security.md](./security.md) for details.

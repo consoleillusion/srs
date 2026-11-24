@@ -5,7 +5,7 @@
   "cleanOutputDir": false,
   "tsconfig": "tsconfig.json",
   "name": "resource-server",
-  "readme": "README.md",
+  "readme": "design/README.md",
   "excludePrivate": true,
   "excludeInternal": true,
   "validation": { "notExported": true, "invalidLink": true, "notDocumented": true },

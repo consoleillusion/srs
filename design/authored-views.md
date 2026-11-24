@@ -36,4 +36,4 @@ role requirement. Writes return `405`.
 - The database view materialises every embedded relation, even when the request
   uses a sparse fieldset.
 
-See [schema-reference.md](../doc/schema-reference.md) for the complete rules.
+See [schema-reference.md](./schema-reference.md) for the complete rules.

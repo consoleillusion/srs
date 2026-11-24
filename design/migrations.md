@@ -25,4 +25,4 @@ Database changes are reviewable as SQL and repeatable from an empty database.
 The test suite applies every migration, so generated SQL is exercised rather
 than assumed correct.
 
-See [development.md](../doc/development.md) for commands and failure handling.
+See [development.md](./development.md) for commands and failure handling.
