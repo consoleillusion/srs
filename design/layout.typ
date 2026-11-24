@@ -26,7 +26,9 @@ spec/              end-to-end tests through the app
   unit/            unit tests by module
 design/            this book: one .typ file per chapter, book.typ, build.sh
 doc/               generated API reference (bun run docs); not committed
-conformance/       planned: language-neutral conformance suites (v0.5)
+conformance/       language-neutral conformance suites
+  protocol/          protocol cases by topic
+  tools/             independent fixture generator (Python)
 crates/            planned: Rust crates (v1.1)
 .github/workflows/ CI
 Dockerfile         container image

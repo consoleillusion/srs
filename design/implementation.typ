@@ -58,6 +58,39 @@ small runner in each language. Both implementations must pass the same files.
 In addition, while both implementations of a piece exist, CI runs randomised
 differential tests: the same inputs through both, failing on any difference.
 
+=== Case format
+
+Each case is one JSON file under `conformance/<suite>/`, in subfolders as
+needed:
+
+```json
+{ "description": "What the case shows",
+  "operation": "encoding.certificate",
+  "input": { "sid": "303132…", "issuedAt": 1764000000000 },
+  "output": "7372732d…" }
+```
+
+- `operation` names what to run. Each implementation keeps a table from
+  operation names to its own code (`spec/conformance/operations.ts` in
+  TypeScript).
+- A case has exactly one of `output` (the expected result) or `error` (the
+  expected error code). Error codes are stable strings such as
+  `invalid-length`; every implementation reports the same code for the same
+  failure.
+- Bytes are lowercase hex strings. Integers that fit in 53 bits are JSON
+  numbers; wider integers are decimal strings.
+- Results are compared as canonical JSON, so field order in an `output` object
+  matters and is fixed by the case.
+
+=== Independent fixtures
+
+Fixtures are never produced by the implementation they test. They are written
+by `conformance/tools/generate.py`, a separate reference implementation in
+Python using the `cryptography` package, and are committed. Changing a fixture
+means changing the generator and regenerating; a fixture is never edited by
+hand. The TypeScript runner is `spec/conformance.test.ts` and runs with the
+rest of the tests.
+
 === Stage 2: Rust, piece by piece
 
 The database file is locked by the process that opens it, so the Rust and

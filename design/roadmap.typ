@@ -112,7 +112,7 @@ Defined in @implementation. Protocol fixtures are written during v0.3.
 #table(
   columns: (auto, 1fr, 1.3fr, auto),
   table.header([*Version*], [*Task*], [*Done when*], [*State*]),
-  [v0.5.0], [Suite format and runner], [`conformance/README.md` defines the file format; a TypeScript runner runs every suite in CI.], [Next],
+  [v0.5.0], [Suite format and runner], [The book defines the case format (@implementation); an independent Python generator writes the fixtures; a TypeScript runner runs every suite with the tests.], [Done],
   [v0.5.1], [Protocol suite], [Complete for every message in Part III, including invalid inputs.], [Later],
   [v0.5.2], [Schema engine suite], [Schema folders with expected built schema, SQL and migration state.], [Later],
   [v0.5.3], [Query compiler and access suites], [Expected SQL, parameters and access decisions.], [Later],
