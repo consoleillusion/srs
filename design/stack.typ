@@ -26,17 +26,10 @@ Status: *Implemented* for the current stack; the planned libraries are
   [Container], [`oven/bun` image], [Non-root, volumes for data and backups.],
 )
 
-=== Planned TypeScript libraries
+=== Protocol code
 
-Needed for the transport and accounts (@roadmap, series v0.3).
-
-#table(
-  columns: (auto, 1fr),
-  table.header([*Library*], [*Use*]),
-  [A CBOR library], [Deterministic CBOR for certificates. To be chosen in v0.3.0: it must produce deterministic encoding, sorted map keys and shortest integers.],
-)
-
-The Noise NK handshake is implemented in SRS on these primitives rather than
+Every library the transport and accounts need is already in the stack. The
+Noise NK handshake is implemented in SRS on these primitives rather than
 taken from a little-used Noise package; it must pass the published test
 vectors before anything is built on it.
 
@@ -54,7 +47,6 @@ Used from series v1.1 (@implementation).
   [`ed25519-dalek`, `x25519-dalek`], [Signatures and key agreement where used outside `snow`.],
   [`chacha20poly1305`, `hkdf`, `hmac`, `sha2`], [RustCrypto primitives.],
   [`zeroize`], [Wipes secrets from memory after use.],
-  [`ciborium`], [CBOR; deterministic output to be confirmed against the certificate fixtures.],
   [`axum` on `hyper`], [HTTP, when Rust takes over the socket.],
   [`sqlx` or `sea-query`], [Database access and SQL building for several dialects (v1.2). To be chosen in v1.2.0.],
   [Turso's Rust crate], [SQLite-compatible storage, matching the TypeScript side. To be confirmed in v1.1.5.],

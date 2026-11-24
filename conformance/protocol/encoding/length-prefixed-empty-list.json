@@ -1,0 +1,8 @@
+{
+  "description": "Fields joined, each prefixed with its 4-byte big-endian length",
+  "operation": "encoding.length-prefixed",
+  "input": {
+    "fields": []
+  },
+  "output": ""
+}

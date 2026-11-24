@@ -1,0 +1,8 @@
+{
+  "description": "A value outside the 64-bit unsigned range is refused",
+  "operation": "encoding.u64be",
+  "input": {
+    "value": "18446744073709551616"
+  },
+  "error": "out-of-range"
+}

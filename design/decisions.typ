@@ -44,4 +44,5 @@ Add a row before changing a design rule. When a rule is replaced, mark its row
   [D034], [Pluggable databases are added only after Rust owns storage], [The dialect layer is written once, in the final implementation],
   [D035], [Rust pieces use vetted libraries for every primitive: `opaque-ke`, `snow`, `ed25519-dalek`, RustCrypto], [Rust is chosen because these exist; no primitive is written by hand],
   [D036], [Work is numbered by semantic version: a series is a minor version, a task is a patch version, and each finished task is tagged; `v1.0.0` is the stable TypeScript release], [Task ids are also release ids, so the roadmap, the code and the tags name work the same way],
+  [D037], [Signed structures use fixed binary layouts with a version tag, or length-prefixed fields, never a general serialisation format], [Fixed layouts are canonical by construction; no library, and nothing for two implementations to serialise differently],
 )

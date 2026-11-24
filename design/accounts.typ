@@ -74,9 +74,13 @@ Failures return the same `401` and count towards the throttle (@rate-limits).
 === Session certificates <certificates>
 
 ```text
-cert = { v: 1, user_id, login_id, sid, h, session_public, issued_at, expires_at }
-sig  = Ed25519(identity_private, "srs-cert-v1" ‖ canonical(cert))
+cert = "srs-cert-v1" ‖ user_id (16) ‖ login_id (16) ‖ sid (16) ‖ h (32)
+       ‖ session_public (32) ‖ issued_at (8) ‖ expires_at (8)
+sig  = Ed25519(identity_private, cert)
 ```
+
+Every field has a fixed length, so the layout is canonical without a general
+encoding. Times are milliseconds since the epoch, big-endian.
 
 The server accepts a certificate only if:
 
@@ -87,8 +91,7 @@ The server accepts a certificate only if:
 - the identity key is not revoked (@revocation).
 
 Certificates are stored and never deleted, because retained signatures
-(@requests) need them for later verification. `canonical` is deterministic
-CBOR with sorted keys.
+(@requests) need them for later verification.
 
 === Resuming a login <resume>
 
