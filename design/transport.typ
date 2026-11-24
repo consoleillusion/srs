@@ -132,7 +132,8 @@ of the counters below it, as WireGuard does.
 
 === Strict mode
 
-Under `noise`, the server refuses every request that is not one of the clear
-routes listed in @http-api, and the client refuses to send anything outside the
+Under `noise`, the server answers every request that is not one of the clear
+routes listed in @http-api with `426 Upgrade Required`, whatever it carries,
+including a bearer session id. The client refuses to send anything outside the
 channel. There is no fallback, so an attacker cannot remove the encryption by
 making each side believe the other lacks it.

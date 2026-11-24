@@ -51,12 +51,16 @@ afterAll(() => rm(project, { recursive: true, force: true }))
 
 describe('resource-server init and serve', () => {
   let key = ''
+  let serverKeys = ''
 
   test('init generates migrations, config and a new server key', async () => {
     const result = run(['init', 'schemas'])
     expect(result.code).toBe(0)
     key = result.out.match(/OPAQUE_SERVER_SETUP=(\S+)/)?.[1] ?? ''
     expect(key.length).toBeGreaterThan(20)
+    serverKeys = result.out.match(/SRS_SERVER_KEYS=(\S+)/)?.[1] ?? ''
+    expect(serverKeys.startsWith('srs-keys-v1:')).toBe(true)
+    expect(result.out).toMatch(/srs1:[a-z2-7]{52}/)
     const config = JSON.parse(await readFile(join(project, '.srs/config.json'), 'utf8'))
     expect(config.schemas).toEqual(['schemas'])
     expect(await readFile(join(project, '.srs/migrations/schema-state.json'), 'utf8')).toContain('table:book')
@@ -69,10 +73,22 @@ describe('resource-server init and serve', () => {
     expect(result.out).not.toContain(`OPAQUE_SERVER_SETUP=${key}`)
   }, 60_000)
 
-  test('serve refuses to start without the server key', () => {
-    const result = run(['serve'])
+  test('serve refuses to start without the server key bundle', () => {
+    const result = run(['serve'], { OPAQUE_SERVER_SETUP: key })
+    expect(result.code).toBe(1)
+    expect(result.out).toContain('SRS_SERVER_KEYS is required')
+  })
+
+  test('serve refuses to start without the OPAQUE setup', () => {
+    const result = run(['serve'], { SRS_TRANSPORT: 'bearer' })
     expect(result.code).toBe(1)
     expect(result.out).toContain('Set OPAQUE_SERVER_SETUP')
+  })
+
+  test('serve refuses an unknown transport', () => {
+    const result = run(['serve'], { SRS_TRANSPORT: 'plain' })
+    expect(result.code).toBe(1)
+    expect(result.out).toContain('SRS_TRANSPORT must be')
   })
 
   test('serve starts and enforces sessions on every resource', async () => {
@@ -82,7 +98,7 @@ describe('resource-server init and serve', () => {
       Bun.spawn(
         [process.execPath, cli, 'serve', '--port', String(port)],
         { cwd: project
-        , env: { PATH: process.env.PATH ?? '', OPAQUE_SERVER_SETUP: key }
+        , env: { PATH: process.env.PATH ?? '', OPAQUE_SERVER_SETUP: key, SRS_TRANSPORT: 'bearer' }
         , stdout: 'ignore'
         , stderr: 'ignore'
         })

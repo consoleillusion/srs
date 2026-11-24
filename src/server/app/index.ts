@@ -5,7 +5,7 @@ import { publicBundle } from '../../auth/server-keys.ts'
 import type { ServerKeys } from '../../protocol/server-keys.ts'
 import { createAuthService } from '../../auth/service/index.ts'
 import type { BuiltSchema } from '../../db/schema-types.ts'
-import type { AppContext, Env } from '../context.ts'
+import { innerOf, type AppContext, type Env } from '../context.ts'
 import { pathParam } from '../context.ts'
 import type { RowDatabase } from '../database.ts'
 import { ApiError } from '../errors.ts'
@@ -41,7 +41,17 @@ export type AppOptions =
   , http?: HttpOptions
   /** The server key bundle; enables `GET /noise/keys` and the Noise transport. */
   , serverKeys?: ServerKeys
+  /**
+   * `noise` serves only the handshake, envelope, key-bundle and health routes in
+   * the clear and refuses everything else; `bearer` serves every route directly
+   * and needs TLS. Defaults to `noise` when `serverKeys` is set.
+   */
+  , transport?: 'noise' | 'bearer'
   }
+
+/** Routes served outside a Noise channel in strict mode. */
+export const CLEAR_ROUTES =
+  new Set(['/healthz', '/readyz', '/noise/keys', '/noise/handshake', '/noise'])
 
 const paths =
   { collection: '/:type'
@@ -80,10 +90,24 @@ const optionsFor =
  * @returns A Hono app serving every exposed resource.
  */
 export const createApp =
-  ({ built, db, opaqueServerSetup, requireSession, admins = [], oidc, oidcAdmins = [], http = {}, serverKeys }: AppOptions): Hono => {
+  ({ built, db, opaqueServerSetup, requireSession, admins = [], oidc, oidcAdmins = [], http = {}, serverKeys, transport = serverKeys ? 'noise' : 'bearer' }: AppOptions): Hono => {
     const s = createServices(built, db)
     const app = new Hono<Env>()
     applyHttp(app, db, http)
+
+    if (transport === 'noise' && !serverKeys)
+      throw new Error('The Noise transport needs a server key bundle')
+    if (transport === 'noise' && oidc)
+      throw new Error('Identity-provider tokens are only accepted in the bearer transport')
+    if (transport === 'noise')
+      app.use('*', async (c, next) => {
+        // Strict mode: nothing but the clear routes is served outside a channel.
+        if (innerOf(c) || CLEAR_ROUTES.has(c.req.path)) return next()
+        return jsonApi(
+          c
+          , errorDocument(426, 'Upgrade Required', 'This server accepts requests only through its Noise channel')
+          , 426 as 400)
+      })
 
     const channels = createChannelStore()
     if (serverKeys) {

@@ -20,6 +20,19 @@ export const createServerApp =
   async (options: { loaded: LoadedSchema[], db: Database, migrationsFolder: string, metrics?: Metrics }) => {
     const opaqueServerSetup = process.env.OPAQUE_SERVER_SETUP
     const issuer = process.env.SRS_OIDC_ISSUER
+    const transport = process.env.SRS_TRANSPORT ?? 'noise'
+    if (transport !== 'noise' && transport !== 'bearer')
+      throw new Error(`SRS_TRANSPORT must be "noise" or "bearer", got "${transport}"`)
+    if (transport === 'noise') {
+      if (!process.env.SRS_SERVER_KEYS)
+        throw new Error(
+          'SRS_SERVER_KEYS is required for the Noise transport; run `srs init` to create it, '
+          + 'or set SRS_TRANSPORT=bearer to serve over TLS instead.')
+      if (!opaqueServerSetup)
+        throw new Error('OPAQUE_SERVER_SETUP is required; run `srs init` to create it.')
+      if (issuer)
+        throw new Error('SRS_OIDC_ISSUER needs SRS_TRANSPORT=bearer: identity-provider tokens cannot be used in the Noise transport.')
+    }
     if (!opaqueServerSetup && !issuer)
       throw new Error(
         'Set OPAQUE_SERVER_SETUP (run `srs init` to create one) for built-in '
@@ -47,6 +60,7 @@ export const createServerApp =
       , oidcAdmins: list(process.env.SRS_OIDC_ADMIN_SUBJECTS)
       , http: { ...httpOptionsFromEnv(), metrics: options.metrics }
       , serverKeys: process.env.SRS_SERVER_KEYS ? parseServerKeys(process.env.SRS_SERVER_KEYS) : undefined
+      , transport
       , admins: list(process.env.SRS_ADMINS)
       })
   }
