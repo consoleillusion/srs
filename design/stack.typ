@@ -15,8 +15,9 @@ Status: *Implemented* for the current stack; the planned libraries are
   [Schema loading], [`@apidevtools/json-schema-ref-parser`, `yaml`], [Reads JSON and YAML schema files and resolves `$ref`.],
   [Validation], [`ajv`, `ajv-formats`], [Validates write documents and auth messages against JSON Schema.],
   [Passwords], [`@serenity-kit/opaque`], [OPAQUE, compiled to WebAssembly from the Rust `opaque-ke`.],
-  [Signatures], [`tweetnacl`], [Ed25519 for request signing.],
-  [Hashes], [`@noble/hashes`], [SHA-256 and HMAC.],
+  [Signatures], [`@noble/curves`], [Ed25519, verified with strict RFC 8032 rules; X25519 for Noise.],
+  [Ciphers], [`@noble/ciphers`], [ChaCha20-Poly1305 and XChaCha20-Poly1305.],
+  [Hashes], [`@noble/hashes`], [SHA-256, BLAKE2s, HMAC and HKDF.],
   [Provider tokens], [`jose`], [OIDC JWT verification (@external-identity).],
   [Settings], [`dotenv`], [Loads `.env` for the CLI.],
   [API reference], [TypeDoc (`bunx typedoc`)], [Fails on any undocumented export.],
@@ -32,9 +33,6 @@ Needed for the transport and accounts (@roadmap, series v0.3).
 #table(
   columns: (auto, 1fr),
   table.header([*Library*], [*Use*]),
-  [`@noble/curves`], [X25519 for Noise; Ed25519 for identity and session keys, replacing `tweetnacl` (v0.2.7).],
-  [`@noble/ciphers`], [ChaCha20-Poly1305 for Noise; XChaCha20-Poly1305 for identity-key wrapping.],
-  [`@noble/hashes`], [BLAKE2s for Noise; HKDF-SHA256 and HMAC-SHA256.],
   [A CBOR library], [Deterministic CBOR for certificates. To be chosen in v0.3.0: it must produce deterministic encoding, sorted map keys and shortest integers.],
 )
 

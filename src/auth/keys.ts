@@ -1,4 +1,4 @@
-import nacl from 'tweetnacl'
+import { ED25519_PUBLIC_KEY_LENGTH, ED25519_SEED_LENGTH, ed25519PublicKey, generateKeyPair as generateClientKeyPair } from '../client/crypto.ts'
 
 export type PublicJwk =
   { kty: 'OKP'
@@ -17,22 +17,8 @@ const fromBase64Url =
 
 import { isObject } from '../server/guard.ts'
 
-export const generateKeyPair =
-  () => {
-    const seed = nacl.randomBytes(nacl.sign.seedLength)
-    const pair = nacl.sign.keyPair.fromSeed(seed)
-    const publicJwk: PublicJwk =
-      { kty: 'OKP'
-      , crv: 'Ed25519'
-      , x: base64Url(pair.publicKey)
-      }
-    const privateJwk: PrivateJwk =
-      { ...publicJwk
-      , d: base64Url(seed)
-      }
-
-    return { publicJwk, privateJwk, publicKey: pair.publicKey, secretKey: pair.secretKey }
-  }
+/** Generate a fresh Ed25519 keypair; `secretKey` is the 32-byte seed. */
+export const generateKeyPair = generateClientKeyPair
 
 export const parsePublicJwk =
   (value: unknown): PublicJwk => {
@@ -45,7 +31,7 @@ export const parsePublicJwk =
       throw new Error('Expected an Ed25519 public JWK')
 
     const key = fromBase64Url(value.x)
-    if (key.length !== nacl.sign.publicKeyLength)
+    if (key.length !== ED25519_PUBLIC_KEY_LENGTH)
       throw new Error('Ed25519 public key has an invalid length')
 
     return { kty: 'OKP', crv: 'Ed25519', x: value.x }
@@ -61,11 +47,10 @@ export const parsePrivateJwk =
       throw new Error('Expected an Ed25519 private JWK')
 
     const seed = fromBase64Url(value.d)
-    if (seed.length !== nacl.sign.seedLength)
+    if (seed.length !== ED25519_SEED_LENGTH)
       throw new Error('Ed25519 private key has an invalid length')
 
-    const derived = nacl.sign.keyPair.fromSeed(seed)
-    if (base64Url(derived.publicKey) !== value.x)
+    if (base64Url(ed25519PublicKey(seed)) !== value.x)
       throw new Error('Ed25519 private JWK does not match its public key')
 
     return { kty: 'OKP', crv: 'Ed25519', x: value.x, d: value.d }
