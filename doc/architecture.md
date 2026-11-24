@@ -1,6 +1,6 @@
 # Architecture
 
-Serber is a schema-first resource server. JSON Schema files are the source of
+SRS is a schema-first resource server. JSON Schema files are the source of
 truth; the generator derives SQLite tables, migrations, views, triggers, and a
 JSON:API registry from them.
 

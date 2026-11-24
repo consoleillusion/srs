@@ -1,6 +1,6 @@
 # Design
 
-These documents record the goals and decisions behind Serber. They are
+These documents record the goals and decisions behind SRS. They are
 hand-maintained, deliberately short, and normative when they say “must”.
 
 Detailed behaviour lives in the [reference docs](../doc/README.md). Generated

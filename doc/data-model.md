@@ -1,6 +1,6 @@
 # Data model
 
-Every table in Serber is generated from a JSON Schema. The generator injects
+Every table in SRS is generated from a JSON Schema. The generator injects
 the default columns, derives relations and join tables, and creates one view per
 table. System schemas define users, groups, the hidden key store, roles, audit
 entries, request nonces, login limits, and the stored schema catalog.

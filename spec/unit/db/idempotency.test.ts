@@ -7,7 +7,7 @@ import { loadSchemas } from '../../../src/db/load-schemas.ts'
 
 describe('generation idempotency', () => {
   test('a second run with the same schemas writes no migration', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'serber-idempotency-'))
+    const dir = await mkdtemp(join(tmpdir(), 'srs-idempotency-'))
 
     try {
       const first = await generateMigrations(dir, await loadSchemas())

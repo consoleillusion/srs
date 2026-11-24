@@ -1,6 +1,6 @@
 # API
 
-Serber exposes a JSON:API 1.0 layer over Hono. Generic resource routes are
+SRS exposes a JSON:API 1.0 layer over Hono. Generic resource routes are
 generated from the exposed tables in the built schema. Authentication uses a
 small plain-JSON surface under `/key`.
 
@@ -110,7 +110,7 @@ Collections support:
   `nin` (comma-separated values), `contains`, `starts`, `ends`, and `null`
   (`true` or `false`). Values are converted to the column type and always passed
   as SQL parameters. JSON:API reserves `filter` but does not define operators, so
-  this operator syntax is Serber's own convention;
+  this operator syntax is SRS's own convention;
 - `fields[type]` — comma-separated attributes and relationship labels;
 - `include` — comma-separated relationship paths for a compound document. A path
   such as `article.tag` includes each article and then each article's tags.

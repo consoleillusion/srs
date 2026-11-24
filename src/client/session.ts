@@ -21,7 +21,7 @@ export type SessionStorage = {
 }
 
 /** Storage key under which the session is saved. */
-export const SESSION_STORAGE_KEY = 'resource-server.session'
+export const SESSION_STORAGE_KEY = 'srs.session'
 
 /** Session storage that keeps the session in memory only, so it is lost when the page or process ends. */
 export const memoryStorage =

@@ -2,7 +2,7 @@
 
 ## Decision
 
-Serber exposes JSON:API 1.0 over Hono. Generic routes are generated from the
+SRS exposes JSON:API 1.0 over Hono. Generic routes are generated from the
 exposed resources in the built schema; authentication uses a small plain-JSON
 surface under `/key`.
 

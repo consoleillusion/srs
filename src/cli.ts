@@ -6,14 +6,14 @@ config({ quiet: true })
 
 const { defaultDir, init, serve } = await import('./commands.ts')
 
-const usage = `resource-server: JSON Schema in, JSON:API server out
+const usage = `srs: JSON Schema in, JSON:API server out
 
-  resource-server init <schema…> [--dir ${defaultDir}]
+  srs init <schema…> [--dir ${defaultDir}]
       Generate the database migrations for the schema folder(s) or file(s)
       into --dir, and print the settings to add to .env. Run it again after
       every schema change. An existing OPAQUE_SERVER_SETUP is never replaced.
 
-  resource-server serve [--dir ${defaultDir}] [--port 5734]
+  srs serve [--dir ${defaultDir}] [--port 5734]
       Apply the migrations and start the server.
 `
 

@@ -43,14 +43,14 @@ startup if it is missing.
 
 ## Commands
 
-When Serber is installed as a library in another project:
+When SRS is installed as a library in another project:
 
 ```bash
 # generate migrations from a schema folder or files
-bun resource-server init schemas
+bun srs init schemas
 
 # apply migrations and start the server
-bun resource-server serve
+bun srs serve
 ```
 
 `init` writes `.resource-server/migrations/`, `.resource-server/config.json`,

@@ -61,7 +61,7 @@ describe('planMigration', () => {
 
 describe('migrations against a database that already has data', () => {
   test('a changed schema keeps rows, keeps child rows, and keeps triggers working', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'serber-migrate-'))
+    const dir = await mkdtemp(join(tmpdir(), 'srs-migrate-'))
     const connection =
       await connect(':memory:', { experimental: ['views', 'custom_types', 'encryption', 'vacuum'] })
     const rows = async (sql: string) => (await connection.prepare(sql)).all()

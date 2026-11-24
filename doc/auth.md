@@ -1,6 +1,6 @@
 # Authentication
 
-Serber uses OPAQUE for password-authenticated key exchange and Ed25519 JWKs
+SRS uses OPAQUE for password-authenticated key exchange and Ed25519 JWKs
 from tweetnacl for authentication keypairs. The application is stateless: every
 temporary value lives in the hidden `key` table, not in process memory.
 
