@@ -8,6 +8,9 @@ import { errorDocument, jsonApi } from './app/document.ts'
 import type { AppContext, Env, Next } from './context.ts'
 import type { RowDatabase } from './database.ts'
 
+/** Receives one structured record per request. */
+export type LogSink = (record: Record<string, unknown>) => void
+
 /** Transport-level settings: size limits, CORS, proxy trust, rate limiting and logging. */
 export type HttpOptions =
   { /** Largest accepted request body in bytes (default 1 MiB). */
@@ -19,7 +22,7 @@ export type HttpOptions =
   /** Requests allowed per client address per minute; 0 or unset turns the limit off. */
   , rateLimitPerMinute?: number
   /** Receives one structured record per request; unset turns request logging off. */
-  , log?: (record: Record<string, unknown>) => void
+  , log?: LogSink
   }
 
 export const DEFAULT_MAX_BODY_BYTES = 1024 * 1024

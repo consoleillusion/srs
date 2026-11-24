@@ -62,6 +62,16 @@ Non-repudiation requires that:
 This is why the default `Key.user` foreign key uses `onDelete: "restrict"`
 rather than cascade. Soft-deletion and key revocation APIs remain future work.
 
+## External identity providers
+
+With `SRS_OIDC_ISSUER` set, SRS also accepts bearer JWTs from an OpenID Connect
+provider. Tokens are verified against the provider's published keys with an
+allowlist of asymmetric algorithms, and must carry the configured issuer and
+audience, a subject and an expiry. Users are provisioned from the verified
+issuer and subject only; a username is never taken from a claim. Multi-factor
+authentication, password reset and recovery then belong to the provider. See
+[auth.md](./auth.md#external-identity-providers).
+
 ## Authorization and sharing
 
 Authorization is owner-based with per-row visibility and optional sharing to
@@ -82,7 +92,12 @@ transaction. See [access-control.md](./access-control.md).
 | Schema injection | AJV validation and an allowlisted keyword set | Phase 7 |
 | Migration corruption | Immutable applied migrations, custom-DDL hashes | Implemented |
 | Credential stuffing | Per-user and per-client login rate limiting with lockout | Implemented |
-| Data loss | Backups, WAL, migration tests | Phase 8 |
+| Request flooding | Per-client request rate limit, request body limit, proxy-aware client address | Implemented |
+| Cross-origin browser calls | No CORS headers unless origins are listed; bearer tokens in a header, not cookies | Implemented |
+| Forged client address | `X-Forwarded-For` read only from the right, by configured proxy count | Implemented |
+| Forged or expired identity-provider tokens | Signature, issuer, audience, expiry and algorithm checks | Implemented |
+| Data loss | Scheduled verified backups, verified restore | Implemented |
+| Database corruption on restore | Integrity check before and after copying; one atomic rename | Implemented |
 | Token or cost blowup | Schema-only authoring and generated code | Phase 7 |
 
 ## Known gaps

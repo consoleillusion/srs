@@ -28,7 +28,7 @@ SRS gives you:
 - **Tables and relations** in Turso / SQLite, generated from the schema.
 - **Migrations** that are deterministic and only change when the schema changes.
 - **A JSON:API** with filtering, sorting, pagination, sparse fieldsets, and includes.
-- **Authentication** with OPAQUE registration and login. Passwords never reach the server.
+- **Authentication** with built-in OPAQUE accounts (passwords never reach the server), or bearer tokens from any OpenID Connect provider such as Keycloak, Authentik, Zitadel, Auth0 or Entra ID.
 - **Authorization** with row ownership, private/public visibility, sharing, roles, and audit logs.
 - **A TypeScript client** that works in browsers, Bun, and Node.
 
@@ -53,12 +53,13 @@ unusual.
 ## Quick start
 
 ```bash
-bun add github:<your-user>/srs
+bun add github:consoleillusion/srs
 
 # 1. Generate migrations from your schema folder.
 bun srs init schemas
 
-# 2. Add the printed OPAQUE_SERVER_SETUP line to .env.
+# 2. Add the printed OPAQUE_SERVER_SETUP line to .env
+#    (or set SRS_OIDC_ISSUER and SRS_OIDC_AUDIENCE to use an identity provider).
 # 3. Apply migrations and start the server.
 bun srs serve
 ```
@@ -80,13 +81,17 @@ DELETE /article/:id    delete an article
 
 - [Design](design/README.md) — goals, invariants, and key decisions.
 - [Documentation](doc/README.md) — schema reference, API, auth, access control, client, and operations.
-- [Development](design/development.md) — setup, commands, migrations, and tests.
+- [Deployment](doc/deployment.md) — settings, reverse proxy, health checks, backups, and the container image.
+- [Development](doc/development.md) — setup, commands, migrations, and tests.
 
 Generated TypeScript API reference is written to `doc/` by `bun run docs`.
 
 ## Status
 
-Early development, but the core is complete: schema generation, relations,
-views, migrations, JSON:API, OPAQUE authentication, and owner-based
-authorization with sharing, roles, and signing. See the
-[roadmap](design/roadmap.md) for what is still planned.
+The core is complete: schema generation, relations, views, migrations,
+JSON:API, OPAQUE and OpenID Connect authentication, and owner-based
+authorization with sharing, roles, and signing. It runs as a single process per
+database, with request limits, health checks, request logging, scheduled
+verified backups and a restore command. Key rotation and revocation, metrics
+and an external security review are still open; see the
+[roadmap](doc/roadmap.md).

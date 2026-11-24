@@ -72,7 +72,7 @@ describe('resource-server init and serve', () => {
   test('serve refuses to start without the server key', () => {
     const result = run(['serve'])
     expect(result.code).toBe(1)
-    expect(result.out).toContain('OPAQUE_SERVER_SETUP is required')
+    expect(result.out).toContain('Set OPAQUE_SERVER_SETUP')
   })
 
   test('serve starts and enforces sessions on every resource', async () => {

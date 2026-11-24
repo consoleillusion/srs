@@ -211,15 +211,26 @@ Exit criteria:
 
 **Goal:** make the system safe to operate.
 
-Deliverables:
+Status: mostly complete.
 
-- backup and restore workflow;
-- WAL and migration checks in CI;
-- structured logging and metrics;
-- rate limiting;
-- CORS and CSRF policy;
-- deployment documentation;
-- security review.
+Done:
+
+- scheduled, verified backups; a verified restore command;
+- CI that type-checks, audits dependencies, checks the API reference, checks that
+  generation is deterministic and idempotent, and runs the tests;
+- structured request logging and request ids;
+- general request rate limiting, proxy-aware client addresses and a request body
+  limit;
+- a CORS policy (none unless origins are listed) and security headers;
+- health and readiness routes;
+- deployment documentation and a container image;
+- graceful shutdown;
+- external identity provider support.
+
+Remaining:
+
+- metrics;
+- a third-party security review.
 
 Exit criteria:
 

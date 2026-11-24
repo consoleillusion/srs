@@ -26,9 +26,13 @@ Optional:
 
 ```bash
 SCHEMA_DIR=./schemas      # directory of .json or .yaml schema files
-SRS_ADMINS=alice,bob   # usernames that always hold the admin role
+SRS_ADMINS=alice,bob      # usernames that always hold the admin role
 MIGRATE_ON_START=true     # set to false to apply migrations yourself
 ```
+
+`.env.example` lists every setting, including request limits, an external
+identity provider and backups; [Deployment](./deployment.md) explains them.
+Either `OPAQUE_SERVER_SETUP` or `SRS_OIDC_ISSUER` is required.
 
 `.env` is gitignored. Never commit server secrets.
 
@@ -74,7 +78,10 @@ bun run db:reset
 bun test
 
 # type-check
-bunx tsc --noEmit
+bun run typecheck
+
+# check the generated API reference builds without warnings
+bun run docs:check
 
 # run the API server with watch mode
 bun run dev

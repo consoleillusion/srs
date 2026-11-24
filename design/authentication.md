@@ -20,6 +20,17 @@ sessions live in the hidden `key` table.
 - Keys belong to users, never groups.
 - Expired rows are purged when an auth flow starts or a key status is read.
 
+## External identity providers
+
+SRS also accepts bearer JWTs from one OpenID Connect provider
+(`SRS_OIDC_ISSUER`). The provider owns passwords, multi-factor authentication,
+recovery and session lifetime. SRS verifies each token, creates a local user the
+first time it sees an issuer and subject, and derives the username from them so
+an external identity cannot claim a built-in username. Those requests have no
+client key, so signed resources reject them. Built-in OPAQUE accounts and a
+provider can run together; a token containing a `.` is checked against the
+provider and anything else is a built-in session id.
+
 ## Non-repudiation
 
 Key rows are deliberately retained. The `key.user` relation uses `ON DELETE
@@ -30,4 +41,4 @@ RESTRICT`, so deleting a user cannot silently erase key history.
 Refresh tokens, multi-device session management, and key rotation or revocation
 APIs.
 
-See [auth.md](./auth.md) and [security.md](./security.md) for details.
+See [auth.md](../doc/auth.md) and [security.md](../doc/security.md) for details.

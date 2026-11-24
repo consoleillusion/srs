@@ -32,4 +32,4 @@ loadSchemas -> deriveSchemas -> buildSchema -> buildViews / planMigration
 The build is deterministic and migration generation is idempotent. The same
 built schema drives both the migration writer and the running application.
 
-The detailed keyword reference is in [schema-reference.md](./schema-reference.md).
+The detailed keyword reference is in [schema-reference.md](../doc/schema-reference.md).

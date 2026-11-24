@@ -13,11 +13,14 @@ export type OidcClaims =
   , email_verified?: boolean
   }
 
+/** Checks one bearer token and returns its claims, or throws a 401. */
+export type TokenVerifier = (token: string) => Promise<OidcClaims>
+
 /** Verifies bearer tokens issued by one external OpenID Connect provider. */
 export type OidcVerifier =
   { issuer: string
   /** Check signature, issuer, audience and expiry; throws a 401 for anything else. */
-  , verify: (token: string) => Promise<OidcClaims>
+  , verify: TokenVerifier
   }
 
 /** Settings for {@link createOidcVerifier}. */

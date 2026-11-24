@@ -1,0 +1,9 @@
+node_modules
+.git
+.db*
+.migrations
+.env
+.env.*
+!.env.example
+coverage
+doc/**/*.html

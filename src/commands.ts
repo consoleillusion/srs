@@ -7,6 +7,7 @@ import { writeIfChanged } from './db/fs.ts'
 import { loadSchemas } from './db/load-schemas.ts'
 import type { LoadedSchema } from './db/schema-types.ts'
 import { openDatabase } from './db/open.ts'
+import { backupDatabase, restoreDatabase, startBackupSchedule } from './db/backup.ts'
 import { DEFAULT_MAX_BODY_BYTES, httpOptionsFromEnv } from './server/http.ts'
 import { createServerApp } from './server/start.ts'
 
@@ -100,9 +101,23 @@ export const serve =
     console.log(`Server listening on http://localhost:${server.port}`)
 
     // Finish in-flight requests, then close the database, so a deploy never cuts a write short.
+    const backupDir = process.env.SRS_BACKUP_DIR
+    const stopBackups =
+      backupDir
+        ? await startBackupSchedule(
+            db
+            , { dir: resolve(backupDir)
+              , intervalMs: Number(process.env.SRS_BACKUP_INTERVAL_HOURS ?? 24) * 3_600_000
+              , keep: Number(process.env.SRS_BACKUP_KEEP ?? 7)
+              })
+        : undefined
+    if (!backupDir)
+      console.warn('SRS_BACKUP_DIR is not set, so no backups are being taken.')
+
     const shutdown =
       async () => {
         // Purpose: stop accepting connections, drain active requests, and close the database
+        stopBackups?.()
         await server.stop()
         await db.close()
         process.exit(0)
@@ -110,4 +125,26 @@ export const serve =
     process.once('SIGTERM', shutdown)
     process.once('SIGINT', shutdown)
     return server
+  }
+
+/** Copy the database to a new verified file. Run it with the server stopped, or use SRS_BACKUP_DIR while serving. */
+export const backup =
+  async (options: { file: string }) => {
+    // Purpose: open the database and write one verified backup to the given file
+    const db = await openDatabase()
+    try {
+      await backupDatabase(db, options.file)
+    } finally {
+      await db.close()
+    }
+    console.log(`Backed up to ${resolve(options.file)}`)
+  }
+
+/** Replace the database with a verified backup. The server must be stopped. */
+export const restore =
+  async (options: { file: string, force?: boolean }) => {
+    // Purpose: verify the backup and swap it in as the database file
+    const target = resolve(process.env.DB_PATH ?? '.db')
+    await restoreDatabase(options.file, target, options.force)
+    console.log(`Restored ${resolve(options.file)} to ${target}`)
   }

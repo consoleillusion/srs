@@ -29,4 +29,4 @@ surface under `/key`.
 There are no per-resource controllers to keep in sync. Adding or hiding a
 resource changes the API surface through the schema, not through route code.
 
-See [api.md](./api.md) for the full endpoint and query contract.
+See [api.md](../doc/api.md) for the full endpoint and query contract.

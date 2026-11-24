@@ -18,8 +18,11 @@ than editing history; link the decision that replaced it.
 | D011 | `x-view: true` identifies a view; `x-source` alone does not | Unknown keywords are ignored, so intent must be explicit |
 | D012 | Authored views name direct relations and follow only to-one column paths | A view column cannot represent a to-many scalar projection |
 | D013 | OPAQUE handles passwords; Ed25519 handles request signing | No plaintext passwords; optional non-repudiation |
-| D014 | Auth state lives in the hidden `key` table | Stateless processes survive restarts and scale horizontally |
+| D014 | Auth state lives in the hidden `key` table | Processes keep no auth state in memory, so a restart loses no logins |
 | D015 | Migrations are deterministic and applied migrations are immutable | Reviewable, replayable database changes |
 | D016 | The HTTP surface is generated JSON:API | No per-resource controller code to maintain |
 | D017 | Hidden rows return `404`, not `403` | Do not reveal that an unreadable row exists |
 | D018 | Hand-written design docs describe behaviour; TypeDoc describes TS API | Neither source is asked to document the other's surface |
+| D019 | External identity providers are accepted as OIDC bearer tokens; users are keyed by issuer and subject | Password storage, multi-factor and recovery are better done by a dedicated provider |
+| D020 | Backups run inside the server; restore runs offline | The database file is locked by the process that opens it, so a second process cannot copy it |
+| D021 | One server process per database | The file lock makes a second writer impossible |

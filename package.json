@@ -30,7 +30,9 @@
     "cli": "bun src/cli.ts",
     "pretest": "bun src/db/generate-migration.ts",
     "docs": "bunx typedoc",
-    "docs:check": "bunx typedoc --emit none"
+    "docs:check": "bunx typedoc --emit none",
+    "typecheck": "tsc --noEmit",
+    "audit": "bun audit"
   },
   "dependencies": {
     "@apidevtools/json-schema-ref-parser": "^16.0.7",
