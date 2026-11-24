@@ -15,7 +15,7 @@ import
   , seal
   } from '../protocol/envelope.ts'
 import { initiator, type HandshakeResult } from '../protocol/noise.ts'
-import { checkFingerprint, srsPrologue, type PublicServerKeys } from '../protocol/server-keys.ts'
+import { checkFingerprint, checkTransition, fingerprint, srsPrologue, type PublicServerKeys } from '../protocol/server-keys.ts'
 import { base64UrlToBytes } from './crypto.ts'
 import type { FetchLike } from './http.ts'
 
@@ -71,18 +71,38 @@ export type ChannelErrorCode =
  * @param fetchImpl - The fetch to use.
  * @param baseUrl - The server's base URL.
  * @param pinned - The `srs1:` fingerprint the client was configured with.
- * @throws {@link ProtocolError} `fingerprint-mismatch` when the server's keys differ.
+ * @returns The keys and their fingerprint, which differs from `pinned` when the
+ *   client followed a key rotation signed by the pinned keys.
+ * @throws {@link ProtocolError} `fingerprint-mismatch` when the server's keys differ
+ *   and no valid transition from the pinned keys is offered; `invalid-transition`
+ *   when the offered transition does not verify.
  */
 export const fetchServerKeys =
-  async (fetchImpl: FetchLike, baseUrl: string, pinned: string): Promise<PublicServerKeys> => {
+  async (fetchImpl: FetchLike, baseUrl: string, pinned: string): Promise<{ keys: PublicServerKeys, fingerprint: string }> => {
     const response = await fetchImpl(`${baseUrl}/noise/keys`)
     if (!response.ok) throw new ProtocolError('handshake-failed', `key bundle request failed: ${response.status}`)
-    const body = await response.json() as { x25519?: unknown, ed25519?: unknown }
-    if (typeof body.x25519 !== 'string' || typeof body.ed25519 !== 'string')
-      throw new ProtocolError('handshake-failed', 'malformed key bundle')
-    const keys = { x25519: base64UrlToBytes(body.x25519), ed25519: base64UrlToBytes(body.ed25519) }
-    checkFingerprint(keys, pinned)
-    return keys
+    type Bundle = { x25519?: unknown, ed25519?: unknown }
+    const body = await response.json() as Bundle & { previous?: Bundle, transition?: { stopAt?: unknown, signature?: unknown } }
+    const read =
+      (bundle: Bundle | undefined): PublicServerKeys => {
+        if (typeof bundle?.x25519 !== 'string' || typeof bundle.ed25519 !== 'string')
+          throw new ProtocolError('handshake-failed', 'malformed key bundle')
+        return { x25519: base64UrlToBytes(bundle.x25519), ed25519: base64UrlToBytes(bundle.ed25519) }
+      }
+    const keys = read(body)
+    try {
+      checkFingerprint(keys, pinned)
+      return { keys, fingerprint: fingerprint(keys) }
+    } catch (error) {
+      // A rotation: follow it only if the pinned keys signed the hand-over.
+      if (!body.previous || !body.transition) throw error
+      const previous = read(body.previous)
+      checkFingerprint(previous, pinned)
+      const stopAt = Date.parse(String(body.transition.stopAt))
+      if (!Number.isFinite(stopAt) || typeof body.transition.signature !== 'string') throw error
+      checkTransition(previous, keys, stopAt, base64UrlToBytes(body.transition.signature))
+      return { keys, fingerprint: fingerprint(keys) }
+    }
   }
 
 /**

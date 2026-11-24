@@ -88,7 +88,7 @@ its attack tests from the list in @status as it goes.
   [v0.3.9], [Client transport], [`createSecureClient({ baseUrl, serverKey })` speaks the Noise transport end to end against a real `srs serve` process over HTTP.], [Done],
   [v0.3.10], [Logout, devices, password change], [The routes in @lifecycle work, with tests.], [Done],
   [v0.3.11], [Revocation, admin reset, disabling users], [As specified in @lifecycle, including `SRS_ALLOW_RESET`, with tests.], [Done],
-  [v0.3.12], [Server key rotation], [`srs rotate-keys` and transition statements work; a forged statement is refused.], [Later],
+  [v0.3.12], [Server key rotation], [`srs rotate-keys` and transition statements work; a forged statement is refused.], [Done],
   [v0.3.13], [Browser check], [The secure client works in a real browser on a plain-HTTP page loaded from a trusted origin, with no `crypto.subtle`. Needs a person with a browser.], [Next],
 )
 

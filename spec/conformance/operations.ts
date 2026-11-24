@@ -6,7 +6,7 @@ import
   , lengthPrefixed
   , u64be
   } from '../../src/protocol/encoding.ts'
-import { checkFingerprint, serverKeysFromSecret, srsPrologue } from '../../src/protocol/server-keys.ts'
+import { checkFingerprint, checkTransition, serverKeysFromSecret, srsPrologue, transitionMessage } from '../../src/protocol/server-keys.ts'
 import { encryptWithNonce, initiator, keyPairFromPrivate, responder } from '../../src/protocol/noise.ts'
 import { decodeRequest, encodeRequest, encodeResponse, seal } from '../../src/protocol/envelope.ts'
 import
@@ -149,5 +149,18 @@ export const operations: Record<string, Operation> =
         { h: hexToBytes(input.h), sid: hexToBytes(input.sid), n: BigInt(input.n), method: input.method
         , path: input.path, contentType: input.contentType, body: hexToBytes(input.body) })
       return { message: bytesToHex(message), signature: bytesToHex(ed25519Sign(message, hexToBytes(input.sessionSeed))) }
+    }
+    , 'server-keys.transition-message': (input:
+      { previousX25519: string, previousEd25519: string, nextX25519: string, nextEd25519: string, stopAt: number }) =>
+      bytesToHex(transitionMessage(
+        { x25519: hexToBytes(input.previousX25519), ed25519: hexToBytes(input.previousEd25519) }
+        , { x25519: hexToBytes(input.nextX25519), ed25519: hexToBytes(input.nextEd25519) }, input.stopAt))
+  , 'server-keys.transition-check': (input:
+      { previousX25519: string, previousEd25519: string, nextX25519: string, nextEd25519: string, stopAt: number, signature: string }) => {
+      checkTransition(
+        { x25519: hexToBytes(input.previousX25519), ed25519: hexToBytes(input.previousEd25519) }
+        , { x25519: hexToBytes(input.nextX25519), ed25519: hexToBytes(input.nextEd25519) }
+        , input.stopAt, hexToBytes(input.signature))
+      return true
     }
   }

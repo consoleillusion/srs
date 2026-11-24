@@ -53,9 +53,12 @@ export const registerHandshake =
       , channels: ChannelStore
       , clientOf: (c: Context) => string
       , perMinute?: number
+      /** During a key rotation: the old bundle, accepted until `until`. */
+      , previous?: { keys: ServerKeys, until: number }
       }) => {
-    const prologue = srsPrologue(options.serverKeys)
-    const staticKey = keyPairFromPrivate(options.serverKeys.x25519Private)
+    const bundles =
+      [ options.serverKeys, ...(options.previous ? [options.previous.keys] : []) ]
+        .map(keys => ({ keys, prologue: srsPrologue(keys), staticKey: keyPairFromPrivate(keys.x25519Private) }))
     const allow = createWindowLimiter(options.perMinute ?? DEFAULT_HANDSHAKES_PER_MINUTE)
     const failed = (c: AppContext) => jsonApi(c, errorDocument(400, 'Bad Request', 'Handshake failed'), 400)
 
@@ -66,13 +69,21 @@ export const registerHandshake =
       const message = new Uint8Array(await c.req.arrayBuffer())
       if (message.length !== MESSAGE_1_LENGTH) return failed(c)
 
-      const handshake = responder({ prologue, staticKey })
-      try {
-        // Message 1 carries no payload in this version.
-        if (handshake.readMessage1(message).length !== 0) return failed(c)
-      } catch {
-        return failed(c)
+      // Try the current bundle, then the previous one while a rotation is in progress.
+      let handshake: ReturnType<typeof responder> | undefined
+      for (const [index, bundle] of bundles.entries()) {
+        if (index > 0 && Date.now() >= options.previous!.until) break
+        const attempt = responder({ prologue: bundle.prologue, staticKey: bundle.staticKey })
+        try {
+          // Message 1 carries no payload in this version.
+          if (attempt.readMessage1(message).length !== 0) return failed(c)
+          handshake = attempt
+          break
+        } catch {
+          // Not this bundle.
+        }
       }
+      if (!handshake) return failed(c)
 
       // Message 2 carries the channel id, so it is chosen first.
       const sid = randomBytes(16)

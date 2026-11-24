@@ -4,7 +4,7 @@ import { config } from 'dotenv'
 
 config({ quiet: true })
 
-const { backup, defaultDir, init, restore, serve, verifySignatures } = await import('./commands.ts')
+const { backup, defaultDir, init, restore, rotateKeys, serve, verifySignatures } = await import('./commands.ts')
 
 const usage = `srs: JSON Schema in, JSON:API server out
 
@@ -19,6 +19,10 @@ const usage = `srs: JSON Schema in, JSON:API server out
 
   srs backup <file>
       Write a verified copy of the database (DB_PATH). Needs the server stopped.
+
+  srs rotate-keys [--days 30]
+      Create a new server key bundle and a transition statement signed by the
+      current one (SRS_SERVER_KEYS). Pinned clients follow it for --days days.
 
   srs verify-signatures
       Check every retained request signature against its certificate and the
@@ -38,6 +42,7 @@ const main =
           { dir: { type: 'string', default: defaultDir }
           , port: { type: 'string' }
           , force: { type: 'boolean' }
+          , days: { type: 'string' }
           , help: { type: 'boolean', short: 'h' }
           }
         })
@@ -50,6 +55,7 @@ const main =
         , port: values.port === undefined ? undefined : Number(values.port)
         })
     if (command === 'verify-signatures') return verifySignatures()
+    if (command === 'rotate-keys') return rotateKeys({ days: values.days === undefined ? undefined : Number(values.days) })
     if (command === 'backup' || command === 'restore') {
       const [file] = rest
       if (!file) throw new Error(`Give ${command} a backup file path.`)

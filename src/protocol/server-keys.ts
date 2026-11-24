@@ -8,6 +8,7 @@ import { ed25519, x25519 } from '@noble/curves/ed25519.js'
 import { sha256 } from '@noble/hashes/sha2.js'
 import { bytesToHex, concatBytes, utf8ToBytes } from '@noble/hashes/utils.js'
 import { ProtocolError } from './errors.ts'
+import { u64be } from './encoding.ts'
 
 /** Domain tag of the fingerprint hash. */
 export const FINGERPRINT_TAG = 'srs-keys-v1'
@@ -127,6 +128,50 @@ export const serverKeysFromSecret =
     const keys =
       { x25519: x25519.getPublicKey(x25519Private), ed25519: ed25519.getPublicKey(ed25519Private) }
     return { ...keys, x25519Private, ed25519Private, fingerprint: fingerprint(keys) }
+  }
+
+/** The ASCII tag that starts a key transition statement. */
+export const TRANSITION_TAG = 'srs-rotate-v1'
+
+/**
+ * The bytes the old signing key signs to hand clients over to a new bundle:
+ * the tag, the old fingerprint digest, both new public keys, and when the old
+ * keys stop being accepted.
+ *
+ * @param previous - The bundle being replaced.
+ * @param next - The new bundle.
+ * @param stopAt - When the old bundle stops working, in milliseconds since the epoch.
+ */
+export const transitionMessage =
+  (previous: PublicServerKeys, next: PublicServerKeys, stopAt: number): Uint8Array =>
+    concatBytes(
+      utf8ToBytes(TRANSITION_TAG), fingerprintDigest(previous), exactlyKey(next.x25519), exactlyKey(next.ed25519)
+      , u64be(stopAt))
+
+const exactlyKey =
+  (key: Uint8Array) => {
+    if (key.length !== 32) throw new ProtocolError('invalid-length', 'server public keys are 32 bytes each')
+    return key
+  }
+
+/**
+ * Check a transition statement with the old bundle's signing key.
+ *
+ * @param previous - The old bundle, whose fingerprint the client has pinned.
+ * @param next - The new bundle the server now serves.
+ * @param stopAt - The statement's stop time.
+ * @param signature - The statement's signature.
+ * @throws {@link ProtocolError} `invalid-transition` when it does not verify.
+ */
+export const checkTransition =
+  (previous: PublicServerKeys, next: PublicServerKeys, stopAt: number, signature: Uint8Array): void => {
+    let valid = false
+    try {
+      valid = ed25519.verify(signature, transitionMessage(previous, next, stopAt), previous.ed25519, { zip215: false })
+    } catch {
+      valid = false
+    }
+    if (!valid) throw new ProtocolError('invalid-transition', 'the key transition statement does not verify')
   }
 
 /** Render bytes as lowercase hex (re-exported for callers of this module). */

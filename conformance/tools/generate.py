@@ -486,6 +486,41 @@ def accounts():
         'output': {'message': h(message), 'signature': h(ed25519_sign(session_seed, message))},
     })
 
+def rotation():
+    s = 'protocol/server-keys'
+    old_x, old_seed = seq(32, 1), seq(32, 33)
+    new_x, new_seed = seq(32, 65), seq(32, 97)
+    old_digest = hashlib.sha256(b'srs-keys-v1' + x25519_public(old_x) + ed25519_public(old_seed)).digest()
+    stop_at = 1766592000000
+    message = b'srs-rotate-v1' + old_digest + x25519_public(new_x) + ed25519_public(new_seed) + struct.pack('>Q', stop_at)
+    signature = ed25519_sign(old_seed, message)
+    base = {'previousX25519': h(x25519_public(old_x)), 'previousEd25519': h(ed25519_public(old_seed)),
+            'nextX25519': h(x25519_public(new_x)), 'nextEd25519': h(ed25519_public(new_seed)), 'stopAt': stop_at}
+    write(s, 'transition-message', {
+        'description': 'The key transition statement the old signing key signs',
+        'operation': 'server-keys.transition-message',
+        'input': base,
+        'output': h(message),
+    })
+    write(s, 'transition-check', {
+        'description': 'A transition signed by the previous signing key is accepted',
+        'operation': 'server-keys.transition-check',
+        'input': {**base, 'signature': h(signature)},
+        'output': True,
+    })
+    write(s, 'transition-forged', {
+        'description': 'A transition signed by any other key is refused',
+        'operation': 'server-keys.transition-check',
+        'input': {**base, 'signature': h(ed25519_sign(seq(32, 5), message))},
+        'error': 'invalid-transition',
+    })
+    write(s, 'transition-later-stop', {
+        'description': 'Changing the stop date breaks the signature',
+        'operation': 'server-keys.transition-check',
+        'input': {**base, 'stopAt': stop_at + 1, 'signature': h(signature)},
+        'error': 'invalid-transition',
+    })
+
 
 if __name__ == '__main__':
     encoding()
@@ -493,3 +528,4 @@ if __name__ == '__main__':
     noise()
     envelope()
     accounts()
+    rotation()

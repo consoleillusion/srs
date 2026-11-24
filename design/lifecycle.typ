@@ -1,7 +1,7 @@
 == Account lifecycle <lifecycle>
 
-Status: *Implemented* for the Noise transport (`src/auth/channel-lifecycle.ts`),
-except server key rotation, which is *Specified*.
+Status: *Implemented* for the Noise transport (`src/auth/channel-lifecycle.ts`;
+key rotation in `src/protocol/server-keys.ts` and `srs rotate-keys`).
 
 All operations here are signed requests in a logged-in channel unless stated
 otherwise, and all are audited in `audit_log` with resource `account`.
@@ -91,13 +91,26 @@ Deployments that need stronger guarantees can disable admin resets with
 
 === Server key rotation <server-key-rotation>
 
-+ The operator runs `srs rotate-keys`, which creates a new key bundle and a
-  _transition statement_: the new bundle and the date the old one stops being
-  accepted, signed by the old server signing key.
-+ `GET /noise/keys` returns the current bundle and any transition statement.
++ The operator runs `srs rotate-keys [--days 30]`, which creates a new key
+  bundle and a _transition statement_ signed by the old signing key:
+
+  ```text
+  "srs-rotate-v1" ‖ old_fingerprint_digest (32) ‖ new_x25519 (32)
+  ‖ new_ed25519 (32) ‖ stop_at (8, milliseconds, big-endian)
+  ```
+
+  It prints three settings: the new `SRS_SERVER_KEYS`, the old bundle as
+  `SRS_PREVIOUS_SERVER_KEYS`, and `SRS_KEY_TRANSITION` (the stop time and the
+  signature). The server checks the statement at startup and refuses to start
+  with one that does not verify.
++ Until the stop date, `GET /noise/keys` returns the new bundle with the old
+  one as `previous` and the statement as `transition`, and the handshake
+  accepts either key.
 + A client pinned to the old fingerprint verifies the statement with the old
-  signing key and replaces its pin.
-+ After the stop date, the server answers handshakes only with the new key.
+  signing key, uses the new keys, and reports the new fingerprint through
+  `onServerKeyChange` so it can be stored.
++ After the stop date, the server answers handshakes only with the new key and
+  no longer offers the statement; the operator removes the two extra settings.
 
 If a server key is stolen, a transition statement cannot be trusted, because
 the thief can sign one. Clients must then be given the new fingerprint out of

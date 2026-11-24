@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { registerAuthRoutes } from '../../auth/routes.ts'
 import type { OidcVerifier } from '../../auth/oidc.ts'
-import { publicBundle } from '../../auth/server-keys.ts'
+import { publicBundle, type KeyTransition } from '../../auth/server-keys.ts'
 import type { ServerKeys } from '../../protocol/server-keys.ts'
 import { createAuthService } from '../../auth/service/index.ts'
 import type { BuiltSchema } from '../../db/schema-types.ts'
@@ -45,6 +45,8 @@ export type AppOptions =
   , http?: HttpOptions
   /** The server key bundle; enables `GET /noise/keys` and the Noise transport. */
   , serverKeys?: ServerKeys
+  /** During a key rotation: the previous bundle and the signed transition to `serverKeys`. */
+  , rotation?: { previous: ServerKeys, transition: KeyTransition }
   /**
    * `noise` serves only the handshake, envelope, key-bundle and health routes in
    * the clear and refuses everything else; `bearer` serves every route directly
@@ -98,7 +100,7 @@ const optionsFor =
  * @returns A Hono app serving every exposed resource.
  */
 export const createApp =
-  ({ built, db, opaqueServerSetup, requireSession, admins = [], oidc, oidcAdmins = [], http = {}, serverKeys, transport = serverKeys ? 'noise' : 'bearer', retainReads = false, allowReset = true }: AppOptions): Hono => {
+  ({ built, db, opaqueServerSetup, requireSession, admins = [], oidc, oidcAdmins = [], http = {}, serverKeys, rotation, transport = serverKeys ? 'noise' : 'bearer', retainReads = false, allowReset = true }: AppOptions): Hono => {
     const s = createServices(built, db)
     const app = new Hono<Env>()
     applyHttp(app, db, http)
@@ -119,11 +121,11 @@ export const createApp =
 
     const channels = createChannelStore()
     if (serverKeys) {
-      const bundle = publicBundle(serverKeys)
-      app.get('/noise/keys', c => c.json(bundle))
+      app.get('/noise/keys', c => c.json(publicBundle(serverKeys, rotation)))
       registerHandshake(
         app
-        , { serverKeys, channels, clientOf: c => clientAddress(c, http.trustedProxyHops) })
+        , { serverKeys, channels, clientOf: c => clientAddress(c, http.trustedProxyHops)
+          , previous: rotation ? { keys: rotation.previous, until: rotation.transition.stopAt } : undefined })
       registerEnvelopeRoute(
         app
         , { channels

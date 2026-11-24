@@ -3,7 +3,8 @@ import { applyMigrations } from '../db/migrate.ts'
 import type { LoadedSchema } from '../db/schema-types.ts'
 import type { Database } from '../db/open.ts'
 import { createOidcVerifier } from '../auth/oidc.ts'
-import { parseServerKeys } from '../auth/server-keys.ts'
+import { parseServerKeys, parseTransition } from '../auth/server-keys.ts'
+import { checkTransition } from '../protocol/server-keys.ts'
 import { createApp } from './app/index.ts'
 import { httpOptionsFromEnv } from './http.ts'
 import type { Metrics } from './metrics.ts'
@@ -47,6 +48,18 @@ export const createServerApp =
             })
         : undefined
 
+    const serverKeys = process.env.SRS_SERVER_KEYS ? parseServerKeys(process.env.SRS_SERVER_KEYS) : undefined
+    const previousSetting = process.env.SRS_PREVIOUS_SERVER_KEYS
+    const transitionSetting = process.env.SRS_KEY_TRANSITION
+    if ((previousSetting === undefined) !== (transitionSetting === undefined))
+      throw new Error('SRS_PREVIOUS_SERVER_KEYS and SRS_KEY_TRANSITION are set together, by `srs rotate-keys`')
+    let rotation: { previous: ReturnType<typeof parseServerKeys>, transition: ReturnType<typeof parseTransition> } | undefined
+    if (serverKeys && previousSetting && transitionSetting) {
+      rotation = { previous: parseServerKeys(previousSetting), transition: parseTransition(transitionSetting) }
+      // Refuse to serve a statement that clients would reject.
+      checkTransition(rotation.previous, serverKeys, rotation.transition.stopAt, rotation.transition.signature)
+    }
+
     // Bring the database up to date before serving; a failure stops the server.
     if (process.env.MIGRATE_ON_START !== 'false')
       await applyMigrations(options.db, options.migrationsFolder)
@@ -59,7 +72,8 @@ export const createServerApp =
       , oidc
       , oidcAdmins: list(process.env.SRS_OIDC_ADMIN_SUBJECTS)
       , http: { ...httpOptionsFromEnv(), metrics: options.metrics }
-      , serverKeys: process.env.SRS_SERVER_KEYS ? parseServerKeys(process.env.SRS_SERVER_KEYS) : undefined
+      , serverKeys
+      , rotation
       , transport
       , retainReads: process.env.SRS_RETAIN_READS === 'true'
       , allowReset: process.env.SRS_ALLOW_RESET !== 'false'

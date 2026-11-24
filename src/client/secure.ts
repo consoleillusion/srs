@@ -45,6 +45,11 @@ export type SecureClientOptions =
   , serverKey: string
   /** Fetch implementation; defaults to `globalThis.fetch`. */
   , fetch?: FetchLike
+  /**
+   * Called when the client follows a server key rotation signed by the pinned
+   * keys, with the new fingerprint to pin from now on. Store it.
+   */
+  , onServerKeyChange?: (fingerprint: string) => void
   }
 
 /** Who the client is logged in as. */
@@ -142,6 +147,7 @@ export const createSecureClient =
     const baseUrl =
       (options.baseUrl ?? (globalThis as { location?: { origin?: string } }).location?.origin ?? '').replace(/\/+$/, '')
     let serverKeys: PublicServerKeys | undefined
+    let pin = options.serverKey.trim().toLowerCase()
     let channel: Channel | undefined
     let login: LoginState | undefined
 
@@ -169,8 +175,28 @@ export const createSecureClient =
     const ensureChannel =
       async (): Promise<Channel> => {
         if (channel) return channel
-        serverKeys ??= await fetchServerKeys(fetchImpl, baseUrl, options.serverKey)
-        const opened = await openChannel({ fetch: fetchImpl, baseUrl, serverKeys })
+        if (!serverKeys) {
+          const fetched = await fetchServerKeys(fetchImpl, baseUrl, pin)
+          serverKeys = fetched.keys
+          if (fetched.fingerprint !== pin) {
+            pin = fetched.fingerprint
+            options.onServerKeyChange?.(pin)
+          }
+        }
+        let opened: Channel
+        try {
+          opened = await openChannel({ fetch: fetchImpl, baseUrl, serverKeys })
+        } catch (error) {
+          // The cached keys may have been retired by a rotation: fetch the bundle again, once.
+          if (!(error instanceof ProtocolError) || error.code !== 'handshake-failed') throw error
+          const fetched = await fetchServerKeys(fetchImpl, baseUrl, pin)
+          serverKeys = fetched.keys
+          if (fetched.fingerprint !== pin) {
+            pin = fetched.fingerprint
+            options.onServerKeyChange?.(pin)
+          }
+          opened = await openChannel({ fetch: fetchImpl, baseUrl, serverKeys })
+        }
         if (login) await certify(opened, login)
         channel = opened
         return opened

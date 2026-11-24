@@ -13,7 +13,7 @@ import { verifyRetainedSignatures } from './db/verify-signatures.ts'
 import { createRowDatabase } from './server/database.ts'
 import { DEFAULT_MAX_BODY_BYTES, httpOptionsFromEnv } from './server/http.ts'
 import { createServerApp } from './server/start.ts'
-import { createServerKeys, parseServerKeys } from './auth/server-keys.ts'
+import { createServerKeys, createTransition, parseServerKeys } from './auth/server-keys.ts'
 
 export const defaultDir = '.srs'
 
@@ -184,4 +184,30 @@ export const verifySignatures =
     } finally {
       await db.close()
     }
+  }
+
+/**
+ * Start a server key rotation: create a new bundle and a transition statement
+ * signed by the current one. Prints the settings to deploy.
+ *
+ * @param options - How many days the old keys keep working.
+ */
+export const rotateKeys =
+  (options: { days?: number }) => {
+    const current = process.env.SRS_SERVER_KEYS
+    if (!current) throw new Error('SRS_SERVER_KEYS must be set to the bundle being replaced')
+    const days = options.days ?? 30
+    if (!Number.isFinite(days) || days < 1) throw new Error('--days must be at least 1')
+    const previous = parseServerKeys(current)
+    const next = createServerKeys()
+    const stopAt = Date.now() + days * 24 * 60 * 60_000
+    const { setting } = createTransition(previous, next.keys, stopAt)
+    console.log(
+      'Set these three settings (keep them secret), then restart:\n'
+      + `\n  SRS_SERVER_KEYS=${next.setting}`
+      + `\n  SRS_PREVIOUS_SERVER_KEYS=${current}`
+      + `\n  SRS_KEY_TRANSITION=${setting}\n`
+      + `\nClients pinned to ${previous.fingerprint} move to ${next.keys.fingerprint} on their own`
+      + ` until ${new Date(stopAt).toISOString()}. After that, remove SRS_PREVIOUS_SERVER_KEYS and`
+      + ' SRS_KEY_TRANSITION; clients that have not moved must be given the new fingerprint by hand.')
   }
