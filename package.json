@@ -1,6 +1,6 @@
 {
   "name": "resource-server",
-  "version": "0.2.2",
+  "version": "0.3.14",
   "description": "JSON Schema in, JSON:API server out (Bun, Hono, Turso/SQLite)",
   "type": "module",
   "bin": {
@@ -31,7 +31,7 @@
     "pretest": "bun src/db/generate-migration.ts",
     "docs": "bunx typedoc",
     "docs:check": "bunx typedoc --emit none",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p src/console",
     "audit": "bun audit",
     "design": "sh design/build.sh"
   },

@@ -4,7 +4,7 @@ import { config } from 'dotenv'
 
 config({ quiet: true })
 
-const { backup, defaultDir, init, restore, rotateKeys, serve, verifySignatures } = await import('./commands.ts')
+const { backup, consolePage, defaultDir, init, restore, rotateKeys, serve, verifySignatures } = await import('./commands.ts')
 
 const usage = `srs: JSON Schema in, JSON:API server out
 
@@ -19,6 +19,11 @@ const usage = `srs: JSON Schema in, JSON:API server out
 
   srs backup <file>
       Write a verified copy of the database (DB_PATH). Needs the server stopped.
+
+  srs console [--port 5735] [--host 127.0.0.1]
+      Serve a browser page for using a server: connect with its fingerprint,
+      register, log in, and list, create, update and delete resources. Use
+      --host 0.0.0.0 to open it from another machine.
 
   srs rotate-keys [--days 30]
       Create a new server key bundle and a transition statement signed by the
@@ -43,6 +48,7 @@ const main =
           , port: { type: 'string' }
           , force: { type: 'boolean' }
           , days: { type: 'string' }
+          , host: { type: 'string' }
           , help: { type: 'boolean', short: 'h' }
           }
         })
@@ -55,6 +61,8 @@ const main =
         , port: values.port === undefined ? undefined : Number(values.port)
         })
     if (command === 'verify-signatures') return verifySignatures()
+    if (command === 'console')
+      return consolePage({ port: values.port === undefined ? undefined : Number(values.port), host: values.host })
     if (command === 'rotate-keys') return rotateKeys({ days: values.days === undefined ? undefined : Number(values.days) })
     if (command === 'backup' || command === 'restore') {
       const [file] = rest

@@ -7,6 +7,7 @@ src/
   auth/            OPAQUE service, /key routes, signing, limits, OIDC, keys
     service/         registration, login and key handlers
   client/          browser-safe TypeScript client
+  console/         `srs console`: the browser page and its server
   db/              schema loading, derivation, building, views, migrations,
                    backup and restore
     build/           columns, relations, DDL, plans, views
@@ -18,7 +19,7 @@ src/
   server/          Hono app, transport layer, registry, queries, mutations
     app/             routes, guard, CRUD and relationship handlers
     mutations/       write-document parsing and row writes
-  cli.ts           `srs` command: init, serve, backup, restore
+  cli.ts           `srs` command: init, serve, console, backup, restore and more
   commands.ts      the commands behind the CLI
   index.ts         public library exports
 spec/              end-to-end tests through the app

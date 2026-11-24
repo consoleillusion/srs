@@ -88,6 +88,8 @@ bun run dev
 bun run start
 ```
 
+To try a running server in a browser, use `bun srs console` (@ref-console).
+
 === Database and migrations
 The database file is `DB_PATH` (default `.db`). `bun run db:generate` writes a
 migration into `.migrations/<timestamp>_<name>/migration.sql` and records what

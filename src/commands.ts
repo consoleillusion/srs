@@ -223,3 +223,20 @@ export const rotateKeys =
       + ` until ${new Date(stopAt).toISOString()}. After that, remove SRS_PREVIOUS_SERVER_KEYS and`
       + ' SRS_KEY_TRANSITION; clients that have not moved must be given the new fingerprint by hand.')
   }
+
+/**
+ * Serve the browser console for using a server over the Noise transport.
+ *
+ * @param options - Port and host for the console page.
+ */
+export const consolePage =
+  async (options: { port?: number, host?: string }) => {
+    const { serveConsole } = await import('./console/serve.ts')
+    const server = await serveConsole(options)
+    const origin = `http://${server.hostname === '0.0.0.0' ? 'YOUR-ADDRESS' : server.hostname}:${server.port}`
+    console.log(
+      `SRS console: ${origin}\n`
+      + `\nThe page and the server are different origins, so start the server with:\n`
+      + `\n  SRS_CORS_ORIGINS=${origin}\n`
+      + '\nThen open the page, enter the server URL and the fingerprint printed by `srs init`, and connect.')
+  }
