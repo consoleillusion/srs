@@ -36,13 +36,20 @@ export type ChannelRequest =
   }
 
 /** A response received through a channel. */
-export type ChannelResponse =
-  { status: number
-  , headers: Map<string, string>
-  , body: Uint8Array
-  /** The body parsed as JSON, or undefined when empty. */
-  , json: <T = unknown>() => T | undefined
-  }
+export interface ChannelResponse {
+  /** The HTTP status the server's application answered with. */
+  status: number
+  /** The response headers that the channel carries. */
+  headers: Map<string, string>
+  /** The response body. */
+  body: Uint8Array
+  /**
+   * Parse the body as JSON.
+   *
+   * @returns The parsed value, or undefined when the body is empty.
+   */
+  json<T = unknown>(): T | undefined
+}
 
 /** An open Noise channel to one server. */
 export type Channel =
