@@ -8,16 +8,17 @@ import
   } from '../../src/protocol/encoding.ts'
 import { checkFingerprint, checkTransition, serverKeysFromSecret, srsPrologue, transitionMessage } from '../../src/protocol/server-keys.ts'
 import { encryptWithNonce, initiator, keyPairFromPrivate, responder } from '../../src/protocol/noise.ts'
-import { decodeRequest, encodeRequest, encodeResponse, seal } from '../../src/protocol/envelope.ts'
+import { decodeRequest, decodeResponse, encodeRequest, encodeResponse, open, parseEnvelope, seal } from '../../src/protocol/envelope.ts'
 import
   { loginBinder
   , registrationProofMessage
   , requestMessage
   , signCertificate
   , unwrapIdentity
+  , verifyCertificate
   , wrapIdentity
   } from '../../src/protocol/accounts.ts'
-import { ed25519PublicKey, ed25519Sign } from '../../src/client/crypto.ts'
+import { ed25519PublicKey, ed25519Sign, ed25519Verify } from '../../src/client/crypto.ts'
 import type { Operation } from './runner.ts'
 
 type CertificateInput =
@@ -163,4 +164,23 @@ export const operations: Record<string, Operation> =
         , input.stopAt, hexToBytes(input.signature))
       return true
     }
+    , 'envelope.open': (input: { key: string, envelope: string }) => {
+      const parsed = parseEnvelope(hexToBytes(input.envelope))
+      return bytesToHex(open(hexToBytes(input.key), parsed.sid, parsed.n, parsed.ciphertext))
+    }
+  , 'envelope.decode-response': (input: { plaintext: string }) => {
+      const response = decodeResponse(hexToBytes(input.plaintext))
+      return { status: response.status, headers: response.headers }
+    }
+  , 'accounts.verify-certificate': (input: { identityPublic: string, certificate: string, signature: string }) =>
+      verifyCertificate(hexToBytes(input.identityPublic), hexToBytes(input.certificate), hexToBytes(input.signature))
+  , 'accounts.verify-request': (input:
+      { sessionPublic: string, h: string, sid: string, n: string, method: string, path: string
+      , contentType: string, body: string, signature: string }) =>
+      ed25519Verify(
+        hexToBytes(input.signature)
+        , requestMessage(
+            { h: hexToBytes(input.h), sid: hexToBytes(input.sid), n: BigInt(input.n), method: input.method
+            , path: input.path, contentType: input.contentType, body: hexToBytes(input.body) })
+        , hexToBytes(input.sessionPublic))
   }

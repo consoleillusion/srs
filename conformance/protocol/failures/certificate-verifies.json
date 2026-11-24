@@ -1,0 +1,10 @@
+{
+  "description": "A certificate signature checked against an identity public key",
+  "operation": "accounts.verify-certificate",
+  "input": {
+    "identityPublic": "bde675014625ab5ef98e6c244e1ac17f9219277c277b17ed1cd85a5ec23e944e",
+    "certificate": "7372732d636572742d7631333435363738393a3b3c3d3e3f404142999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8b0b1b2b3b4b5b6b7b8b9babbbcbdbebf1112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f3003ff0e60c3634744bf45cec1833341ccdde192a3f66873422378bcbd46a32f1b0000019ab697e8000000019abbbe4400",
+    "signature": "1b90ec6a72371f2a3f6d47c740659aa5f5ceccb202af62d62d6f5d203d838df20e35d5cfb2933f77e7aaca360da9567a684919ed25322b6b97aaedf115c0b80c"
+  },
+  "output": true
+}

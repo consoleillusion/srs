@@ -521,6 +521,92 @@ def rotation():
         'error': 'invalid-transition',
     })
 
+def failures():
+    """Failure cases across Part III that the topic generators above do not cover."""
+    s = 'protocol/failures'
+    key, sid = seq(32, 9), seq(16, 0xb0)
+    plaintext = length_prefixed(b'GET', b'/tag', b'', b'', b'')
+    ad = envelope_ad(sid, 1)
+    sealed = ad + ChaCha20Poly1305(key).encrypt(chacha_nonce(1), plaintext, ad)
+    write(s, 'envelope-open', {
+        'description': 'An envelope opens to its plaintext under the right key and counter',
+        'operation': 'envelope.open',
+        'input': {'key': h(key), 'envelope': h(sealed)},
+        'output': h(plaintext),
+    })
+    tampered = bytearray(sealed); tampered[-1] ^= 1
+    write(s, 'envelope-tampered', {
+        'description': 'A changed ciphertext fails authentication',
+        'operation': 'envelope.open',
+        'input': {'key': h(key), 'envelope': h(bytes(tampered))},
+        'error': 'decrypt-failed',
+    })
+    moved = bytearray(sealed); moved[4:20] = seq(16, 0xc0)
+    write(s, 'envelope-moved-channel', {
+        'description': 'An envelope relabelled with another channel id fails authentication',
+        'operation': 'envelope.open',
+        'input': {'key': h(key), 'envelope': h(bytes(moved))},
+        'error': 'decrypt-failed',
+    })
+    renumbered = bytearray(sealed); renumbered[27] ^= 1
+    write(s, 'envelope-renumbered', {
+        'description': 'An envelope with a changed counter fails authentication',
+        'operation': 'envelope.open',
+        'input': {'key': h(key), 'envelope': h(bytes(renumbered))},
+        'error': 'decrypt-failed',
+    })
+    write(s, 'envelope-bad-magic', {
+        'description': 'An envelope that does not start with SRS1 is refused',
+        'operation': 'envelope.open',
+        'input': {'key': h(key), 'envelope': h(b'SRS2' + sealed[4:])},
+        'error': 'invalid-envelope',
+    })
+    write(s, 'envelope-too-short', {
+        'description': 'An envelope shorter than its header and a tag is refused',
+        'operation': 'envelope.open',
+        'input': {'key': h(key), 'envelope': h(sealed[:43])},
+        'error': 'invalid-envelope',
+    })
+    write(s, 'response-bad-status', {
+        'description': 'A response whose status is not three digits from 100 to 599 is refused',
+        'operation': 'envelope.decode-response',
+        'input': {'plaintext': h(length_prefixed(b'99', b'', b'', b''))},
+        'error': 'invalid-encoding',
+    })
+    write(s, 'response-extra-field', {
+        'description': 'A response with a fifth field is refused',
+        'operation': 'envelope.decode-response',
+        'input': {'plaintext': h(length_prefixed(b'200', b'', b'', b'', b''))},
+        'error': 'invalid-encoding',
+    })
+
+    identity_seed = seq(32, 0x44)
+    hh = seq(32, 0x11)
+    cert = certificate(seq(16, 0x33), seq(16, 0x99), sid, hh, ed25519_public(seq(32, 0x88)), 1764000000000, 1764086400000)
+    good = ed25519_sign(identity_seed, cert)
+    for name, public, signature, valid in [
+        ('certificate-verifies', ed25519_public(identity_seed), good, True),
+        ('certificate-other-key', ed25519_public(seq(32, 0x45)), good, False),
+        ('certificate-altered', ed25519_public(identity_seed), good[:-1] + bytes([good[-1] ^ 1]), False),
+    ]:
+        write(s, name, {
+            'description': 'A certificate signature checked against an identity public key',
+            'operation': 'accounts.verify-certificate',
+            'input': {'identityPublic': h(public), 'certificate': h(cert), 'signature': h(signature)},
+            'output': valid,
+        })
+    message = length_prefixed(b'srs-req-v1', hh, sid, struct.pack('>Q', 3), b'GET', b'/tag', b'', hashlib.sha256(b'').digest())
+    session_seed = seq(32, 0x88)
+    for name, n, valid in [('request-signature-verifies', 3, True), ('request-signature-other-counter', 4, False)]:
+        write(s, name, {
+            'description': 'A request signature only verifies for the counter it was made for',
+            'operation': 'accounts.verify-request',
+            'input': {'sessionPublic': h(ed25519_public(session_seed)), 'h': h(hh), 'sid': h(sid), 'n': str(n),
+                      'method': 'GET', 'path': '/tag', 'contentType': '', 'body': '',
+                      'signature': h(ed25519_sign(session_seed, message))},
+            'output': valid,
+        })
+
 
 if __name__ == '__main__':
     encoding()
@@ -529,3 +615,4 @@ if __name__ == '__main__':
     envelope()
     accounts()
     rotation()
+    failures()
