@@ -1,0 +1,10 @@
+{
+  "description": "A bundle matching the pinned fingerprint is accepted",
+  "operation": "server-keys.check",
+  "input": {
+    "x25519": "07a37cbc142093c8b755dc1b10e86cb426374ad16aa853ed0bdfc0b2b86d1c7c",
+    "ed25519": "e7f162a10bec559afea195e4dce84b69568d5d2cb0963eb446c0685e2b17f2f0",
+    "pinned": "srs1:wv4yohckd36atzcruab5xt7boe7rrus2d7qrlr42a4lytz4zb4pq"
+  },
+  "output": true
+}

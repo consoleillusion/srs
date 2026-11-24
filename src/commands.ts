@@ -11,6 +11,7 @@ import { backupDatabase, restoreDatabase, startBackupSchedule } from './db/backu
 import { createMetrics, serveMetrics } from './server/metrics.ts'
 import { DEFAULT_MAX_BODY_BYTES, httpOptionsFromEnv } from './server/http.ts'
 import { createServerApp } from './server/start.ts'
+import { createServerKeys, parseServerKeys } from './auth/server-keys.ts'
 
 export const defaultDir = '.srs'
 
@@ -70,6 +71,16 @@ export const init =
       console.log(`\nAdd this to your .env (keep it secret; changing it locks every user out):\n\n  OPAQUE_SERVER_SETUP=${key.value}\n`)
     else
       console.log('\nOPAQUE_SERVER_SETUP is already set, so it was kept.')
+    if (process.env.SRS_SERVER_KEYS)
+      console.log(
+        `\nSRS_SERVER_KEYS is already set, so it was kept. Clients pin:\n\n  ${parseServerKeys(process.env.SRS_SERVER_KEYS).fingerprint}\n`)
+    else {
+      const created = createServerKeys()
+      console.log(
+        '\nAdd this to your .env too (keep it secret; changing it breaks every pinned client):'
+        + `\n\n  SRS_SERVER_KEYS=${created.setting}\n`
+        + `\nGive clients this fingerprint to pin:\n\n  ${created.keys.fingerprint}\n`)
+    }
     console.log('Optional .env settings: DB_PATH (default .db), PORT (default 5734), SRS_ADMINS (comma-separated usernames).')
     console.log('\nThen run `srs serve`. Run init again after any schema change.')
   }

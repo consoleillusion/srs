@@ -1,6 +1,8 @@
 import { Hono } from 'hono'
 import { registerAuthRoutes } from '../../auth/routes.ts'
 import type { OidcVerifier } from '../../auth/oidc.ts'
+import { publicBundle } from '../../auth/server-keys.ts'
+import type { ServerKeys } from '../../protocol/server-keys.ts'
 import { createAuthService } from '../../auth/service/index.ts'
 import type { BuiltSchema } from '../../db/schema-types.ts'
 import type { AppContext, Env } from '../context.ts'
@@ -34,6 +36,8 @@ export type AppOptions =
   , oidcAdmins?: string[]
   /** Transport settings: body limit, CORS, proxy trust, rate limit and logging. */
   , http?: HttpOptions
+  /** The server key bundle; enables `GET /noise/keys` and the Noise transport. */
+  , serverKeys?: ServerKeys
   }
 
 const paths =
@@ -73,10 +77,15 @@ const optionsFor =
  * @returns A Hono app serving every exposed resource.
  */
 export const createApp =
-  ({ built, db, opaqueServerSetup, requireSession, admins = [], oidc, oidcAdmins = [], http = {} }: AppOptions): Hono => {
+  ({ built, db, opaqueServerSetup, requireSession, admins = [], oidc, oidcAdmins = [], http = {}, serverKeys }: AppOptions): Hono => {
     const s = createServices(built, db)
     const app = new Hono<Env>()
     applyHttp(app, db, http)
+
+    if (serverKeys) {
+      const bundle = publicBundle(serverKeys)
+      app.get('/noise/keys', c => c.json(bundle))
+    }
 
     if (opaqueServerSetup)
       registerAuthRoutes(

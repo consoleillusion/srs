@@ -8,9 +8,14 @@ against itself. Run from the repository root:
 
 Every fixture is deterministic: no randomness, no clock.
 """
+import base64
+import hashlib
 import json
 import os
 import struct
+
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ed25519, x25519
 
 ROOT = os.path.join(os.path.dirname(__file__), '..')
 
@@ -118,5 +123,55 @@ def encoding():
     })
 
 
+# ── server keys ───────────────────────────────────────────────────────────
+
+RAW = serialization.Encoding.Raw, serialization.PublicFormat.Raw
+
+
+def x25519_public(private):
+    return x25519.X25519PrivateKey.from_private_bytes(private).public_key().public_bytes(*RAW)
+
+
+def ed25519_public(seed):
+    return ed25519.Ed25519PrivateKey.from_private_bytes(seed).public_key().public_bytes(*RAW)
+
+
+def fingerprint(x_pub, ed_pub):
+    digest = hashlib.sha256(b'srs-keys-v1' + x_pub + ed_pub).digest()
+    return 'srs1:' + base64.b32encode(digest).decode().lower().rstrip('=')
+
+
+def server_keys():
+    s = 'protocol/server-keys'
+    for name, secret in [('derive-a', seq(64, 1)), ('derive-b', seq(64, 0x80))]:
+        x_pub, ed_pub = x25519_public(secret[:32]), ed25519_public(secret[32:])
+        write(s, name, {
+            'description': 'Public keys and fingerprint derived from the 64-byte bundle secret',
+            'operation': 'server-keys.derive',
+            'input': {'secret': h(secret)},
+            'output': {'x25519': h(x_pub), 'ed25519': h(ed_pub), 'fingerprint': fingerprint(x_pub, ed_pub)},
+        })
+    x_pub, ed_pub = x25519_public(seq(32, 1)), ed25519_public(seq(32, 33))
+    write(s, 'check-match', {
+        'description': 'A bundle matching the pinned fingerprint is accepted',
+        'operation': 'server-keys.check',
+        'input': {'x25519': h(x_pub), 'ed25519': h(ed_pub), 'pinned': fingerprint(x_pub, ed_pub)},
+        'output': True,
+    })
+    write(s, 'check-swapped-signing-key', {
+        'description': 'A bundle whose signing key differs from the pinned one is refused',
+        'operation': 'server-keys.check',
+        'input': {'x25519': h(x_pub), 'ed25519': h(ed25519_public(seq(32, 99))), 'pinned': fingerprint(x_pub, ed_pub)},
+        'error': 'fingerprint-mismatch',
+    })
+    write(s, 'derive-short-secret', {
+        'description': 'A secret that is not 64 bytes is refused',
+        'operation': 'server-keys.derive',
+        'input': {'secret': h(seq(63))},
+        'error': 'invalid-length',
+    })
+
+
 if __name__ == '__main__':
     encoding()
+    server_keys()

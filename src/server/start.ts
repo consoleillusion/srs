@@ -3,6 +3,7 @@ import { applyMigrations } from '../db/migrate.ts'
 import type { LoadedSchema } from '../db/schema-types.ts'
 import type { Database } from '../db/open.ts'
 import { createOidcVerifier } from '../auth/oidc.ts'
+import { parseServerKeys } from '../auth/server-keys.ts'
 import { createApp } from './app/index.ts'
 import { httpOptionsFromEnv } from './http.ts'
 import type { Metrics } from './metrics.ts'
@@ -45,6 +46,7 @@ export const createServerApp =
       , oidc
       , oidcAdmins: list(process.env.SRS_OIDC_ADMIN_SUBJECTS)
       , http: { ...httpOptionsFromEnv(), metrics: options.metrics }
+      , serverKeys: process.env.SRS_SERVER_KEYS ? parseServerKeys(process.env.SRS_SERVER_KEYS) : undefined
       , admins: list(process.env.SRS_ADMINS)
       })
   }
