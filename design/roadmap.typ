@@ -62,7 +62,7 @@ routes, graceful shutdown, scheduled verified backups, `srs backup` and
   [v0.2.2], [Verify CI on GitHub], [The workflow passes on a push to the repository.], [Next],
   [v0.2.3], [Verify the container image], [`docker build` succeeds; a container with a mounted project serves `/readyz` as `200`, takes a backup, and stops cleanly on `SIGTERM`. Steps recorded in `doc/deployment.md`.], [Next],
   [v0.2.4], [Verify OIDC against a real provider], [A Keycloak or Kanidm instance issues a token that SRS accepts; the exact provider settings, including issuer and audience, are recorded in `doc/auth.md`.], [Next],
-  [v0.2.5], [Metrics], [With `SRS_METRICS_PORT` set, a second listener on `127.0.0.1` serves Prometheus text format: requests by route pattern and status, request duration histogram, login successes and failures, backup age. Off by default. Tests cover the output.], [Next],
+  [v0.2.5], [Metrics], [With `SRS_METRICS_PORT` set, a second listener on `127.0.0.1` serves Prometheus text format: requests by route pattern and status, request duration histogram, login successes and failures, backup age. Off by default. Tests cover the output.], [Done],
   [v0.2.6], [Protect `audit_log` in the database], [Triggers make `UPDATE` and `DELETE` on `audit_log` fail; a test proves it.], [Done],
   [v0.2.7], [Ed25519 from `@noble/curves`], [`tweetnacl` is removed; signing and verification use `@noble/curves`; existing signing tests pass unchanged.], [Done],
 )

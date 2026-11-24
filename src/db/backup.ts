@@ -13,6 +13,8 @@ export type BackupSchedule =
   , intervalMs: number
   /** How many of the newest backups to keep. */
   , keep: number
+  /** Called with the time of each successful backup. */
+  , onBackup?: (at: number) => void
   }
 
 /** Quote a path as an SQL string literal. */
@@ -148,6 +150,7 @@ export const startBackupSchedule =
           const target = join(schedule.dir, backupName(new Date()))
           await backupDatabase(db, target)
           await pruneBackups(schedule.dir, schedule.keep)
+          schedule.onBackup?.(Date.now())
           console.log(JSON.stringify({ event: 'backup', file: target }))
         } catch (error) {
           console.error(JSON.stringify({ event: 'backup_failed', error: String(error) }))

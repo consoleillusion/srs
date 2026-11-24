@@ -86,6 +86,7 @@ export const createApp =
             { db
             , serverSetup: opaqueServerSetup
             , audit: s.registry.get('audit_log') !== undefined
+            , onLogin: http.metrics?.login
             }))
 
     const requireAuth = requireSession ? sessionMiddleware(db, oidc) : undefined

@@ -21,7 +21,6 @@ Everything with state *Next*, *Later* or *Open* in @roadmap.
   transport requires TLS, which prevents this; the Noise transport removes the
   gap by design (@login).
 - A parent's owner cannot moderate inherited child rows.
-- There are no metrics (v0.2.5).
 
 === Open questions
 

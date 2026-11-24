@@ -8,6 +8,7 @@ import { loadSchemas } from './db/load-schemas.ts'
 import type { LoadedSchema } from './db/schema-types.ts'
 import { openDatabase } from './db/open.ts'
 import { backupDatabase, restoreDatabase, startBackupSchedule } from './db/backup.ts'
+import { createMetrics, serveMetrics } from './server/metrics.ts'
 import { DEFAULT_MAX_BODY_BYTES, httpOptionsFromEnv } from './server/http.ts'
 import { createServerApp } from './server/start.ts'
 
@@ -85,11 +86,17 @@ export const serve =
         + `${config.schemas.join(' ')}\` again, then serve.`)
 
     const db = await openDatabase()
+    const metricsPort = process.env.SRS_METRICS_PORT
+    if (metricsPort !== undefined && !/^\d+$/.test(metricsPort))
+      throw new Error(`SRS_METRICS_PORT must be a port number, got "${metricsPort}"`)
+    const metrics = metricsPort ? createMetrics() : undefined
     const app = await createServerApp(
       { loaded
       , db
       , migrationsFolder: join(dir, 'migrations')
+      , metrics
       })
+    const metricsServer = metrics && metricsPort ? serveMetrics(metrics, Number(metricsPort)) : undefined
     const port = options.port ?? Number(process.env.PORT ?? 5734)
     const server =
       Bun.serve(
@@ -109,6 +116,7 @@ export const serve =
             , { dir: resolve(backupDir)
               , intervalMs: Number(process.env.SRS_BACKUP_INTERVAL_HOURS ?? 24) * 3_600_000
               , keep: Number(process.env.SRS_BACKUP_KEEP ?? 7)
+              , onBackup: metrics?.backup
               })
         : undefined
     if (!backupDir)
@@ -117,6 +125,7 @@ export const serve =
     const shutdown =
       async () => {
         stopBackups?.()
+        metricsServer?.stop()
         await server.stop()
         await db.close()
         process.exit(0)

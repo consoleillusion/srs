@@ -19,10 +19,10 @@ export type AuthService =
 /**
  * Create the OPAQUE registration, login and key service.
  *
- * @param options - The database, OPAQUE server setup, optional rate limits and audit flag.
+ * @param options - The database, OPAQUE server setup, optional rate limits, audit flag, and a login counter.
  */
 export const createAuthService =
-  (options: { db: RowDatabase, serverSetup: string, limits?: Limits, audit?: boolean }): AuthService => {
+  (options: { db: RowDatabase, serverSetup: string, limits?: Limits, audit?: boolean, onLogin?: (outcome: 'success' | 'failure') => void }): AuthService => {
     const deps = createDeps(options)
     const registration = registrationHandlers(deps)
     const login = loginHandlers(deps)

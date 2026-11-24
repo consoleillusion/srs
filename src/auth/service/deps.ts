@@ -34,13 +34,15 @@ export type KeyRow =
  * @param options - The database, OPAQUE server setup, rate limits and audit flag.
  */
 export const createDeps =
-  ( { db, serverSetup, limits = DEFAULT_LIMITS, audit = false }:
-      { db: RowDatabase, serverSetup: string, limits?: Limits, audit?: boolean }
+  ( { db, serverSetup, limits = DEFAULT_LIMITS, audit = false, onLogin }:
+      { db: RowDatabase, serverSetup: string, limits?: Limits, audit?: boolean, onLogin?: (outcome: 'success' | 'failure') => void }
   /** Build the audit, throttle, purge, insert and consume helpers the handlers share. */
   ): AuthDeps => {
     /** Write a login event to audit_log when auditing is available. */
     const record =
       async (action: string, user: unknown) => {
+        if (action === 'login') onLogin?.('success')
+        if (action === 'login_failed') onLogin?.('failure')
         if (audit)
           await insert(
             db, 'audit_log', { actor: user ?? null, action, resource: 'session' })

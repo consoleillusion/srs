@@ -5,6 +5,7 @@ import type { Database } from '../db/open.ts'
 import { createOidcVerifier } from '../auth/oidc.ts'
 import { createApp } from './app/index.ts'
 import { httpOptionsFromEnv } from './http.ts'
+import type { Metrics } from './metrics.ts'
 import { createRowDatabase } from './database.ts'
 
 /** Split a comma-separated setting into trimmed, non-empty entries. */
@@ -15,7 +16,7 @@ const list =
 
 /** Migrate the database, then build the HTTP app from the environment settings. */
 export const createServerApp =
-  async (options: { loaded: LoadedSchema[], db: Database, migrationsFolder: string }) => {
+  async (options: { loaded: LoadedSchema[], db: Database, migrationsFolder: string, metrics?: Metrics }) => {
     const opaqueServerSetup = process.env.OPAQUE_SERVER_SETUP
     const issuer = process.env.SRS_OIDC_ISSUER
     if (!opaqueServerSetup && !issuer)
@@ -43,7 +44,7 @@ export const createServerApp =
       , requireSession: true
       , oidc
       , oidcAdmins: list(process.env.SRS_OIDC_ADMIN_SUBJECTS)
-      , http: httpOptionsFromEnv()
+      , http: { ...httpOptionsFromEnv(), metrics: options.metrics }
       , admins: list(process.env.SRS_ADMINS)
       })
   }

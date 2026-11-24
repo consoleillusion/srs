@@ -41,6 +41,11 @@ started with a different key bundle is rejected by every pinned client.
   application.
 - A per-client request rate limit applies to every route except health checks.
 - `/healthz` reports the process is up; `/readyz` also queries the database.
+- With `SRS_METRICS_PORT` set, a second listener on `127.0.0.1` serves
+  `/metrics` in the Prometheus text format: requests by method, route pattern
+  and status; request duration histograms; login successes and failures; and
+  the age of the last backup. It is bound to loopback so it is never reachable
+  from the network; a local agent or proxy scrapes it.
 - Each request writes one JSON log line without the query string or body. Under
   `noise`, the logged path is the decrypted one.
 - `SIGTERM` stops accepting connections, finishes in-flight requests and closes

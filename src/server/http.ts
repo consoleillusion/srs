@@ -7,6 +7,8 @@ import { NONCE_HEADER, SIGNATURE_HEADER, TIMESTAMP_HEADER } from '../auth/signin
 import { errorDocument, jsonApi } from './app/document.ts'
 import type { AppContext, Env, Next } from './context.ts'
 import type { RowDatabase } from './database.ts'
+import { routePath } from 'hono/route'
+import type { Metrics } from './metrics.ts'
 
 /** Receives one structured record per request. */
 export type LogSink = (record: Record<string, unknown>) => void
@@ -23,6 +25,8 @@ export type HttpOptions =
   , rateLimitPerMinute?: number
   /** Receives one structured record per request; unset turns request logging off. */
   , log?: LogSink
+  /** Counts requests and their durations when set. */
+  , metrics?: Metrics
   }
 
 export const DEFAULT_MAX_BODY_BYTES = 1024 * 1024
@@ -129,6 +133,20 @@ export const applyHttp =
   (app: Hono<Env>, db: RowDatabase, options: HttpOptions = {}) => {
     const hops = options.trustedProxyHops ?? 0
     if (options.log) app.use('*', requestLogger(options.log))
+    const metrics = options.metrics
+    if (metrics)
+      app.use('*', async (c, next) => {
+        const started = performance.now()
+        await next()
+        // The route pattern, not the path, keeps the number of series small.
+        let route = 'unmatched'
+        try {
+          route = routePath(c, -1)
+        } catch {
+          // No route matched.
+        }
+        metrics.request(c.req.method, route, c.res.status, (performance.now() - started) / 1000)
+      })
 
     app.use('*', secureHeaders())
 
