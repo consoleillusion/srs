@@ -28,7 +28,7 @@ export const registrationHandlers =
           throw conflict('A user with that username already exists')
 
         const userId = newUuid()
-        const id = newUuid()
+        const id = crypto.randomUUID()
         const expiresAt = Date.now() + REGISTRATION_TTL_MS
         const { registrationResponse } =
           opaqueStep(

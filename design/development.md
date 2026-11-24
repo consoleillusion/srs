@@ -26,7 +26,7 @@ Optional:
 
 ```bash
 SCHEMA_DIR=./schemas      # directory of .json or .yaml schema files
-SERBER_ADMINS=alice,bob   # usernames that always hold the admin role
+SRS_ADMINS=alice,bob   # usernames that always hold the admin role
 MIGRATE_ON_START=true     # set to false to apply migrations yourself
 ```
 
@@ -53,7 +53,7 @@ bun srs init schemas
 bun srs serve
 ```
 
-`init` writes `.resource-server/migrations/`, `.resource-server/config.json`,
+`init` writes `.srs/migrations/`, `.srs/config.json`,
 and generated working files. `serve` refuses to start when the schemas no longer
 match the recorded fingerprint, so run `init` again after a schema change.
 

@@ -23,6 +23,6 @@ export const createServerApp =
       , db: createRowDatabase(options.db)
       , opaqueServerSetup
       , requireSession: true
-      , admins: (process.env.SERBER_ADMINS ?? '').split(',').map(x => x.trim()).filter(Boolean)
+      , admins: (process.env.SRS_ADMINS ?? '').split(',').map(x => x.trim()).filter(Boolean)
       })
   }

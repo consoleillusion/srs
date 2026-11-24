@@ -56,7 +56,7 @@ export const loginHandlers =
                   , userIdentifier: userId ?? newUuid()
                   }))
 
-        const id = newUuid()
+        const id = crypto.randomUUID()
         const expiresAt = Date.now() + LOGIN_TTL_MS
         const serverKeyPair = generateKeyPair()
 
