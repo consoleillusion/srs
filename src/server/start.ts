@@ -62,6 +62,7 @@ export const createServerApp =
       , serverKeys: process.env.SRS_SERVER_KEYS ? parseServerKeys(process.env.SRS_SERVER_KEYS) : undefined
       , transport
       , retainReads: process.env.SRS_RETAIN_READS === 'true'
+      , allowReset: process.env.SRS_ALLOW_RESET !== 'false'
       , admins: list(process.env.SRS_ADMINS)
       })
   }

@@ -1,21 +1,38 @@
 == Account lifecycle <lifecycle>
 
-Status: *Specified*. Ending one bearer session is *Implemented*.
+Status: *Implemented* for the Noise transport (`src/auth/channel-lifecycle.ts`),
+except server key rotation, which is *Specified*.
 
 All operations here are signed requests in a logged-in channel unless stated
-otherwise, and all are audited.
+otherwise, and all are audited in `audit_log` with resource `account`.
+
+#table(
+  columns: (auto, 1fr),
+  table.header([*Route*], [*Effect*]),
+  [`DELETE /account/login/current`], [Log out: end this login and its channels.],
+  [`GET /account/logins`], [List active logins: `id`, `createdAt`, `expiresAt`, `current`.],
+  [`DELETE /account/logins/:id`], [End one login.],
+  [`DELETE /account/logins?others=true`], [End every login but this one.],
+  [`POST /account/password`, `PUT /account/password/:id`], [Change the password (two OPAQUE steps).],
+  [`POST /account/identity/revoke`], [Revoke one's own identity key.],
+  [`POST /account/rekey`, `PUT /account/rekey/:id`], [After revocation: new password and new identity key. Allowed only right after a login that found no usable identity key.],
+  [`POST /account/resets`], [Admin: issue a reset token for `userId`.],
+  [`POST /account/reset`, `PUT /account/reset/:id`], [Redeem a reset token (no login needed): new password and new identity key.],
+  [`POST /account/users/:id/disable`, `…/enable`, `…/revoke`], [Admin: disable or enable a user, or revoke their identity key.],
+)
 
 === Logout
 
-The client sends `DELETE /login/current`. The server marks the login record
-ended and drops every channel using it. The client discards its session key,
-identity key and login id.
+The client sends `DELETE /account/login/current`. The server marks the login
+record ended and drops every channel using it. The client discards its session
+key, identity key and login id. A certificate naming an ended login is refused,
+so a device whose login was ended cannot resume.
 
 === Devices
 
-`GET /login` lists the user's unended logins (created, expires, last used).
-`DELETE /login/:id` ends one, dropping its channels. Ending every other login
-is `DELETE /login?others=true`.
+`GET /account/logins` lists the user's unended logins. `DELETE
+/account/logins/:id` ends one, dropping its channels. Ending every other login
+is `DELETE /account/logins?others=true`.
 
 === Password change
 
@@ -38,10 +55,12 @@ identity key. Revocation is signed by the current session, or done by an admin.
 - Signatures made before `revoked_at` remain verifiable and are reported as
   _made before revocation_. Signatures after it are refused.
 - The user then logs in with OPAQUE, which still works because the password
-  is unchanged, and must change the password in the same step: the client runs
-  a new OPAQUE registration, generates a new identity key, wraps it under the
-  new export key, and registers it with a proof of possession. Until that
-  completes, the login can do nothing else.
+  is unchanged. The login answers `rekeyRequired: true` and no identity key,
+  and the channel stays unauthenticated: the only thing it may do is re-key. The
+  client runs a new OPAQUE registration with a new password, generates a new
+  identity key, wraps it under the new export key, and registers it with a proof
+  of possession (`/account/rekey`). It then certifies a session with the new
+  key as usual.
 
 If an attacker also knows the password, they can race the user to this step.
 An admin reset (@recovery) settles the race.
@@ -63,8 +82,9 @@ cannot be unlocked. Recovery therefore creates a new identity key:
 Signatures made with the retired key stay valid. An admin who issues a reset
 can sign in as the user afterwards; this cannot be prevented while recovery
 exists. It is mitigated by recording every reset in the audit log and showing
-it to the user at their next login, and verifiers treat signatures made after
-an admin reset as accountable to the reset as well as to the user.
+it to the user at their next login (the login answer carries `lastReset`),
+and verifiers treat signatures made after an admin reset as accountable to the
+reset as well as to the user.
 
 Deployments that need stronger guarantees can disable admin resets with
 `SRS_ALLOW_RESET=false`; a forgotten password then means a new account.
@@ -87,5 +107,6 @@ band.
 
 Users that own keys cannot be deleted (@schema), so that retained signatures
 stay attributable. An admin can _disable_ a user: every login ends and logins
-are refused. Personal data columns can be cleared; the user id, identity key
+are refused with the same `401` as a wrong password. Enabling the user again
+restores logins. Personal data columns can be cleared; the user id, identity key
 history and certificates remain.

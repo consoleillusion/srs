@@ -16,11 +16,12 @@ import { createChannelStore } from '../channels.ts'
 import { registerHandshake } from '../noise-handshake.ts'
 import { registerEnvelopeRoute } from '../noise-route.ts'
 import { registerChannelAccounts } from '../../auth/channel-accounts.ts'
+import { registerChannelLifecycle } from '../../auth/channel-lifecycle.ts'
 import { requestMessage } from '../../protocol/accounts.ts'
 import { ed25519Verify } from '../../client/crypto.ts'
 import { crudHandlers } from './crud.ts'
 import { errorDocument, jsonApi } from './document.ts'
-import { createGuard } from './guard.ts'
+import { createGuard, rolesOf } from './guard.ts'
 import { relationshipHandlers } from './relationships.ts'
 import { createServices } from './services.ts'
 
@@ -52,6 +53,8 @@ export type AppOptions =
   , transport?: 'noise' | 'bearer'
   /** Retain every signed read, not only reads listed in `x-access.signed`. */
   , retainReads?: boolean
+  /** Allow admins to issue password reset tokens (default true). */
+  , allowReset?: boolean
   }
 
 /** Routes served outside a Noise channel in strict mode. */
@@ -95,7 +98,7 @@ const optionsFor =
  * @returns A Hono app serving every exposed resource.
  */
 export const createApp =
-  ({ built, db, opaqueServerSetup, requireSession, admins = [], oidc, oidcAdmins = [], http = {}, serverKeys, transport = serverKeys ? 'noise' : 'bearer', retainReads = false }: AppOptions): Hono => {
+  ({ built, db, opaqueServerSetup, requireSession, admins = [], oidc, oidcAdmins = [], http = {}, serverKeys, transport = serverKeys ? 'noise' : 'bearer', retainReads = false, allowReset = true }: AppOptions): Hono => {
     const s = createServices(built, db)
     const app = new Hono<Env>()
     applyHttp(app, db, http)
@@ -150,15 +153,24 @@ export const createApp =
             , onLogin: http.metrics?.login
             }))
 
-    if (opaqueServerSetup && serverKeys)
+    if (opaqueServerSetup && serverKeys) {
+      const auditing = s.registry.get('audit_log') !== undefined
       registerChannelAccounts(
+        app
+        , { db, serverSetup: opaqueServerSetup, channels, audit: auditing, onLogin: http.metrics?.login })
+      registerChannelLifecycle(
         app
         , { db
           , serverSetup: opaqueServerSetup
           , channels
-          , audit: s.registry.get('audit_log') !== undefined
-          , onLogin: http.metrics?.login
+          , audit: auditing
+          , allowReset
+          , isAdmin: async userId =>
+              (await rolesOf(
+                { db, registry: s.registry, adminNames: admins.map(x => x.toLowerCase()) }, userId))
+                .includes('admin')
           })
+    }
 
     const requireAuth = requireSession ? sessionMiddleware(db, oidc) : undefined
     const guard =

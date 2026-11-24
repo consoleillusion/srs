@@ -40,6 +40,8 @@ export type Channel =
   , seen: bigint
   , requests: bigint
   , login?: ChannelLogin
+  /** Set when a login succeeded for a user whose identity key is revoked: only re-keying is allowed. */
+  , pendingRekey?: { userId: string, loginId: string }
   }
 
 /** The channel table. */

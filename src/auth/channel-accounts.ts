@@ -66,7 +66,7 @@ const validators = Object.fromEntries(Object.entries(schemas).map(([k, v]) => [k
   Record<keyof typeof schemas, ReturnType<typeof ajv.compile>>
 
 /** Validate a JSON body against one of the route schemas. */
-const body =
+export const body =
   async (c: AppContext, name: keyof typeof schemas): Promise<Record<string, string>> => {
     const value = await readJson(c)
     const validate = validators[name]
@@ -78,7 +78,7 @@ const body =
   }
 
 /** Decode base64url or fail with a 400 naming the field. */
-const bytes =
+export const bytes =
   (value: string, field: string): Uint8Array => {
     try {
       return base64UrlToBytes(value)
@@ -88,7 +88,7 @@ const bytes =
   }
 
 /** The channel of a request, or 404 when it did not come through one. */
-const channelOf =
+export const channelOf =
   (c: AppContext) => {
     const inner = innerOf(c)
     if (!inner) throw notFound('Route not found')
@@ -174,11 +174,7 @@ export const registerChannelAccounts =
           throw badRequest('"proof" does not verify', 'proof')
 
         // Reject unusable records now; the throw rolls the consume back.
-        opaqueStep('registrationRecord', () =>
-          opaque.server.startLogin(
-            { serverSetup, registrationRecord: input.registrationRecord!
-            , startLoginRequest: opaque.client.startLogin({ password: 'probe' }).startLoginRequest
-            , userIdentifier: newUuid() }))
+        probeRecord(serverSetup, input.registrationRecord!)
 
         try {
           await tx.run(
@@ -260,19 +256,34 @@ export const registerChannelAccounts =
         await record('login_failed', login.user_id)
         throw unauthorized('Invalid username or password')
       }
+      const account =
+        await db.get('SELECT `disabled_at` FROM `user` WHERE `id` = ?', [login.user_id])
+      if (account?.disabled_at !== null && account?.disabled_at !== undefined) {
+        await record('login_failed', login.user_id)
+        throw unauthorized('Invalid username or password')
+      }
       await throttle.succeed(id.toLowerCase())
       await record('login', login.user_id)
 
       const identity = await currentIdentity(db, login.user_id as Uint8Array)
       const loginId = newUuid()
       const expiresAt = now + LOGIN_RECORD_TTL_MS
-      await insertKey(db, { id: loginId, type: 'login', userId: canonicalUuid(login.user_id), expiresAt })
+      const userId = canonicalUuid(login.user_id)
+      await insertKey(db, { id: loginId, type: 'login', userId, expiresAt })
+      // Without a usable identity key (it was revoked), the only thing this login may do is re-key.
+      if (!identity) inner.channel.pendingRekey = { userId, loginId }
+      const reset =
+        await db.get(
+          "SELECT max(`updated_at`) AS `at` FROM `audit_log` WHERE `action` = 'reset_used' AND `resource_id` = ?"
+          , [login.user_id]).catch(() => undefined)
       return c.json(
         { loginId
-        , userId: canonicalUuid(login.user_id)
+        , userId
         , expiresAt: iso(expiresAt)
         , identityPublic: identity ? bytesToBase64Url(identityPublicOf(identity)) : null
         , wrappedIdentity: identity ? identity.material : null
+        , rekeyRequired: !identity
+        , lastReset: iso(reset?.at)
         })
     })
 
@@ -327,8 +338,42 @@ export const registerChannelAccounts =
     })
   }
 
+/**
+ * Check that an OPAQUE registration record is usable by starting a throwaway
+ * login against it; answers 400 naming `registrationRecord` otherwise.
+ *
+ * @param serverSetup - The OPAQUE server setup.
+ * @param record - The registration record.
+ */
+export const probeRecord =
+  (serverSetup: string, record: string) =>
+    opaqueStep('registrationRecord', () =>
+      opaque.server.startLogin(
+        { serverSetup, registrationRecord: record
+        , startLoginRequest: opaque.client.startLogin({ password: 'probe' }).startLoginRequest
+        , userIdentifier: newUuid() }))
+
+/**
+ * Store a user's new OPAQUE record, replacing the old one, so only the new
+ * password works.
+ *
+ * @param tx - The transaction.
+ * @param userId - The user.
+ * @param record - The new registration record.
+ * @param now - The current time.
+ */
+export const replaceOpaqueRecord =
+  async (tx: RowDatabase, userId: Uint8Array, record: string, now: number) => {
+    await tx.run(
+      "DELETE FROM `key` WHERE `user_id` = ? AND `type` = 'opaque_registration' AND `expires_at` IS NULL"
+      , [userId])
+    await tx.run(
+      'INSERT INTO `key` (`id`, `type`, `material`, `user_id`, `owner`, `consumed_at`) VALUES (?, ?, ?, ?, ?, ?)'
+      , [uuidToBuffer(newUuid()), 'opaque_registration', record, userId, userId, now])
+  }
+
 /** Parse a path id as a UUID buffer, or answer 400. */
-const uuidOrBadRequest =
+export const uuidOrBadRequest =
   (value: string) => {
     try {
       return uuidToBuffer(value)
