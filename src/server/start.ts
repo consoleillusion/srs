@@ -3,6 +3,7 @@ import { applyMigrations } from '../db/migrate.ts'
 import type { LoadedSchema } from '../db/schema-types.ts'
 import type { Database } from '../db/open.ts'
 import { createApp } from './app/index.ts'
+import { httpOptionsFromEnv } from './http.ts'
 import { createRowDatabase } from './database.ts'
 
 /** Migrate the database, then build the HTTP app from the environment settings. */
@@ -23,6 +24,7 @@ export const createServerApp =
       , db: createRowDatabase(options.db)
       , opaqueServerSetup
       , requireSession: true
+      , http: httpOptionsFromEnv()
       , admins: (process.env.SRS_ADMINS ?? '').split(',').map(x => x.trim()).filter(Boolean)
       })
   }

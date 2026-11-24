@@ -7,6 +7,7 @@ import { writeIfChanged } from './db/fs.ts'
 import { loadSchemas } from './db/load-schemas.ts'
 import type { LoadedSchema } from './db/schema-types.ts'
 import { openDatabase } from './db/open.ts'
+import { DEFAULT_MAX_BODY_BYTES, httpOptionsFromEnv } from './server/http.ts'
 import { createServerApp } from './server/start.ts'
 
 export const defaultDir = '.srs'
@@ -82,13 +83,31 @@ export const serve =
         'The schemas changed since `init`. Run `srs init '
         + `${config.schemas.join(' ')}\` again, then serve.`)
 
+    const db = await openDatabase()
     const app = await createServerApp(
       { loaded
-      , db: await openDatabase()
+      , db
       , migrationsFolder: join(dir, 'migrations')
       })
     const port = options.port ?? Number(process.env.PORT ?? 5734)
-    const server = Bun.serve({ port, fetch: app.fetch })
+    const server =
+      Bun.serve(
+        { port
+        , fetch: app.fetch
+        // Refuse oversized bodies at the socket, before the app reads them.
+        , maxRequestBodySize: httpOptionsFromEnv().maxBodyBytes ?? DEFAULT_MAX_BODY_BYTES
+        })
     console.log(`Server listening on http://localhost:${server.port}`)
+
+    // Finish in-flight requests, then close the database, so a deploy never cuts a write short.
+    const shutdown =
+      async () => {
+        // Purpose: stop accepting connections, drain active requests, and close the database
+        await server.stop()
+        await db.close()
+        process.exit(0)
+      }
+    process.once('SIGTERM', shutdown)
+    process.once('SIGINT', shutdown)
     return server
   }

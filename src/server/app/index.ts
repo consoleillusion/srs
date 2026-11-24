@@ -7,6 +7,7 @@ import { pathParam } from '../context.ts'
 import type { RowDatabase } from '../database.ts'
 import { ApiError } from '../errors.ts'
 import type { Registry } from '../registry.ts'
+import { applyHttp, clientAddress, type HttpOptions } from '../http.ts'
 import { sessionMiddleware } from '../session.ts'
 import { crudHandlers } from './crud.ts'
 import { errorDocument, jsonApi } from './document.ts'
@@ -26,6 +27,8 @@ export type AppOptions =
   , requireSession?: boolean
   /** Usernames that always hold the "admin" role. */
   , admins?: string[]
+  /** Transport settings: body limit, CORS, proxy trust, rate limit and logging. */
+  , http?: HttpOptions
   }
 
 const paths =
@@ -65,13 +68,15 @@ const optionsFor =
  * @returns A Hono app serving every exposed resource.
  */
 export const createApp =
-  ({ built, db, opaqueServerSetup, requireSession, admins = [] }: AppOptions): Hono => {
+  ({ built, db, opaqueServerSetup, requireSession, admins = [], http = {} }: AppOptions): Hono => {
     const s = createServices(built, db)
     const app = new Hono<Env>()
+    applyHttp(app, db, http)
 
     if (opaqueServerSetup)
       registerAuthRoutes(
         app
+        , c => clientAddress(c, http.trustedProxyHops)
         , createAuthService(
             { db
             , serverSetup: opaqueServerSetup
