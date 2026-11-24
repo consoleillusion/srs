@@ -1,11 +1,12 @@
-# Schema reference
+== Schema reference <ref-schema>
+
+Status: *Implemented*.
 
 A schema is a JSON Schema object. User schemas live in `src/schema/` and system
 schemas in `src/schema/system/`. The loader validates each file and the builder
 derives tables, relations, views, and API resources.
 
-## File formats
-
+=== File formats
 Schema files are `.json`, `.yaml`, or `.yml`:
 
 - `.json` files hold exactly one schema object.
@@ -28,8 +29,7 @@ The loader fails loudly instead of skipping silently:
   the file and, for YAML, the document number;
 - a YAML file with a syntax error or with no documents at all errors.
 
-## Nullable properties
-
+=== Nullable properties
 A union with `"null"`, such as `type: ["integer", "null"]`, collapses onto its
 single non-null member (`integer`), recursively through nested `properties`
 and `items`. Nullability itself comes from `required`: a property that is not
@@ -37,71 +37,102 @@ listed there stays nullable, with `null` stored when the request omits it. A
 union with two or more non-null types, or with `"null"` only, fails loudly,
 naming the schema and the property.
 
-## Supported keywords
-
-| Keyword | Effect |
-| --- | --- |
-| `title` | Table name after snake_case conversion; also drives the export name |
-| `description` | Documentation only |
-| `type` | Base SQLite type; must be `object` for a table |
-| `properties` | Columns |
-| `required` | `NOT NULL` constraints (default columns are always required) |
-| `default` | Column default |
-| `format` | Specialized type mapping (`uuid`, `date-time`, `byte`, `email`) |
-| `enum` | Text column with enum typing |
-| `minLength`, `maxLength`, `pattern`, `minimum`, `maximum`, `multipleOf`, `items`, `properties`, `required` | Validation metadata; the full property schema is enforced on writes |
-| `readOnly` | Standard JSON Schema: clients can read the attribute but writes to it are rejected with 400 |
-| `x-unique` | Unique constraint |
-| `x-primary` | Custom primary key marker |
-| `x-system` | Always-loaded system schema |
-| `x-view` / `x-source` | Authored read-only view over a base table |
-| `x-exposed` | `false` hides the table, property, or relation |
-| `x-access` | Reads, creates, visibility, sharing, signing, roles, and audit |
-| `x-relations` | Relation metadata |
-| `x-unique-constraints` | Table-level unique constraints over column groups |
-| `x-link-any` | Internal: allows a relation to reference rows the writer cannot read |
+=== Supported keywords
+#table(
+  columns: (1fr, 2fr),
+  table.header([*Keyword*], [*Effect*]),
+  [`title`],
+  [Table name after snake\_case conversion; also drives the export name],
+  [`description`],
+  [Documentation only],
+  [`type`],
+  [Base SQLite type; must be `object` for a table],
+  [`properties`],
+  [Columns],
+  [`required`],
+  [`NOT NULL` constraints (default columns are always required)],
+  [`default`],
+  [Column default],
+  [`format`],
+  [Specialized type mapping (`uuid`, `date-time`, `byte`, `email`)],
+  [`enum`],
+  [Text column with enum typing],
+  [`minLength`, `maxLength`, `pattern`, `minimum`, `maximum`, `multipleOf`, `items`, `properties`, `required`],
+  [Validation metadata; the full property schema is enforced on writes],
+  [`readOnly`],
+  [Standard JSON Schema: clients can read the attribute but writes to it are rejected with 400],
+  [`x-unique`],
+  [Unique constraint],
+  [`x-primary`],
+  [Custom primary key marker],
+  [`x-system`],
+  [Always-loaded system schema],
+  [`x-view` / `x-source`],
+  [Authored read-only view over a base table],
+  [`x-exposed`],
+  [`false` hides the table, property, or relation],
+  [`x-access`],
+  [Reads, creates, visibility, sharing, signing, roles, and audit],
+  [`x-relations`],
+  [Relation metadata],
+  [`x-unique-constraints`],
+  [Table-level unique constraints over column groups],
+  [`x-link-any`],
+  [Internal: allows a relation to reference rows the writer cannot read],
+  [`x-append-only`],
+  [`true` generates triggers that reject every `UPDATE` and `DELETE` on the table],
+)
 
 `additionalProperties: false` is conventional in this repository but is not the
 only accepted value.
 
-## Type mapping
+=== Type mapping
+#table(
+  columns: (1fr, 2fr),
+  table.header([*JSON Schema*], [*SQLite*]),
+  [`string`],
+  [`text`],
+  [`string` with `format: uuid`],
+  [`blob`, default `uuid7()` when used as an ID],
+  [`string` with `format: date-time`],
+  [`integer` timestamp],
+  [`string` with `format: byte`],
+  [`blob`],
+  [`integer`],
+  [`integer`],
+  [`number`],
+  [`real`],
+  [`boolean`],
+  [`integer` boolean],
+  [`object`],
+  [`text` JSON],
+  [`array`],
+  [`text` JSON],
+  [string `enum`],
+  [`text` with enum typing],
+  [`[T, "null"]`],
+  [collapses to `T`; nullability comes from `required`],
+)
 
-| JSON Schema | SQLite |
-| --- | --- |
-| `string` | `text` |
-| `string` with `format: uuid` | `blob`, default `uuid7()` when used as an ID |
-| `string` with `format: date-time` | `integer` timestamp |
-| `string` with `format: byte` | `blob` |
-| `integer` | `integer` |
-| `number` | `real` |
-| `boolean` | `integer` boolean |
-| `object` | `text` JSON |
-| `array` | `text` JSON |
-| string `enum` | `text` with enum typing |
-| `[T, "null"]` | collapses to `T`; nullability comes from `required` |
-
-Column names are snake_cased. API attribute names are the snake_case column
+Column names are snake\_cased. API attribute names are the snake\_case column
 names.
 
-## Default columns
-
+=== Default columns
 The builder injects these columns into every table when they are not declared:
 
 - `id` — UUID primary key;
 - `updated_at` — timestamp;
 - `owner` — nullable UUID foreign key to `user.id`.
 
-See [data-model.md](./data-model.md) for their semantics. A schema may declare
+See @ref-data-model for their semantics. A schema may declare
 `id`, `updated_at`, or `owner` explicitly; the builder preserves the declared
 position and type rules. `owner` must remain a UUID column.
 
-## `x-exposed`
-
+=== `x-exposed`
 `x-exposed` defaults to `true`. Setting it to `false` removes the declaration
 from the public surface.
 
-### Tables
-
+==== Tables
 ```json
 {
   "title": "Key",
@@ -121,8 +152,7 @@ A hidden table:
 The table and its data still exist. An application service, such as the auth
 service, can access it directly.
 
-### Properties
-
+==== Properties
 ```json
 {
   "properties": {
@@ -138,8 +168,7 @@ A hidden property is omitted from generated views, serializers, query fields,
 and write validation. It is still present in the table and can be read or written
 by trusted server code.
 
-### Relations
-
+==== Relations
 ```json
 {
   "x-relations": {
@@ -157,13 +186,11 @@ A hidden relation is omitted from the registry, serializers, and `include`
 validation. Relations that target a hidden table are hidden automatically. A
 derived join table is hidden when either endpoint or the relation is hidden.
 
-### Validation
-
+==== Validation
 `x-exposed` must be a boolean on tables, properties, and relations. Any other
 value fails schema building.
 
-## Relations
-
+=== Relations
 Relations are declared under `x-relations`.
 
 ```json
@@ -187,27 +214,36 @@ Relations are declared under `x-relations`.
 }
 ```
 
-### Relation fields
-
-| Field | Meaning |
-| --- | --- |
-| `table` | Target table |
-| `column` | Target column, default `id` |
-| `cardinality` | `one` or `many` |
-| `foreignKey` | Optional foreign-key column override for `one` |
-| `through` | Optional join-table name override for `many` |
-| `required` | Whether a derived `one` foreign key is `NOT NULL` |
-| `onDelete` | Foreign-key delete action |
-| `onUpdate` | Foreign-key update action |
-| `x-exposed` | `false` hides the relation |
+==== Relation fields
+#table(
+  columns: (1fr, 2fr),
+  table.header([*Field*], [*Meaning*]),
+  [`table`],
+  [Target table],
+  [`column`],
+  [Target column, default `id`],
+  [`cardinality`],
+  [`one` or `many`],
+  [`foreignKey`],
+  [Optional foreign-key column override for `one`],
+  [`through`],
+  [Optional join-table name override for `many`],
+  [`required`],
+  [Whether a derived `one` foreign key is `NOT NULL`],
+  [`onDelete`],
+  [Foreign-key delete action],
+  [`onUpdate`],
+  [Foreign-key update action],
+  [`x-exposed`],
+  [`false` hides the relation],
+)
 
 `x-link-any` is an internal escape hatch for system resources. A `many` relation
 may use it only with a `through` join table: inverse-one relations rewrite the
-target rows, so linking outside the writer's scope would let them take over
-another user's row.
+target rows, so linking outside the writer’s scope would let them take over
+another user’s row.
 
-### `one` relation
-
+==== `one` relation
 A `one` relation adds a foreign-key column when it does not exist:
 
 - the default column name is `<target_table>_<target_column>`, for example
@@ -222,8 +258,7 @@ A `one` relation adds a foreign-key column when it does not exist:
 `owner` is added separately and always references `user.id` with
 `ON DELETE SET NULL`.
 
-### `many` relation
-
+==== `many` relation
 A `many` relation without `through` produces a derived join table named after the
 sorted endpoint pair, for example `article_tag`. The join table has:
 
@@ -238,14 +273,12 @@ new one. A self-referential many-to-many relation derives a join table named
 side and `related_<table>_id` for the target. It is directed: the relation lists
 rows where this row is on the `<table>_id` side, so symmetry is not automatic.
 
-### Deduplication
-
+==== Deduplication
 The builder deduplicates join tables by endpoint pair. If two schemas declare the
 same many-to-many relation, only one join table is generated. Conflicting
 `through` names for the same pair fail the build.
 
-## Views
-
+=== Views
 A schema marked `x-view: true` is an authored, read-only resource over a base
 table. It is declared in the same folder as the tables and is not a table: no
 table, trigger, join table, or share table is created for it. Its database
@@ -273,11 +306,19 @@ object is a `SELECT` view named `snakeCase(title)`.
 }
 ```
 
-| Keyword | Where | Meaning |
-| --- | --- | --- |
-| `x-view` | Top level | Marks the schema as an authored view; must be a boolean |
-| `x-source` | Top level | The base table the view selects from |
-| `x-source` | Property | A `<base>.<path>` path to a column or relation |
+#table(
+  columns: (1fr, 1fr, 2fr),
+  table.header([*Keyword*], [*Where*], [*Meaning*]),
+  [`x-view`],
+  [Top level],
+  [Marks the schema as an authored view; must be a boolean],
+  [`x-source`],
+  [Top level],
+  [The base table the view selects from],
+  [`x-source`],
+  [Property],
+  [A `<base>.<path>` path to a column or relation],
+)
 
 `x-view: true` is the discriminator. A top-level `x-source` is read only on a
 schema marked `x-view: true`; on a table it is ignored.
@@ -292,13 +333,13 @@ schema marked `x-view: true`; on a table it is ignored.
   requires `type: array`.
 - A relation-valued property must name a relation of the base table, such as
   `article.tag`. Nested relation values are rejected because filters and related
-  reads only know the base row's relations. Scalar paths may still follow
+  reads only know the base row’s relations. Scalar paths may still follow
   to-one relations, such as `article.author.name`, but not to-many relations:
   a path like `article.tag.name` would produce an array of scalars. Expose the
   relation itself instead.
-- Reads keep the base table's read policy. A view may make access stricter, but
+- Reads keep the base table’s read policy. A view may make access stricter, but
   it cannot set `read` to `public` when the base is session-only or drop the
-  base's `signed` and `roles` restrictions.
+  base’s `signed` and `roles` restrictions.
 - `id`, `owner`, and `visibility` are mandatory. They must be exposed and source
   directly from `<base>.id`, `<base>.owner`, and `<base>.visibility`; `id` and
   `owner` must use `format: uuid`. Row scoping reads them from the view.
@@ -312,8 +353,7 @@ schema marked `x-view: true`; on a table it is ignored.
 
 The repository ships `src/schema/article_card.yaml` as a working example.
 
-## Complete example
-
+=== Complete example
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -346,8 +386,7 @@ This produces:
 - the `/article` JSON:API resource with a `tag` relationship;
 - an `owner` attribute on `/article`.
 
-## Validation rules
-
+=== Validation rules
 Schema building fails when:
 
 - a title is missing or duplicate;
@@ -373,3 +412,4 @@ Schema building fails when:
 - an authored view reuses a table, generated-view, or authored-view name.
 
 Failures happen before any SQL is generated or executed.
+

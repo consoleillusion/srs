@@ -40,12 +40,8 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Finder (MacOS) folder config
 .DS_Store
 
-# generated API docs (bun run docs)
-doc/**/*.html
-doc/assets
-doc/media
-doc/.nojekyll
-tools/typedoc/node_modules
+# generated API reference (bun run docs)
+doc/
 
 # built design book (./design/build.sh)
 design/book.pdf

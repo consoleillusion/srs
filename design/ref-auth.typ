@@ -1,4 +1,6 @@
-# Authentication
+== Authentication routes <ref-auth>
+
+Status: *Implemented* for the bearer transport. The Noise transport replaces these flows as specified in @accounts.
 
 SRS uses OPAQUE for password-authenticated key exchange and Ed25519 JWKs
 from tweetnacl for authentication keypairs. The application is stateless: every
@@ -8,11 +10,10 @@ There is no `/auth` namespace. Authentication uses `/key`, because the
 persisted state is a key row and the REST paths map directly to that table.
 
 Applications normally use the browser-safe client rather than calling these
-routes directly. See [client.md](./client.md) for `register()`, `login()`, and
+routes directly. See the client API reference (TypeDoc) for `register()`, `login()`, and
 session storage.
 
-## Goals and non-goals
-
+=== Goals and non-goals
 Implemented:
 
 - OPAQUE registration and login;
@@ -24,7 +25,7 @@ Implemented:
 - Ed25519 keypairs generated for every flow;
 - automatic purging of expired rows;
 - per-user and per-client login rate limiting with temporary lockout;
-- request signing with the session's client key;
+- request signing with the session’s client key;
 - owner-based authorization.
 
 Not implemented yet:
@@ -33,80 +34,113 @@ Not implemented yet:
 - multi-device session management;
 - key rotation and revocation APIs.
 
-## Key row lifecycle
-
+=== Key row lifecycle
 The `key` table stores four kinds of rows. See
-[data-model.md](./data-model.md#key) for the columns.
+@ref-data-model for the columns.
 
-### Pending registration
-
+==== Pending registration
 Created by `POST /key` with `"type": "opaque_registration"`.
 
-| Field | Value |
-| --- | --- |
-| `type` | `opaque_registration` |
-| `jwk` | Client public JWK |
-| `material` | Pending username, display name, and future user id |
-| `expires_at` | Now + 10 minutes |
-| `consumed_at` | `NULL` |
-| `user_id` | `NULL` |
-| `owner` | `NULL` |
+#table(
+  columns: (1fr, 2fr),
+  table.header([*Field*], [*Value*]),
+  [`type`],
+  [`opaque_registration`],
+  [`jwk`],
+  [Client public JWK],
+  [`material`],
+  [Pending username, display name, and future user id],
+  [`expires_at`],
+  [Now + 10 minutes],
+  [`consumed_at`],
+  [`NULL`],
+  [`user_id`],
+  [`NULL`],
+  [`owner`],
+  [`NULL`],
+)
 
-The response includes the OPAQUE `registrationResponse` and the server's
+The response includes the OPAQUE `registrationResponse` and the server’s
 ephemeral public JWK.
 
-### Finished registration
-
+==== Finished registration
 The same row after `PATCH /key/:id` with `registrationRecord`.
 
-| Field | Value |
-| --- | --- |
-| `type` | `opaque_registration` |
-| `jwk` | Client public JWK |
-| `material` | OPAQUE registration record |
-| `expires_at` | `NULL` |
-| `consumed_at` | Finish time |
-| `user_id` | New user id |
-| `owner` | New user id |
+#table(
+  columns: (1fr, 2fr),
+  table.header([*Field*], [*Value*]),
+  [`type`],
+  [`opaque_registration`],
+  [`jwk`],
+  [Client public JWK],
+  [`material`],
+  [OPAQUE registration record],
+  [`expires_at`],
+  [`NULL`],
+  [`consumed_at`],
+  [Finish time],
+  [`user_id`],
+  [New user id],
+  [`owner`],
+  [New user id],
+)
 
 Finishing atomically:
 
-1. consumes the pending row with `UPDATE ... RETURNING`;
-2. inserts the user with the pre-generated UUID;
-3. stores the registration record and links the key row to the user.
++ consumes the pending row with `UPDATE ... RETURNING`;
++ inserts the user with the pre-generated UUID;
++ stores the registration record and links the key row to the user.
 
 The registration server keypair is ephemeral. Its private key is discarded; only
 the public key is returned to the client.
 
-### Pending login
-
+==== Pending login
 Created by `POST /key` with `"type": "opaque_login_state"`.
 
-| Field | Value |
-| --- | --- |
-| `type` | `opaque_login_state` |
-| `jwk` | Server private JWK |
-| `client_jwk` | Client public JWK |
-| `material` | OPAQUE `serverLoginState` |
-| `expires_at` | Now + 10 minutes |
-| `consumed_at` | `NULL` |
-| `user_id` | User id, or `NULL` for an unknown username |
-| `owner` | User id, or `NULL` for an unknown username |
+#table(
+  columns: (1fr, 2fr),
+  table.header([*Field*], [*Value*]),
+  [`type`],
+  [`opaque_login_state`],
+  [`jwk`],
+  [Server private JWK],
+  [`client_jwk`],
+  [Client public JWK],
+  [`material`],
+  [OPAQUE `serverLoginState`],
+  [`expires_at`],
+  [Now + 10 minutes],
+  [`consumed_at`],
+  [`NULL`],
+  [`user_id`],
+  [User id, or `NULL` for an unknown username],
+  [`owner`],
+  [User id, or `NULL` for an unknown username],
+)
 
-### Session
-
+==== Session
 Created by a successful `PATCH /key/:id` with `finishLoginRequest`.
 
-| Field | Value |
-| --- | --- |
-| `type` | `session` |
-| `jwk` | Server private JWK copied from the login state |
-| `client_jwk` | Client public JWK copied from the login state |
-| `material` | Raw OPAQUE `sessionKey` |
-| `expires_at` | Now + 24 hours |
-| `consumed_at` | `NULL` |
-| `user_id` | Authenticated user id |
-| `owner` | Authenticated user id |
+#table(
+  columns: (1fr, 2fr),
+  table.header([*Field*], [*Value*]),
+  [`type`],
+  [`session`],
+  [`jwk`],
+  [Server private JWK copied from the login state],
+  [`client_jwk`],
+  [Client public JWK copied from the login state],
+  [`material`],
+  [Raw OPAQUE `sessionKey`],
+  [`expires_at`],
+  [Now + 24 hours],
+  [`consumed_at`],
+  [`NULL`],
+  [`user_id`],
+  [Authenticated user id],
+  [`owner`],
+  [Authenticated user id],
+)
 
 The session response includes the server public JWK, the user id, and expiry.
 The client keeps its `sessionKey` and its own private key locally. Applications
@@ -115,8 +149,7 @@ automatically.
 
 There is no refresh flow. When the session expires, a new login is required.
 
-## Registration flow
-
+=== Registration flow
 ```text
 client                                      server
   |                                            |
@@ -147,8 +180,7 @@ client                                      server
   | 200 { id, type, userId, consumedAt }       |
 ```
 
-### Start registration
-
+==== Start registration
 ```http
 POST /key
 Content-Type: application/json
@@ -191,8 +223,7 @@ Validation:
 
 `email` is not part of registration. Duplicate username returns `409`. Email, if used, is an optional, freeform, unverified profile field that can be set later via the normal user resource and is never used to prove identity.
 
-### Finish registration
-
+==== Finish registration
 ```http
 PATCH /key/0190c9d2-...
 Content-Type: application/json
@@ -216,8 +247,7 @@ A missing, expired, or already consumed row returns `401`. A duplicate username 
 The finished registration record is retained indefinitely and is used by later
 logins. It is never returned by `GET /key/:id`.
 
-## Login flow
-
+=== Login flow
 ```text
 client                                      server
   |                                            |
@@ -249,8 +279,7 @@ client                                      server
   |       expiresAt, serverPublicKey }         |
 ```
 
-### Start login
-
+==== Start login
 ```http
 POST /key
 Content-Type: application/json
@@ -275,23 +304,21 @@ Response:
 }
 ```
 
-### Unknown usernames
-
+==== Unknown usernames
 An unknown username must not be distinguishable from a known one at login start.
 The server:
 
-1. looks up the user;
-2. loads the registration record when found;
-3. otherwise calls OPAQUE with a null registration record and a dummy UUID;
-4. stores a login row with `user_id = NULL`;
-5. returns the same response shape and status.
++ looks up the user;
++ loads the registration record when found;
++ otherwise calls OPAQUE with a null registration record and a dummy UUID;
++ stores a login row with `user_id = NULL`;
++ returns the same response shape and status.
 
 At finish, a login row with no `user_id`, or a failed OPAQUE exchange, returns
 `401` with `Invalid username or password`. The start response shape, status, and
 field names are identical for known and unknown users.
 
-### Finish login
-
+==== Finish login
 ```http
 PATCH /key/0190c9d2-...
 Content-Type: application/json
@@ -318,10 +345,8 @@ key sent at login, not with the session key.
 
 A login row can be consumed once. Replaying a successful finish returns `401`.
 
-## Key status and deletion
-
-### Status
-
+=== Key status and deletion
+==== Status
 ```http
 GET /key/0190c9d2-...
 ```
@@ -345,8 +370,7 @@ The response contains safe metadata only. It never includes `jwk`,
 Expired rows are purged before lookup. An expired or deleted key returns `404`.
 A malformed UUID returns `400`.
 
-### Delete
-
+==== Delete
 ```http
 DELETE /key/0190c9d2-...
 ```
@@ -354,8 +378,7 @@ DELETE /key/0190c9d2-...
 Returns `204`. This deletes a session for logout, or aborts a pending
 registration/login flow. Deleting a missing key returns `404`.
 
-## Rate limiting
-
+=== Rate limiting
 Login starts are limited per username and per client: more than 30 starts in a
 minute returns `429`. A failed finish counts against the username; five failures
 lock it for 15 minutes. Successful logins clear the failure count.
@@ -364,14 +387,19 @@ Counters live in the system `auth_limit` table, so they survive restarts and are
 shared by every server process. A lock applies to login starts only; existing
 sessions keep working.
 
-## TTLs and purging
-
-| State | TTL |
-| --- | --- |
-| Pending registration | 10 minutes |
-| Pending login state | 10 minutes |
-| Session | 24 hours |
-| Finished registration record | No expiry |
+=== TTLs and purging
+#table(
+  columns: (1fr, 2fr),
+  table.header([*State*], [*TTL*]),
+  [Pending registration],
+  [10 minutes],
+  [Pending login state],
+  [10 minutes],
+  [Session],
+  [24 hours],
+  [Finished registration record],
+  [No expiry],
+)
 
 Purging runs when a registration starts, a login starts, or key status is read:
 
@@ -385,36 +413,55 @@ The session TTL is also the lifetime of the server-side session keypair and the
 stored client public key. When the session row is purged or deleted, both are
 discarded.
 
-## Keypairs
-
+=== Keypairs
 Every registration and login creates fresh keypairs on both sides.
 
-| Flow | Client keypair | Server keypair | Client private key | Server private key |
-| --- | --- | --- | --- | --- |
-| Registration | Generated for the request | Generated for the response | Client-managed | Discarded after response |
-| Login | Generated for the request | Generated for the response | Client-managed | Copied into the session row |
-| Session | Existing login client key | Existing login server key | Client-managed | Stored until expiry or deletion |
+#table(
+  columns: (auto, auto, auto, auto, 1fr),
+  table.header([*Flow*], [*Client keypair*], [*Server keypair*], [*Client private key*], [*Server private key*]),
+  [Registration],
+  [Generated for the request],
+  [Generated for the response],
+  [Client-managed],
+  [Discarded after response],
+  [Login],
+  [Generated for the request],
+  [Generated for the response],
+  [Client-managed],
+  [Copied into the session row],
+  [Session],
+  [Existing login client key],
+  [Existing login server key],
+  [Client-managed],
+  [Stored until expiry or deletion],
+)
 
 The server stores only public client keys and its own private key. Losing or
 expiring the session row invalidates the server half of the pair.
 
-## Storage mapping
-
+=== Storage mapping
 Auth REST paths map to the key table, not to a hand-written auth namespace:
 
-| Request | Database effect |
-| --- | --- |
-| `POST /key` + `opaque_registration` | Insert a pending registration key row |
-| `POST /key` + `opaque_login_state` | Insert a pending login key row |
-| `GET /key/:id` | Read safe metadata from a key row |
-| `PATCH /key/:id` + `registrationRecord` | Consume registration state, insert user |
-| `PATCH /key/:id` + `finishLoginRequest` | Consume login state, insert session |
-| `DELETE /key/:id` | Delete a key row |
+#table(
+  columns: (1fr, 2fr),
+  table.header([*Request*], [*Database effect*]),
+  [`POST /key` + `opaque_registration`],
+  [Insert a pending registration key row],
+  [`POST /key` + `opaque_login_state`],
+  [Insert a pending login key row],
+  [`GET /key/:id`],
+  [Read safe metadata from a key row],
+  [`PATCH /key/:id` + `registrationRecord`],
+  [Consume registration state, insert user],
+  [`PATCH /key/:id` + `finishLoginRequest`],
+  [Consume login state, insert session],
+  [`DELETE /key/:id`],
+  [Delete a key row],
+)
 
 Because `key` is hidden, generic JSON:API routes cannot read or mutate key rows.
 
-## Error responses
-
+=== Error responses
 Auth errors use the standard JSON:API error document:
 
 ```json
@@ -429,18 +476,26 @@ Auth errors use the standard JSON:API error document:
 }
 ```
 
-| Condition | Status |
-| --- | --- |
-| Malformed body, field, UUID, or JWK | `400` |
-| Missing, expired, consumed, or invalid auth state | `401` |
-| Missing key row | `404` |
-| Duplicate username | `409` |
-| Too many login starts or failed logins | `429` |
-| Unknown `type` in `POST /key` | `400` |
-| Both finish fields or neither | `400` |
+#table(
+  columns: (1fr, 2fr),
+  table.header([*Condition*], [*Status*]),
+  [Malformed body, field, UUID, or JWK],
+  [`400`],
+  [Missing, expired, consumed, or invalid auth state],
+  [`401`],
+  [Missing key row],
+  [`404`],
+  [Duplicate username],
+  [`409`],
+  [Too many login starts or failed logins],
+  [`429`],
+  [Unknown `type` in `POST /key`],
+  [`400`],
+  [Both finish fields or neither],
+  [`400`],
+)
 
-## Environment
-
+=== Environment
 `OPAQUE_SERVER_SETUP` is required at server startup. Generate it once and keep it
 secret:
 
@@ -450,8 +505,7 @@ bunx @serenity-kit/opaque create-server-setup
 
 The server fails fast if the variable is missing. Never commit the value.
 
-## Security properties
-
+=== Security properties
 Implemented:
 
 - passwords never cross the network;
@@ -473,11 +527,10 @@ Deferred:
 - multi-device session management;
 - refresh tokens.
 
-## External identity providers
-
+=== External identity providers
 SRS can accept bearer tokens from an OpenID Connect provider instead of, or
 alongside, the built-in OPAQUE accounts. Set `SRS_OIDC_ISSUER` and
-`SRS_OIDC_AUDIENCE` (see [Deployment](./deployment.md#settings)).
+`SRS_OIDC_AUDIENCE` (see @ref-deployment).
 
 A request whose bearer token contains a `.` is treated as a JWT and checked
 against the provider. Anything else is treated as a built-in session id, so the
@@ -485,7 +538,7 @@ two kinds of sign-in coexist.
 
 Verification:
 
-- The provider's discovery document is read once at startup, so a wrong issuer
+- The provider’s discovery document is read once at startup, so a wrong issuer
   stops the server rather than failing on the first request. Signing keys are
   cached and refreshed as the provider rotates them.
 - Only asymmetric algorithms are accepted (RS, PS, ES and EdDSA families); `none`
@@ -508,7 +561,8 @@ Users:
 
 Limits:
 
-- Sessions are the provider's tokens, so lifetime, refresh, logout, multi-factor
-  authentication, password reset and account recovery are the provider's.
+- Sessions are the provider’s tokens, so lifetime, refresh, logout, multi-factor
+  authentication, password reset and account recovery are the provider’s.
 - These requests have no client key, so resources that require signed requests
   (`x-access.signed`) reject them.
+

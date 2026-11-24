@@ -1,6 +1,35 @@
 /**
- * Browser and Node client for a resource server: OPAQUE registration and
- * login, session storage, JSON:API requests and optional request signing.
+ * Browser and Node client for a Standard Resource Server: OPAQUE registration
+ * and login, session storage, JSON:API requests and optional request signing.
+ * It runs in browsers, Bun and Node without Node built-ins, and uses only
+ * pure-JS cryptography, so it works on plain-HTTP pages where `crypto.subtle`
+ * is unavailable.
+ *
+ * The protocol it speaks is specified in the design book (Accounts and login,
+ * Signed requests).
+ *
+ * @example Create a client and sign in
+ * ```ts
+ * import { createResourceServerClient } from 'resource-server/client'
+ *
+ * const client = createResourceServerClient({ baseUrl: 'https://api.example.com' })
+ * await client.register({ username: 'alice', password: 'correct horse battery staple' })
+ * // register() also logs in; later sessions use:
+ * await client.login({ username: 'alice', password: 'correct horse battery staple' })
+ * ```
+ *
+ * @example JSON:API requests
+ * ```ts
+ * const articles = await client.get('/article?sort=-updated_at')
+ * await client.post('/article', { data: { type: 'article', attributes: { heading: 'Hello' } } })
+ * await client.post('/payment', paymentDocument, { signed: true })
+ * await client.logout()
+ * ```
+ *
+ * @remarks
+ * Sessions persist in `localStorage` when it exists, including the session's
+ * signing key; pass `storage: null` or {@link memoryStorage} to keep them in
+ * memory only. Failed requests throw {@link ResourceServerError}.
  *
  * @packageDocumentation
  */

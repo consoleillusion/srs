@@ -178,3 +178,12 @@
 #include "layout.typ"
 #include "decisions.typ"
 #include "status.typ"
+
+#part("VI", "Reference",
+  [The schema keywords, data model, API, authentication routes, deployment settings and development commands.])
+#include "ref-schema.typ"
+#include "ref-data-model.typ"
+#include "ref-api.typ"
+#include "ref-auth.typ"
+#include "ref-deployment.typ"
+#include "ref-development.typ"

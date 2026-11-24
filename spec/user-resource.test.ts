@@ -53,10 +53,10 @@ describe('the user resource', () => {
     expect((await patch(bob, { email: 'shared@example.com' })).status).toBe(200)
   })
 
-  test('a user can delete their own account, which ends their session', async () => {
+  test('an account cannot be deleted, so its key history stays attributable', async () => {
     const { bob } = await setup()
-    expect((await bob.request('DELETE', `/user/${bob.userId}`)).status).toBe(204)
-    expect((await bob.request('GET', `/user/${bob.userId}`)).status).toBe(401)
+    expect((await bob.request('DELETE', `/user/${bob.userId}`)).status).toBe(409)
+    expect((await bob.request('GET', `/user/${bob.userId}`)).status).toBe(200)
   })
 
   test("deleting an account leaves other users' accounts alone", async () => {

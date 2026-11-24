@@ -32,4 +32,4 @@ generator derives everything else.
 
 The build is deterministic and migration generation is idempotent. The same
 built schema drives the migration writer and the running application. The full
-keyword reference is in `doc/schema-reference.md`.
+keyword reference is in @ref-schema.

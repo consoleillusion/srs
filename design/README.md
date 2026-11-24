@@ -20,6 +20,7 @@ package.
 | III. Security | `threat-model`, `transport`, `accounts`, `requests`, `lifecycle`, `external-identity` |
 | IV. Delivery | `operations`, `implementation`, `roadmap` |
 | V. Working on SRS | `contributing`, `layout`, `decisions`, `status` |
+| VI. Reference | `ref-schema`, `ref-data-model`, `ref-api`, `ref-auth`, `ref-deployment`, `ref-development` |
 
-Contributors and agents: start with [AGENTS.md](../AGENTS.md). The reference
-documentation for what is built today is in [doc](../doc/README.md).
+Contributors and agents: start with [AGENTS.md](../AGENTS.md). The generated
+API reference is written to `doc/` by `bun run docs`.

@@ -19,8 +19,10 @@ other context.
   behaviour. The difference is a defect to be listed under known gaps
   (@status) and fixed, unless the book is changed first through the decision
   log (@decisions).
-- `doc/` is the reference for what is built today and how to use it. It
-  follows this book and never contradicts it about intent.
+- Documentation flows one way. This book decides behaviour and holds the
+  reference (Part VI). Code documents itself with TSDoc comments, and TypeDoc
+  generates the API reference into `doc/` from them; nothing in `doc/` is
+  written by hand.
 - The roadmap (@roadmap) is the only list of planned work. Work not on it is
   added to it before it starts.
 - How to work on SRS, including conventions and the checks every change must
@@ -50,5 +52,7 @@ strings are joined with `‖`. Lengths in byte layouts are in bytes.
 - *Part IV, Delivery* — operations, the implementation plan and the roadmap.
 - *Part V, Working on SRS* — contributor rules, repository layout, the
   decision log and current status.
+- *Part VI, Reference* — the schema keywords, data model, API, authentication
+  routes, deployment settings and development commands.
 
 A newcomer should read Parts I and V first, then the chapters their task cites.

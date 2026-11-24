@@ -32,7 +32,8 @@ bun run design      # the book compiles
 
 - the book is updated: the task set to *Done*, chapter status lines corrected,
   new gaps listed in @status;
-- `doc/` describes any changed user-visible behaviour;
+- the reference chapters (Part VI) and TSDoc comments describe any changed
+  user-visible behaviour;
 - the commit message names the task, for example `v0.3.2: Noise NK handshake`;
 - `package.json` carries the task's version and the commit is tagged with it
   (@roadmap).
@@ -79,7 +80,7 @@ The existing code sets the style; match it.
 - Errors returned to clients are created with the `ApiError` factories in
   `src/server/errors.ts`.
 - Settings are environment variables named `SRS_*`, read in one place, validated
-  at startup, and listed in `.env.example` and `doc/deployment.md`.
+  at startup, and listed in `.env.example` and @ref-deployment.
 - File names are kebab-case.
 
 === Tests

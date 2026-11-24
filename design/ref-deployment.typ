@@ -1,18 +1,18 @@
-# Deployment
+== Deployment <ref-deployment>
+
+Status: *Implemented*.
 
 How to run SRS in production: one process, its settings, a reverse proxy,
 backups, and restore.
 
-## One process per database
-
+=== One process per database
 The database file is locked by the process that opens it. A second process on
 the same file, including `srs backup`, fails to start rather than risk
 corrupting it. Run one SRS instance per database; scale a single instance
 up rather than out. The container image declares `/data` and `/backups` as
 volumes for this reason.
 
-## Container
-
+=== Container
 ```bash
 docker build -t srs .
 docker run -p 5734:5734 --env-file .env \
@@ -23,37 +23,71 @@ docker run -p 5734:5734 --env-file .env \
 The image runs as a non-root user, sets `DB_PATH=/data/srs.db` and
 `SRS_BACKUP_DIR=/backups`, and reports health through `/readyz`.
 
-## Settings
-
+=== Settings
 All settings are environment variables. `.env.example` lists them with
 defaults.
 
-| Variable | Default | Meaning |
-| --- | --- | --- |
-| `DB_PATH` | `.db` | Database file |
-| `PORT` | `5734` | Listening port |
-| `MIGRATE_ON_START` | `true` | `false` to apply migrations yourself |
-| `OPAQUE_SERVER_SETUP` | none | Server key for built-in accounts; losing or changing it locks every built-in user out |
-| `SRS_ADMINS` | none | Usernames that always hold the `admin` role |
-| `SRS_OIDC_ISSUER` | none | Turns on sign-in through an external OpenID Connect provider |
-| `SRS_OIDC_AUDIENCE` | none | Required with the issuer: the audience tokens must carry |
-| `SRS_OIDC_JWKS_URI` | discovered | Signing-key URL, when the provider has no discovery document |
-| `SRS_OIDC_ADMIN_SUBJECTS` | none | Provider `sub` values that always hold the `admin` role |
-| `SRS_MAX_BODY_BYTES` | `1048576` | Largest accepted request body |
-| `SRS_RATE_LIMIT_PER_MINUTE` | `600` | Requests per client address per minute; `0` turns it off |
-| `SRS_TRUSTED_PROXY_HOPS` | `0` | Reverse proxies in front of the server |
-| `SRS_CORS_ORIGINS` | none | Comma-separated browser origins allowed to call the API; `*` allows any |
-| `SRS_LOG` | `true` | `false` turns off the JSON request log |
-| `SRS_BACKUP_DIR` | none | Folder for scheduled backups; unset means no backups |
-| `SRS_BACKUP_INTERVAL_HOURS` | `24` | Time between backups |
-| `SRS_BACKUP_KEEP` | `7` | Newest backups to keep |
+#table(
+  columns: (1fr, 1fr, 2fr),
+  table.header([*Variable*], [*Default*], [*Meaning*]),
+  [`DB_PATH`],
+  [`.db`],
+  [Database file],
+  [`PORT`],
+  [`5734`],
+  [Listening port],
+  [`MIGRATE_ON_START`],
+  [`true`],
+  [`false` to apply migrations yourself],
+  [`OPAQUE_SERVER_SETUP`],
+  [none],
+  [Server key for built-in accounts; losing or changing it locks every built-in user out],
+  [`SRS_ADMINS`],
+  [none],
+  [Usernames that always hold the `admin` role],
+  [`SRS_OIDC_ISSUER`],
+  [none],
+  [Turns on sign-in through an external OpenID Connect provider],
+  [`SRS_OIDC_AUDIENCE`],
+  [none],
+  [Required with the issuer: the audience tokens must carry],
+  [`SRS_OIDC_JWKS_URI`],
+  [discovered],
+  [Signing-key URL, when the provider has no discovery document],
+  [`SRS_OIDC_ADMIN_SUBJECTS`],
+  [none],
+  [Provider `sub` values that always hold the `admin` role],
+  [`SRS_MAX_BODY_BYTES`],
+  [`1048576`],
+  [Largest accepted request body],
+  [`SRS_RATE_LIMIT_PER_MINUTE`],
+  [`600`],
+  [Requests per client address per minute; `0` turns it off],
+  [`SRS_TRUSTED_PROXY_HOPS`],
+  [`0`],
+  [Reverse proxies in front of the server],
+  [`SRS_CORS_ORIGINS`],
+  [none],
+  [Comma-separated browser origins allowed to call the API; `*` allows any],
+  [`SRS_LOG`],
+  [`true`],
+  [`false` turns off the JSON request log],
+  [`SRS_BACKUP_DIR`],
+  [none],
+  [Folder for scheduled backups; unset means no backups],
+  [`SRS_BACKUP_INTERVAL_HOURS`],
+  [`24`],
+  [Time between backups],
+  [`SRS_BACKUP_KEEP`],
+  [`7`],
+  [Newest backups to keep],
+)
 
 The server refuses to start when neither `OPAQUE_SERVER_SETUP` nor
 `SRS_OIDC_ISSUER` is set, or when the issuer is unreachable, is not https
 (localhost excepted), or has no audience.
 
-## Behind a reverse proxy
-
+=== Behind a reverse proxy
 Terminate TLS at the proxy and set `SRS_TRUSTED_PROXY_HOPS` to the number of
 proxies in front of SRS (1 for a single proxy). SRS then takes the client
 address from the matching entry of `X-Forwarded-For`, counted from the right,
@@ -65,8 +99,7 @@ login-throttle bucket.
 The proxy should also set its own request timeouts and strip any
 `X-Forwarded-For` it did not add.
 
-## Request limits and headers
-
+=== Request limits and headers
 - Bodies larger than `SRS_MAX_BODY_BYTES` get `413` with a JSON:API error; the
   socket layer refuses them before they are read.
 - Every response carries the standard security headers.
@@ -78,8 +111,7 @@ The proxy should also set its own request timeouts and strip any
   in memory per process. Login and registration have separate limits that are
   stored in the database.
 
-## Health and logs
-
+=== Health and logs
 - `GET /healthz` answers while the process is up.
 - `GET /readyz` also runs a query and answers `503` if the database does not
   respond.
@@ -90,8 +122,7 @@ The proxy should also set its own request timeouts and strip any
 - On `SIGTERM` or `SIGINT` the server stops accepting connections, finishes
   in-flight requests, and closes the database.
 
-## Backups
-
+=== Backups
 Set `SRS_BACKUP_DIR` and SRS writes a consistent copy of the live database every
 `SRS_BACKUP_INTERVAL_HOURS`, keeps the newest `SRS_BACKUP_KEEP`, and logs
 `{"event":"backup"}` or `{"event":"backup_failed"}`. A backup is taken at startup
@@ -105,8 +136,7 @@ disk.
 
 With the server stopped, `srs backup <file>` writes one verified copy by hand.
 
-## Restore
-
+=== Restore
 ```bash
 # stop the server first
 srs restore /backups/srs-2026-11-24T07-41-06.218Z.db --force
@@ -124,8 +154,8 @@ and query it.
 Back up `OPAQUE_SERVER_SETUP` separately in a secret store. A database restored
 without it cannot log built-in users in.
 
-## External identity provider
-
+=== External identity provider
 Set `SRS_OIDC_ISSUER` and `SRS_OIDC_AUDIENCE` to accept bearer tokens from any
 OpenID Connect provider (Keycloak, Authentik, Zitadel, Auth0, Entra ID, Okta,
-Google and others). See [Authentication](./auth.md#external-identity-providers).
+Google and others). See @ref-auth.
+

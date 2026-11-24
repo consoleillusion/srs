@@ -79,12 +79,12 @@ DELETE /article/:id    delete an article
 
 ## Learn more
 
-- [Design book](design/README.md) — goals, rules, the security protocol, and the decision log (Typst; build with `bun run design`).
-- [Documentation](doc/README.md) — schema reference, API, auth, access control, client, and operations.
-- [Deployment](doc/deployment.md) — settings, reverse proxy, health checks, backups, and the container image.
-- [Development](doc/development.md) — setup, commands, migrations, and tests.
-
-Generated TypeScript API reference is written to `doc/` by `bun run docs`.
+- [Design book](design/README.md) — the source of truth: goals, stack,
+  architecture, the security protocol, the roadmap, and the reference for the
+  schema, API, deployment and development. Build it with `bun run design`.
+- API reference — generated from the code's TSDoc comments into `doc/` by
+  `bun run docs`.
+- [AGENTS.md](AGENTS.md) — where contributors and agents start.
 
 ## Status
 

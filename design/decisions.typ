@@ -25,7 +25,7 @@ Add a row before changing a design rule. When a rule is replaced, mark its row
   [D015], [Migrations are deterministic and applied migrations are immutable], [Reviewable, replayable database changes],
   [D016], [The HTTP surface is generated JSON:API], [No per-resource controller code],
   [D017], [Hidden rows return `404`, not `403`], [Do not reveal that an unreadable row exists],
-  [D018], [The design book decides rules; `doc/` describes what is built; TypeDoc describes the TS API], [Each source documents one thing],
+  [D018], [Documentation flows one way: the design book decides behaviour and holds the reference; code carries TSDoc comments; TypeDoc generates the API reference in `doc/`, which is never edited by hand], [Nothing is written twice, so nothing drifts],
   [D019], [External identity providers are accepted as OIDC bearer tokens in the bearer transport only], [Provider tokens are bearer tokens and cannot be signed; they must not weaken the Noise transport],
   [D020], [Backups run inside the server; restore runs offline], [The database file is locked by the process that opens it],
   [D021], [One server process per database], [The file lock makes a second process impossible],

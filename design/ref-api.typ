@@ -1,11 +1,12 @@
-# API
+== API reference <ref-api>
+
+Status: *Implemented* for the bearer transport. Under the Noise transport the same routes and documents are carried inside the channel (@transport).
 
 SRS exposes a JSON:API 1.0 layer over Hono. Generic resource routes are
 generated from the exposed tables in the built schema. Authentication uses a
 small plain-JSON surface under `/key`.
 
-## Resource endpoints
-
+=== Resource endpoints
 ```text
 GET, HEAD /              resource catalog
 GET, HEAD /:type         collection
@@ -28,7 +29,7 @@ parameters gets `406`. Every document carries `jsonapi.version`, a top-level
 `links.self`, a `links.self` per resource, and `self` and `related` links per
 relationship. Collections add `first`, `last`, `prev`, and `next` links.
 
-Resource types are snake_case table names. The built-in exposed resources are:
+Resource types are snake\_case table names. The built-in exposed resources are:
 
 ```text
 /user
@@ -57,10 +58,9 @@ OPTIONS /key
 OPTIONS /key/:id
 ```
 
-See [auth.md](./auth.md) for bodies, status codes, and flows.
+See @ref-auth for bodies, status codes, and flows.
 
-## Content types
-
+=== Content types
 Generic JSON:API responses use:
 
 ```text
@@ -76,8 +76,7 @@ application/json
 Auth errors still use the JSON:API error format. Every error response, generic
 or auth, uses `application/vnd.api+json`.
 
-## Catalog
-
+=== Catalog
 `GET /` describes every exposed resource without querying rows:
 
 ```json
@@ -98,8 +97,7 @@ Hidden tables, hidden columns, and hidden relations never appear in the catalog.
 When the server enforces sessions the catalog needs one too.
 The `owner` attribute appears on every exposed resource.
 
-## Query parameters
-
+=== Query parameters
 Collections support:
 
 - `page[number]` — 1-based page number, default `1`;
@@ -110,10 +108,10 @@ Collections support:
   `nin` (comma-separated values), `contains`, `starts`, `ends`, and `null`
   (`true` or `false`). Values are converted to the column type and always passed
   as SQL parameters. JSON:API reserves `filter` but does not define operators, so
-  this operator syntax is SRS's own convention;
+  this operator syntax is SRS’s own convention;
 - `fields[type]` — comma-separated attributes and relationship labels;
 - `include` — comma-separated relationship paths for a compound document. A path
-  such as `article.tag` includes each article and then each article's tags.
+  such as `article.tag` includes each article and then each article’s tags.
 
 Single-resource requests accept `fields[type]` and `include`. Pagination and
 sorting parameters are accepted but do not affect a single-resource response.
@@ -141,14 +139,13 @@ Include paths follow the JSON:API rules:
   data;
 - an included resource has relationship linkage only for the labels that
   continue a path through it;
-- each step applies the viewer's read access, so an unreadable row is absent at
+- each step applies the viewer’s read access, so an unreadable row is absent at
   any depth, and its id is not leaked in linkage.
 
 Hidden relations cannot be requested, and relations to hidden tables are hidden
 automatically.
 
-## Documents
-
+=== Documents
 A collection response:
 
 ```json
@@ -189,8 +186,7 @@ Relationships contain resource identifier objects only; relationship links are
 not generated yet. A `one` relationship is one identifier or `null`; a `many`
 relationship is an array.
 
-## Write operations
-
+=== Write operations
 Write bodies are JSON:API resource objects:
 
 ```json
@@ -231,7 +227,7 @@ Writes validate:
 
 - the resource type and JSON:API document shape;
 - attribute names against exposed attributes;
-- every validation keyword in each attribute's JSON Schema, including types,
+- every validation keyword in each attribute’s JSON Schema, including types,
   enums, patterns, numeric ranges, string lengths, and nested objects or arrays;
 - required attributes for the request mode (`create`/`PUT` enforce them,
   `PATCH` may omit them);
@@ -240,17 +236,15 @@ Writes validate:
   existing user row.
 
 A `one` relationship writes its foreign-key column. A `many` relationship through
-a join table replaces that table's rows for the resource. Constraint violations
+a join table replaces that table’s rows for the resource. Constraint violations
 return `409 Conflict`.
 
-## IDs
-
+=== IDs
 The database stores UUIDv7 values as blobs. Views format them as canonical
 lowercase UUID strings. The API uses those strings as JSON:API `id` values and as
 lookup values in `GET /:type/:id`.
 
-## Errors
-
+=== Errors
 Errors use the JSON:API error format:
 
 ```json
@@ -268,26 +262,104 @@ Errors use the JSON:API error format:
 
 Status codes:
 
-| Status | Meaning |
-| --- | --- |
-| `200` | Successful read, update, or auth finish |
-| `201` | Resource or auth flow created |
-| `204` | Delete, `HEAD`, or `OPTIONS` with no body |
-| `400` | Invalid query, document, attribute, key id, or auth body |
-| `401` | Invalid, expired, consumed, or unknown auth state |
-| `404` | Unknown resource, id, key, or route |
-| `409` | Unique or foreign-key constraint violation |
-| `500` | Unexpected server failure |
+#table(
+  columns: (1fr, 2fr),
+  table.header([*Status*], [*Meaning*]),
+  [`200`],
+  [Successful read, update, or auth finish],
+  [`201`],
+  [Resource or auth flow created],
+  [`204`],
+  [Delete, `HEAD`, or `OPTIONS` with no body],
+  [`400`],
+  [Invalid query, document, attribute, key id, or auth body],
+  [`401`],
+  [Invalid, expired, consumed, or unknown auth state],
+  [`404`],
+  [Unknown resource, id, key, or route],
+  [`409`],
+  [Unique or foreign-key constraint violation],
+  [`500`],
+  [Unexpected server failure],
+)
 
-## Owner attribute
-
+=== Owner attribute
 `owner` is a normal attribute on every exposed resource and is read-only. It is a
 nullable UUID foreign key to `user.id` with `ON DELETE SET NULL`.
 
 - the server sets it to the signed-in creator;
 - a value sent by a client is ignored;
 - a row created anonymously has no owner;
-- deleting the user sets the row's `owner` to `null`.
+- deleting the user sets the row’s `owner` to `null`.
 
 Read and write access follow the rules in
-[access-control.md](./access-control.md).
+@access-control.
+
+=== Signed requests (bearer transport)
+A resource can require signing per operation:
+
+```json
+"x-access": { "signed": ["create", "update", "delete"] }
+```
+
+`"signed": true` requires it for every write. Requests that are not signed when
+signing is required fail with `401`. A signature that is present is always
+checked, even where signing is not required.
+
+Signed requests add three headers to a session request:
+
+#table(
+  columns: (1fr, 2fr),
+  table.header([*Header*], [*Value*]),
+  [`x-srs-timestamp`],
+  [Unix time in milliseconds, within 60 s of the server clock],
+  [`x-srs-nonce`],
+  [16–128 URL-safe random characters, never reused by a session],
+  [`x-srs-signature`],
+  [base64url Ed25519 signature, made with the private key whose public key was sent as `clientPublicKey` at login],
+)
+
+The signed message is these lines joined by `\n`:
+
+```text
+srs-signature-v1
+<METHOD>
+<path with query string>
+<session id, lowercased>
+<timestamp>
+<nonce>
+<base64url SHA-256 of the body>
+```
+
+Used nonces are stored in `request_nonce` until they expire, which blocks
+replay. `clientPublicKey` is optional at login; a session without one cannot
+make signed requests.
+
+The browser-safe client signs automatically when asked:
+
+```ts
+await client.post('/payment', payment, { signed: true })
+```
+
+See the client API reference (TypeDoc) for the client-side signing API.
+
+=== Failure behavior
+#table(
+  columns: (1fr, 2fr),
+  table.header([*Condition*], [*Response*]),
+  [No session where one is required],
+  [`401`],
+  [Invalid, expired, or consumed session],
+  [`401`],
+  [Missing or invalid signature when required],
+  [`401`],
+  [Signature timestamp outside the window],
+  [`401`],
+  [Reused nonce],
+  [`401`],
+  [Authenticated but not allowed],
+  [`404` for unreadable rows, `403` for a forbidden operation],
+  [Constraint violation],
+  [`409`],
+)
+

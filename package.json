@@ -1,6 +1,6 @@
 {
   "name": "resource-server",
-  "version": "0.2.5",
+  "version": "0.2.8",
   "description": "JSON Schema in, JSON:API server out (Bun, Hono, Turso/SQLite)",
   "type": "module",
   "bin": {

@@ -10,16 +10,35 @@
 export const DURATION_BUCKETS = [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10]
 
 /** Collects counters and timings and renders them for a scraper. */
-export type Metrics =
-  { /** Record one finished request by method, route pattern and status. */
-    request: (method: string, route: string, status: number, seconds: number) => void
-  /** Record one login attempt. */
-  , login: (outcome: 'success' | 'failure') => void
-  /** Record a successful backup at the given time (milliseconds since the epoch). */
-  , backup: (at: number) => void
-  /** Render every metric in the Prometheus text exposition format. */
-  , render: (now?: number) => string
-  }
+export interface Metrics {
+  /**
+   * Record one finished request.
+   *
+   * @param method - The HTTP method.
+   * @param route - The matched route pattern, such as `/:type/:id`.
+   * @param status - The response status.
+   * @param seconds - How long the request took.
+   */
+  request(method: string, route: string, status: number, seconds: number): void
+  /**
+   * Record one login attempt.
+   *
+   * @param outcome - Whether the login succeeded.
+   */
+  login(outcome: 'success' | 'failure'): void
+  /**
+   * Record a successful backup.
+   *
+   * @param at - When it finished, in milliseconds since the epoch.
+   */
+  backup(at: number): void
+  /**
+   * Render every metric in the Prometheus text exposition format.
+   *
+   * @param now - The current time, for the backup age; defaults to now.
+   */
+  render(now?: number): string
+}
 
 /** Quote a label value for the exposition format. */
 const label =

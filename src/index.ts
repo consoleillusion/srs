@@ -11,6 +11,7 @@ export { init, serve } from './commands.ts'
 export { createApp, type AppOptions } from './server/app/index.ts'
 export { createOidcVerifier, type OidcClaims, type OidcOptions, type OidcVerifier, type TokenVerifier } from './auth/oidc.ts'
 export type { HttpOptions, LogSink } from './server/http.ts'
+export { createMetrics, type Metrics } from './server/metrics.ts'
 export { loadSchemas } from './db/load-schemas.ts'
 export { buildSchema } from './db/build-schema.ts'
 export type

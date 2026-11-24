@@ -1,19 +1,18 @@
-# Development
+== Development <ref-development>
 
-## Requirements
+Status: *Implemented*.
 
+=== Requirements
 - Bun 1.4 or newer;
 - a writable directory for the SQLite/Turso database;
 - an OPAQUE server setup value.
 
-## Install
-
+=== Install
 ```bash
 bun install
 ```
 
-## Environment
-
+=== Environment
 Create `.env` in the project root:
 
 ```bash
@@ -31,7 +30,7 @@ MIGRATE_ON_START=true     # set to false to apply migrations yourself
 ```
 
 `.env.example` lists every setting, including request limits, an external
-identity provider and backups; [Deployment](./deployment.md) explains them.
+identity provider and backups; @ref-deployment explains them.
 Either `OPAQUE_SERVER_SETUP` or `SRS_OIDC_ISSUER` is required.
 
 `.env` is gitignored. Never commit server secrets.
@@ -45,8 +44,7 @@ bunx @serenity-kit/opaque create-server-setup
 `OPAQUE_SERVER_SETUP` is required by `src/server/index.ts`. The server throws at
 startup if it is missing.
 
-## Commands
-
+=== Commands
 When SRS is installed as a library in another project:
 
 ```bash
@@ -90,8 +88,7 @@ bun run dev
 bun run start
 ```
 
-## Database and migrations
-
+=== Database and migrations
 The database file is `DB_PATH` (default `.db`). `bun run db:generate` writes a
 migration into `.migrations/<timestamp>_<name>/migration.sql` and records what
 the database now contains in `.migrations/schema-state.json`. Applied migrations
@@ -99,14 +96,14 @@ are immutable. Do not edit the generated files by hand.
 
 `bun run db:generate`:
 
-1. loads and builds the schema;
-2. compares the tables, triggers and views with the recorded state;
-3. writes a migration with the difference, or nothing if there is none:
-   new tables are created, a changed table is rebuilt keeping the rows of the
-   columns it still has, and removed tables are dropped;
-4. drops and recreates views and triggers around any table change, because
-   SQLite checks them when a table is renamed;
-5. updates the recorded state.
++ loads and builds the schema;
++ compares the tables, triggers and views with the recorded state;
++ writes a migration with the difference, or nothing if there is none:
+  new tables are created, a changed table is rebuilt keeping the rows of the
+  columns it still has, and removed tables are dropped;
++ drops and recreates views and triggers around any table change, because
+  SQLite checks them when a table is renamed;
++ updates the recorded state.
 
 `bun run db:migrate` applies the migrations not yet recorded in the `__migrations`
 table. Each runs in one transaction with foreign keys off, so rebuilding a
@@ -119,8 +116,7 @@ Running it twice with unchanged schemas must not create a second migration.
 `bun run db:reset` removes the development database and migration baseline. Use
 it only when you intentionally want to rebuild from scratch.
 
-### Foreign keys
-
+==== Foreign keys
 SQLite disables foreign-key enforcement unless it is enabled per connection.
 The application enables it in `src/helper/loadDb.ts`:
 
@@ -128,11 +124,9 @@ The application enables it in `src/helper/loadDb.ts`:
 PRAGMA foreign_keys = ON
 ```
 
-The test harness does the same after connecting. Without it, `ON DELETE SET
-NULL`, `ON DELETE RESTRICT`, and owner-to-user checks would not run.
+The test harness does the same after connecting. Without it, `ON DELETE SET NULL`, `ON DELETE RESTRICT`, and owner-to-user checks would not run.
 
-## Tests
-
+=== Tests
 ```bash
 bun test
 ```
@@ -160,8 +154,7 @@ sorted order, build the schema, and call the Hono app through
 Tests do not use the development `.db` file, so they can run while the dev
 server is open.
 
-### Adding auth coverage
-
+==== Adding auth coverage
 Use the helpers instead of reimplementing OPAQUE:
 
 ```ts
@@ -182,21 +175,19 @@ const { sessionKey, finish } = await login(app, {
 For expiry and purge tests, update `key.expires_at` directly through the test
 row database.
 
-## Adding a schema
-
-1. Add `src/schema/<name>.yaml` holding a JSON Schema object.
-2. Use a unique `title`; it becomes the snake_case table name.
-3. Declare relations under `x-relations`.
-4. Run `bun run db:generate`.
-5. Inspect the generated migration.
-6. Run `bun run db:migrate`.
-7. Add seed and API tests if the resource should be user-visible.
+=== Adding a schema
++ Add `src/schema/<name>.yaml` holding a JSON Schema object.
++ Use a unique `title`; it becomes the snake\_case table name.
++ Declare relations under `x-relations`.
++ Run `bun run db:generate`.
++ Inspect the generated migration.
++ Run `bun run db:migrate`.
++ Add seed and API tests if the resource should be user-visible.
 
 The generator injects `id`, `updated_at`, and `owner`, so do not add them unless
 you need explicit control.
 
-### Hiding a resource or field
-
+==== Hiding a resource or field
 Set `"x-exposed": false` on the table, property, or relation. Hidden targets
 automatically hide relations that point at them. Hidden resources are absent
 from the catalog, views, queries, mutations, and generic routes.
@@ -205,24 +196,22 @@ The `key` table is hidden this way. If you add another hidden table, expose it
 through a dedicated service and route in `src/server/app.ts`, before the generic
 `/:type` routes.
 
-## Server startup
-
+=== Server startup
 `src/server/index.ts`:
 
-1. loads `.env`;
-2. requires `OPAQUE_SERVER_SETUP`;
-3. builds the schema from all system and user schemas;
-4. opens the Turso database with foreign keys enabled;
-5. creates the Hono app with the built schema, row database, and OPAQUE setup;
-6. serves it on `PORT` (default `5734`).
++ loads `.env`;
++ requires `OPAQUE_SERVER_SETUP`;
++ builds the schema from all system and user schemas;
++ opens the Turso database with foreign keys enabled;
++ creates the Hono app with the built schema, row database, and OPAQUE setup;
++ serves it on `PORT` (default `5734`).
 
 `createApp` accepts an optional `opaqueServerSetup`. Without it, auth routes are
 not registered, which keeps auth-free unit tests simple.
 
-## Conventions
-
+=== Conventions
 - JSON Schema is the source of truth.
-- Table and column names are snake_case.
+- Table and column names are snake\_case.
 - IDs are UUIDv7 blobs, exposed as canonical strings.
 - Every table has `id`, `updated_at`, and `owner`.
 - Generated files are not edited by hand.
@@ -233,30 +222,24 @@ not registered, which keeps auth-free unit tests simple.
 - `key.user` uses `RESTRICT` to preserve key attribution.
 - `owner` uses `SET NULL` to preserve rows when a user is deleted.
 
-## Troubleshooting
-
-### `OPAQUE_SERVER_SETUP is required`
-
+=== Troubleshooting
+==== `OPAQUE_SERVER_SETUP is required`
 Add the variable to `.env` and restart the server.
 
-### Database is locked
-
+==== Database is locked
 The dev server holds the development `.db` file. Tests use `:memory:` and do
 not touch it. If you run migration commands while the dev server is open, stop
 the server first.
 
-### A migration did not change
-
+==== A migration did not change
 Custom DDL only generates a migration when its hash changes. Confirm that the
 generated SQL actually differs. Applied migrations are never rewritten.
 
-### Foreign keys are not enforced
-
+==== Foreign keys are not enforced
 Check that the connection executed `PRAGMA foreign_keys = ON`. The app does this
 in `loadDb.ts`; custom connections must do it themselves.
 
-### Login always returns 401
-
+==== Login always returns 401
 Check that:
 
 - the registration flow finished successfully;
@@ -265,3 +248,4 @@ Check that:
 - `OPAQUE_SERVER_SETUP` did not change between registration and login.
 
 Changing the server setup invalidates existing registration records.
+

@@ -25,7 +25,7 @@ spec/              end-to-end tests through the app
   helpers/         test server, sign-in and client helpers
   unit/            unit tests by module
 design/            this book: one .typ file per chapter, book.typ, build.sh
-doc/               reference documentation for what is built
+doc/               generated API reference (bun run docs); not committed
 conformance/       planned: language-neutral conformance suites (v0.5)
 crates/            planned: Rust crates (v1.1)
 .github/workflows/ CI
@@ -36,7 +36,7 @@ AGENTS.md          entry point for agents; CLAUDE.md is a copy
 
 Generated and local files are not committed: `node_modules/`, `.migrations/`
 (the library's own development migrations), databases, `.env`,
-`design/book.pdf`. A project using SRS commits its `.srs/` folder, written by
+`design/book.pdf`, `doc/`. A project using SRS commits its `.srs/` folder, written by
 `srs init`.
 
 === Design book files
@@ -51,4 +51,5 @@ Generated and local files are not committed: `node_modules/`, `.migrations/`
   [`threat-model.typ`, `transport.typ`, `accounts.typ`, `requests.typ`, `lifecycle.typ`, `external-identity.typ`], [Part III],
   [`operations.typ`, `implementation.typ`, `roadmap.typ`], [Part IV],
   [`contributing.typ`, `layout.typ`, `decisions.typ`, `status.typ`], [Part V],
+  [`ref-schema.typ`, `ref-data-model.typ`, `ref-api.typ`, `ref-auth.typ`, `ref-deployment.typ`, `ref-development.typ`], [Part VI],
 )
