@@ -4,6 +4,7 @@ Secure Resource Server — turn JSON Schema files into a secure backend.
 Describe your data, and it generates the database, API, migrations,
 authentication, and authorization.
 
+
 No CRUD handlers. No hand-written SQL.
 
 ## What it does
@@ -79,7 +80,7 @@ DELETE /article/:id    delete an article
 
 - [Design](design/README.md) — goals, invariants, and key decisions.
 - [Documentation](doc/README.md) — schema reference, API, auth, access control, client, and operations.
-- [Development](doc/development.md) — setup, commands, migrations, and tests.
+- [Development](design/development.md) — setup, commands, migrations, and tests.
 
 Generated TypeScript API reference is written to `doc/` by `bun run docs`.
 
@@ -88,4 +89,4 @@ Generated TypeScript API reference is written to `doc/` by `bun run docs`.
 Early development, but the core is complete: schema generation, relations,
 views, migrations, JSON:API, OPAQUE authentication, and owner-based
 authorization with sharing, roles, and signing. See the
-[roadmap](doc/roadmap.md) for what is still planned.
+[roadmap](design/roadmap.md) for what is still planned.

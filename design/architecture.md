@@ -184,7 +184,7 @@ src/
   server/        Hono app, registry, queries, serializers, mutations, guards
 spec/            end-to-end API, auth, and client tests
 design/          goals and important design decisions
-doc/             detailed documentation and generated TypeDoc output
+doc/             generated TypeDoc API reference (hand-written in design/)
 .migrations/     generated migrations and schema-state.json
 ```
 
