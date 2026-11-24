@@ -35,7 +35,7 @@ generator derives everything else.
 
 === Generated types
 
-`srs init` writes `.srs/types.ts`: for each exposed resource, its attributes
+The `init` command writes `.srs/types.ts`: for each exposed resource, its attributes
 (read-only columns marked `readonly`, optional columns as `T | null`), its
 relationships, and a resource-object type, plus `Collection<T>` and `Single<T>`
 document types. The client uses them as type arguments:

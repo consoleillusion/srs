@@ -7,7 +7,7 @@ src/
   auth/            OPAQUE service, /key routes, signing, limits, OIDC, keys
     service/         registration, login and key handlers
   client/          browser-safe TypeScript client
-  console/         `srs console`: the browser page and its server
+  console/         the `console` command: the browser page and its server
   db/              schema loading, derivation, building, views, migrations,
                    backup and restore
     build/           columns, relations, DDL, plans, views
@@ -22,7 +22,8 @@ src/
   cli.ts           `srs` command: init, serve, console, backup, restore and more
   commands.ts      the commands behind the CLI
   index.ts         public library exports
-spec/              end-to-end tests through the app
+scripts/           `bun run try`
+spec/              end-to-end tests through the app, and the browser test
   helpers/         test server, sign-in and client helpers
   unit/            unit tests by module
 design/            this book: one .typ file per chapter, book.typ, build.sh
@@ -40,7 +41,7 @@ AGENTS.md          entry point for agents; CLAUDE.md is a copy
 Generated and local files are not committed: `node_modules/`, `.migrations/`
 (the library's own development migrations), databases, `.env`,
 `design/book.pdf`, `doc/`. A project using SRS commits its `.srs/` folder, written by
-`srs init`.
+the `init` command.
 
 === Design book files
 

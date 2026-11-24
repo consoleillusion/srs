@@ -44,7 +44,7 @@ The same routes are reached in one of two ways, chosen with `SRS_TRANSPORT`.
 The HTTP end-to-end tests drive the server over HTTP only, so they serve as
 the conformance suite for any implementation (@implementation).
 
-`noise` is the default for `srs serve`, and for `createApp` whenever a key
+`noise` is the default for the `serve` command, and for `createApp` whenever a key
 bundle is given. `SRS_TRANSPORT=bearer` selects the bearer transport. In `noise` mode the server answers
 only these routes in the clear: `/healthz`, `/readyz`, `/noise/keys`,
 `/noise/handshake` and `/noise`. Every other request is refused, so nothing can

@@ -16,6 +16,18 @@ import { DEFAULT_MAX_BODY_BYTES, httpOptionsFromEnv } from './server/http.ts'
 import { createServerApp } from './server/start.ts'
 import { createServerKeys, createTransition, parseServerKeys } from './auth/server-keys.ts'
 
+/**
+ * How to run the CLI from the current folder, for messages that name a command:
+ * `bunx srs` where SRS is installed as a dependency, otherwise `bun <path to cli.ts>`.
+ */
+export const invocation =
+  (): string => {
+    const script = process.argv[1] ?? ''
+    if (script.includes('node_modules') || !script.endsWith('cli.ts')) return 'bunx srs'
+    const path = relative(process.cwd(), script)
+    return `bun ${path.startsWith('..') ? script : path}`
+  }
+
 export const defaultDir = '.srs'
 
 type ProjectConfig =
@@ -42,7 +54,7 @@ const readConfig =
     } catch (error) {
       const code = (error as NodeJS.ErrnoException).code
       if (code === 'ENOENT')
-        throw new Error(`No ${configPath(dir)}. Run \`srs init <schema…>\` first, in ${process.cwd()}.`)
+        throw new Error(`No ${configPath(dir)}. Run \`${invocation()} init <schema…>\` first, in ${process.cwd()}.`)
       // Anything else (permission denied, a bad mount) must not be reported as a missing file.
       throw new Error(
         `Cannot read ${configPath(dir)}: ${code ?? String(error)}. If the project is mounted into a `
@@ -66,7 +78,7 @@ export const init =
   async (options: { schemas: string[], dir?: string }) => {
     const dir = resolve(options.dir ?? defaultDir)
     if (options.schemas.length === 0)
-      throw new Error('Give init a schema folder or files, e.g. `srs init schemas`.')
+      throw new Error(`Give init a schema folder or files, e.g. \`${invocation()} init schemas\`.`)
 
     const loaded = await loadSchemas({ schemaDir: options.schemas })
     const { built } = await generateMigrations(join(dir, 'migrations'), loaded)
@@ -96,7 +108,7 @@ export const init =
         + `\nGive clients this fingerprint to pin:\n\n  ${created.keys.fingerprint}\n`)
     }
     console.log('Optional .env settings: DB_PATH (default .db), PORT (default 5734), SRS_ADMINS (comma-separated usernames).')
-    console.log('\nThen run `srs serve`. Run init again after any schema change.')
+    console.log(`\nThen run \`${invocation()} serve\`. Run init again after any schema change.`)
   }
 
 /** Start the server for the schemas recorded by init, refusing to run if they changed since. */
@@ -107,8 +119,7 @@ export const serve =
     const loaded = await loadSchemas({ schemaDir: config.schemas })
     if (schemaHash(loaded) !== config.schemaHash)
       throw new Error(
-        'The schemas changed since `init`. Run `srs init '
-        + `${config.schemas.join(' ')}\` again, then serve.`)
+        `The schemas changed since init. Run \`${invocation()} init ${config.schemas.join(' ')}\` again, then serve.`)
 
     const db = await openDatabase()
     const metricsPort = process.env.SRS_METRICS_PORT
@@ -238,5 +249,5 @@ export const consolePage =
       `SRS console: ${origin}\n`
       + `\nThe page and the server are different origins, so start the server with:\n`
       + `\n  SRS_CORS_ORIGINS=${origin}\n`
-      + '\nThen open the page, enter the server URL and the fingerprint printed by `srs init`, and connect.')
+      + '\nThen open the page, enter the server URL and the fingerprint printed by init, and connect.')
   }

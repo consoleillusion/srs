@@ -1,5 +1,5 @@
 /**
- * The browser side of `srs console`: connect to a server over the Noise
+ * The browser side of the `console` command: connect to a server over the Noise
  * transport, register or log in, and explore the API. Runs in any browser,
  * including on plain-HTTP pages where `crypto.subtle` is unavailable.
  *
@@ -36,8 +36,10 @@ const save =
     }
   }
 
-$('url').value = saved.url ?? (location.port === '5735' ? `${location.protocol}//${location.hostname}:5734` : location.origin)
-$('pin').value = saved.pin ?? ''
+// `?server=…&pin=…` in the page address fills the form, so a link can carry them.
+const query = new URLSearchParams(location.search)
+$('url').value = query.get('server') ?? saved.url ?? (location.port === '5735' ? `${location.protocol}//${location.hostname}:5734` : location.origin)
+$('pin').value = query.get('pin') ?? saved.pin ?? ''
 $('username').value = saved.username ?? ''
 $('crypto').textContent =
   globalThis.crypto?.subtle ? '' : 'crypto.subtle unavailable on this page: using pure-JS cryptography'
@@ -102,15 +104,21 @@ const template =
 
 const selected = () => catalog.find(x => x.type === $<HTMLSelectElement>('resource').value)
 
+/** Load the resource list. Returns false when the server wants a login first. */
 const loadCatalog =
   async () => {
     const response = await send('GET', '/')
+    if (response?.status === 401) {
+      $('response').textContent = 'This server needs a login before it lists its resources.'
+      return false
+    }
     const resources = (response?.json<{ meta?: { resources?: CatalogEntry[] } }>()?.meta?.resources) ?? []
-    if (resources.length === 0) return
+    if (resources.length === 0) return true
     catalog = resources
     const select = $<HTMLSelectElement>('resource')
     select.replaceChildren(...catalog.map(x => new Option(x.readOnly ? `${x.type} (read-only)` : x.type, x.type)))
     $<HTMLTextAreaElement>('body').value = JSON.stringify(template(catalog[0]!), null, 2)
+    return true
   }
 
 $('connect').onclick = async () => {
@@ -128,7 +136,8 @@ $('connect').onclick = async () => {
   try {
     await client.request('/healthz')
     status('server-status', 'Connected through an encrypted channel to the pinned server.', 'good')
-    await loadCatalog()
+    if (!await loadCatalog())
+      status('account-status', 'Register or log in to see the resources.')
   } catch (error) {
     client = undefined
     status('server-status', `Could not connect: ${String(error)}`, 'bad')
@@ -142,7 +151,7 @@ $('trust').onclick = async () => {
     if (!body.fingerprint) throw new Error('no fingerprint in the response')
     $('pin').value = body.fingerprint
     save()
-    status('server-status', 'Fingerprint taken from the server. Check it against srs init if you can.', '')
+    status('server-status', 'Fingerprint taken from the server. Check it against the one init printed, if you can.', '')
   } catch (error) {
     status('server-status', `Could not read the server key: ${String(error)}`, 'bad')
   }
@@ -159,8 +168,9 @@ const account =
       if (action === 'register') await client.register(input)
       else await client.login(input)
       $('password').value = ''
-      status('account-status', `Logged in as ${input.username}. Every request is now signed.`, 'good')
+      // Load the resources before saying so, so the explorer is ready when the status appears.
       await loadCatalog()
+      status('account-status', `Logged in as ${input.username}. Every request is now signed.`, 'good')
     } catch (error) {
       status('account-status', String((error as Error).message ?? error), 'bad')
     }

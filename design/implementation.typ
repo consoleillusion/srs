@@ -111,7 +111,7 @@ interface, so each can be swapped without touching the others.
   window, binder, identity-key wrapping, certificates, request signing. Built
   for Node-API (server) and WebAssembly (client).
 + *Schema engine* (`srs-schema`): loading, deriving and building schemas, and
-  planning migrations. Also gives a Rust `srs init`.
+  planning migrations. Also gives a Rust `init` command.
 + *Query compiler* (`srs-query`): JSON:API query parameters and access rules to
   SQL and parameters.
 + *Access decisions*: owner, visibility, share, role and inheritance checks.

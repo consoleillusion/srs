@@ -30,6 +30,8 @@ bun run docs:check  # every export documented
 bun run design      # the book compiles
 ```
 
+- every command shown in the book or the README has been run as written, in
+  a fresh checkout, and its output matches what the text says;
 - the book is updated: the task set to *Done*, chapter status lines corrected,
   new gaps listed in @status;
 - the reference chapters (Part VI) and TSDoc comments describe any changed

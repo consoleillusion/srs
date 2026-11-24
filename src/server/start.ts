@@ -27,16 +27,16 @@ export const createServerApp =
     if (transport === 'noise') {
       if (!process.env.SRS_SERVER_KEYS)
         throw new Error(
-          'SRS_SERVER_KEYS is required for the Noise transport; run `srs init` to create it, '
+          'SRS_SERVER_KEYS is required for the Noise transport; run the init command (`bun src/cli.ts init <schemas>` in this repository) to create it, '
           + 'or set SRS_TRANSPORT=bearer to serve over TLS instead.')
       if (!opaqueServerSetup)
-        throw new Error('OPAQUE_SERVER_SETUP is required; run `srs init` to create it.')
+        throw new Error('OPAQUE_SERVER_SETUP is required; run the init command (`bun src/cli.ts init <schemas>` in this repository) to create it.')
       if (issuer)
         throw new Error('SRS_OIDC_ISSUER needs SRS_TRANSPORT=bearer: identity-provider tokens cannot be used in the Noise transport.')
     }
     if (!opaqueServerSetup && !issuer)
       throw new Error(
-        'Set OPAQUE_SERVER_SETUP (run `srs init` to create one) for built-in '
+        'Set OPAQUE_SERVER_SETUP (the init command creates one) for built-in '
         + 'accounts, SRS_OIDC_ISSUER to sign users in through an identity provider, or both.')
 
     const oidc =

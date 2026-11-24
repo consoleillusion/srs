@@ -44,7 +44,7 @@ export type KeyChangeListener = (fingerprint: string) => void
 export type SecureClientOptions =
   { /** The server's base URL; defaults to the current origin. */
     baseUrl?: string
-  /** The `srs1:` fingerprint of the server's key bundle, as printed by `srs init`. */
+  /** The `srs1:` fingerprint of the server's key bundle, as printed by the `init` command. */
   , serverKey: string
   /** Fetch implementation; defaults to `globalThis.fetch`. */
   , fetch?: FetchLike

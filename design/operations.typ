@@ -13,11 +13,11 @@ process's memory.
 
 === Setup
 
-`srs init <schemas>` generates migrations, records the schema fingerprint, and
+The `init <schemas>` command generates migrations, records the schema fingerprint, and
 creates the secrets that do not exist yet: the OPAQUE server setup
 (`OPAQUE_SERVER_SETUP`) and, for the Noise transport, the server key bundle
 (`SRS_SERVER_KEYS`). It prints the server key fingerprint to
-give to clients. `srs serve` applies migrations and starts the server.
+give to clients. The `serve` command applies migrations and starts the server.
 
 === Secrets
 
@@ -56,7 +56,7 @@ started with a different key bundle is rejected by every pinned client.
 The server takes a consistent copy of the live database on a timer
 (`SRS_BACKUP_DIR`), writes it under a temporary name, checks it with
 `PRAGMA integrity_check` and for the system tables, and only then renames it
-into place. `srs restore` verifies a backup and swaps it in with one rename,
+into place. The `restore` command verifies a backup and swaps it in with one rename,
 with the server stopped. Backups contain wrapped identity keys and OPAQUE
 records; both are useless without the passwords and the OPAQUE setup, but
 backups should still be protected like the database.

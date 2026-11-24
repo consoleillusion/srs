@@ -6,15 +6,15 @@ the matching parts are built.
 
 === Decision
 
-`srs import <source> --owner <username> [--out schemas]` reads an existing
+`bun src/cli.ts import <source> --owner <username> [--out schemas]` reads an existing
 database and gives it an SRS API in two steps:
 
 + *Schemas.* It writes one JSON Schema file per table into `--out`, from the
   table's columns, keys and foreign keys. The files are ordinary schemas: the
   user reviews them, adds `x-access` rules, and can change anything before
   continuing.
-+ *Data.* `srs init` builds the SRS database from those schemas, adding SRS's
-  own columns, system tables and views. `srs import --data` then copies the
++ *Data.* The `init` command builds the SRS database from those schemas, adding SRS's
+  own columns, system tables and views. `import --data` then copies the
   rows across. The source database is only ever read.
 
 Copying, rather than serving the source database in place, keeps the source

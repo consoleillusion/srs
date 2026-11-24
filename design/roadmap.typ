@@ -30,7 +30,7 @@ Status: *Implemented* — this is the live list of work.
   table.header([*Series*], [*Goal*], [*State*]),
   [v0.1], [Core: schema to tables, views, migrations, JSON:API, OPAQUE accounts, access control], [Done],
   [v0.2], [Production hardening of the current server], [In progress (`v0.2.0` done)],
-  [v0.3], [Secure transport and accountable accounts, in TypeScript], [In progress],
+  [v0.3], [Secure transport and accountable accounts, in TypeScript], [Done],
   [v0.4], [Schema authoring workflow and existing databases], [In progress],
   [v0.5], [Conformance suites], [In progress],
   [v0.6], [Wire-format freeze and real use], [Later],
@@ -52,8 +52,8 @@ TypeScript client.
 
 Built in `v0.2.0`: request body limit, CORS, security headers, request rate limit,
 proxy-aware client address, request logging with ids, health and readiness
-routes, graceful shutdown, scheduled verified backups, `srs backup` and
-`srs restore`, CI, container image, deployment reference, OIDC bearer tokens.
+routes, graceful shutdown, scheduled verified backups, the `backup` command and
+the `restore` command, CI, container image, deployment reference, OIDC bearer tokens.
 
 #table(
   columns: (auto, 1fr, 1.3fr, auto),
@@ -77,7 +77,7 @@ its attack tests from the list in @status as it goes.
   columns: (auto, 1fr, 1.3fr, auto),
   table.header([*Version*], [*Task*], [*Done when*], [*State*]),
   [v0.3.0], [Encoding helpers], [Length-prefixed field encoding and the fixed certificate layout (@certificates), with fixtures in `conformance/protocol/encoding/`. Depends on v0.5.0, which defines the fixture format.], [Done],
-  [v0.3.1], [Server key bundle], [`srs init` creates the bundle when `SRS_SERVER_KEYS` is unset and prints the `srs1:` fingerprint; `GET /noise/keys` serves the bundle; fingerprint fixtures exist.], [Done],
+  [v0.3.1], [Server key bundle], [the `init` command creates the bundle when `SRS_SERVER_KEYS` is unset and prints the `srs1:` fingerprint; `GET /noise/keys` serves the bundle; fingerprint fixtures exist.], [Done],
   [v0.3.2], [Noise NK handshake], [`POST /noise/handshake` works; the implementation passes the published `Noise_NK_25519_ChaChaPoly_BLAKE2s` test vectors; handshake rate limit in place.], [Done],
   [v0.3.3], [Envelope and replay window], [`POST /noise` decrypts into an ordinary request and encrypts the response; replay, reorder, truncation and cross-channel tests pass.], [Done],
   [v0.3.4], [Strict mode], [`SRS_TRANSPORT=noise` serves only the clear routes in @http-api; a downgrade test passes.], [Done],
@@ -85,12 +85,13 @@ its attack tests from the list in @status as it goes.
   [v0.3.6], [Bound login and certificates], [Login checks the binder, creates login records and accepts certificates per @certificates; relayed-login and swapped-key tests pass.], [Done],
   [v0.3.7], [Resume], [A client resumes after a server restart without the password; a certificate for an ended login is refused.], [Done],
   [v0.3.8], [Signing and retention], [Every request after login is verified; audit rows retain signatures and bodies per @retention; an offline verifier script checks a retained signature from the database alone.], [Done],
-  [v0.3.9], [Client transport], [`createSecureClient({ baseUrl, serverKey })` speaks the Noise transport end to end against a real `srs serve` process over HTTP.], [Done],
+  [v0.3.9], [Client transport], [`createSecureClient({ baseUrl, serverKey })` speaks the Noise transport end to end against a real the `serve` command process over HTTP.], [Done],
   [v0.3.10], [Logout, devices, password change], [The routes in @lifecycle work, with tests.], [Done],
   [v0.3.11], [Revocation, admin reset, disabling users], [As specified in @lifecycle, including `SRS_ALLOW_RESET`, with tests.], [Done],
-  [v0.3.12], [Server key rotation], [`srs rotate-keys` and transition statements work; a forged statement is refused.], [Done],
-  [v0.3.13], [Browser check], [The secure client works in a real browser on a plain-HTTP page loaded from a trusted origin, with no `crypto.subtle`. Needs a person with a browser, using `srs console` (@ref-console).], [Next],
-  [v0.3.14], [Browser console], [`srs console` serves a page that connects to a pinned server, registers, logs in, and lists, creates, updates and deletes resources over the Noise transport (@ref-console).], [Done],
+  [v0.3.12], [Server key rotation], [the `rotate-keys` command and transition statements work; a forged statement is refused.], [Done],
+  [v0.3.13], [Browser check], [The secure client works in a real browser on a plain-HTTP page loaded from a trusted origin, with no `crypto.subtle`: `spec/browser.test.ts` drives the console in headless Chrome on a LAN address (@ref-console).], [Done],
+  [v0.3.14], [Browser console], [The `console` command serves a page that connects to a pinned server, registers, logs in, and lists, creates, updates and deletes resources over the Noise transport (@ref-console).], [Done],
+  [v0.3.15], [Try it], [`bun run try` starts a throwaway server and the console, configured for each other, and prints a link with the server URL and fingerprint filled in; the browser test runs it.], [Done],
 )
 
 === v0.4 — Schema authoring workflow
@@ -101,12 +102,12 @@ Makes adding a resource reliable for people and AI models. Independent of v0.3.
   columns: (auto, 1fr, 1.3fr, auto),
   table.header([*Version*], [*Task*], [*Done when*], [*State*]),
   [v0.4.0], [Schema validation], [Schema files are validated against a meta-schema of the supported keywords before any SQL is generated; every error names the file and the JSON pointer of the fault.], [Done],
-  [v0.4.1], [Type generation], [`srs init` writes TypeScript types for every exposed resource, used by the client.], [Done],
+  [v0.4.1], [Type generation], [the `init` command writes TypeScript types for every exposed resource, used by the client.], [Done],
   [v0.4.2], [Schema catalog], [The resource catalog at `GET /` describes each resource's attributes and relations.], [Done],
   [v0.4.3], [Templates], [Example schemas for common patterns (owned notes, shared documents, public catalog, chat with inherited messages) with tests that load them.], [Done],
   [v0.4.4], [Schema change guidance], [The schema reference explains which changes rebuild tables and which lose data.], [Done],
-  [v0.4.5], [Import schemas from SQLite], [`srs import <file.db> --out schemas` writes one schema per table following the mapping in @existing-databases, with a report of what it could not map; the written schemas pass the meta-schema and `srs init`.], [Next],
-  [v0.4.6], [Import rows], [`srs import --data` copies rows into the SRS database in one transaction: new ids, `source_id` kept, foreign keys rewritten, rows owned by `--owner`. The source is opened read-only.], [Later],
+  [v0.4.5], [Import schemas from SQLite], [`bun src/cli.ts import <file.db> --out schemas` writes one schema per table following the mapping in @existing-databases, with a report of what it could not map; the written schemas pass the meta-schema and the `init` command.], [Next],
+  [v0.4.6], [Import rows], [`import --data` copies rows into the SRS database in one transaction: new ids, `source_id` kept, foreign keys rewritten, rows owned by `--owner`. The source is opened read-only.], [Later],
 )
 
 === v0.5 — Conformance suites
@@ -159,10 +160,10 @@ Order and switching rules in @implementation. Starts after v1.0.0.
 #table(
   columns: (auto, 1fr, 1.3fr, auto),
   table.header([*Version*], [*Task*], [*Done when*], [*State*]),
-  [v1.2.0], [Database settings], [`SRS_DATABASE_URL` and `SRS_DATABASE_TOKEN` select the database (@implementation); with neither set, the embedded SQLite file is used as now.], [Later],
+  [v1.2.0], [Database settings], [`SRS_DATABASE_URL` and `SRS_DATABASE_TOKEN` select the database (@implementation); with neither set, the embedded SQLite file is used. Built after the Rust migration (v1.1), hosted SQLite included.], [Later],
   [v1.2.1], [Choose the SQL layer], [A decision row selects `sqlx`, `sea-query` or both.], [Later],
   [v1.2.2], [PostgreSQL], [Every suite passes against PostgreSQL.], [Later],
   [v1.2.3], [MySQL], [Every suite passes against MySQL.], [Later],
   [v1.2.4], [Several processes], [Open: shared replay windows, channel state and rate limits are designed before this is built.], [Open],
-  [v1.2.5], [Import from other databases], [`srs import` reads PostgreSQL and MySQL sources, by URL.], [Later],
+  [v1.2.5], [Import from other databases], [the `import` command reads PostgreSQL and MySQL sources, by URL.], [Later],
 )

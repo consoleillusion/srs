@@ -4,60 +4,59 @@ Status: *Implemented*.
 
 === Requirements
 - Bun 1.4 or newer;
-- a writable directory for the SQLite/Turso database;
-- an OPAQUE server setup value.
+- a writable folder for the SQLite database.
 
-=== Install
+=== Running the CLI
+
+In this repository the CLI is run as `bun src/cli.ts <command>`. Where SRS is
+installed as a dependency of another project, it is `bunx srs <command>`. The
+book names commands by their name alone (`init`, `serve`, `console`); the CLI
+prints its own correct invocation in its help and messages
+(`bun src/cli.ts --help`).
+
+=== Trying it
+
 ```bash
 bun install
+bun run try
 ```
 
-=== Environment
-Create `.env` in the project root:
+`bun run try` sets up a throwaway server on the sample schemas in
+`src/schema`, starts it and the browser console (@ref-console) configured for
+each other, and prints a link to open. Keys, data and migrations are kept in
+`.try/`; delete that folder to start again. Add `--host 0.0.0.0` to open the
+console from another machine.
+
+=== Running a server by hand
+
+These are the steps `bun run try` performs, run from the repository root:
 
 ```bash
-DB_PATH=.db
-PORT=5734
-OPAQUE_SERVER_SETUP=...
+# 1. Generate migrations and keys from a schema folder.
+bun src/cli.ts init src/schema
+
+# 2. Put the two printed secrets in .env, and allow the console's origin.
+#    init also prints the fingerprint (srs1:…) that clients pin.
+cat >> .env <<'END'
+OPAQUE_SERVER_SETUP=<printed by init>
+SRS_SERVER_KEYS=<printed by init>
+SRS_CORS_ORIGINS=http://127.0.0.1:5735
+END
+
+# 3. Start the server (it listens on port 5734).
+bun src/cli.ts serve
+
+# 4. In another terminal, start the console and open http://127.0.0.1:5735.
+bun src/cli.ts console
 ```
 
-Optional:
-
-```bash
-SCHEMA_DIR=./schemas      # directory of .json or .yaml schema files
-SRS_ADMINS=alice,bob      # usernames that always hold the admin role
-MIGRATE_ON_START=true     # set to false to apply migrations yourself
-```
-
-`.env.example` lists every setting, including request limits, an external
-identity provider and backups; @ref-deployment explains them.
-Either `OPAQUE_SERVER_SETUP` or `SRS_OIDC_ISSUER` is required.
-
-`.env` is gitignored. Never commit server secrets.
-
-Generate a server setup once:
-
-```bash
-bunx @serenity-kit/opaque create-server-setup
-```
-
-`OPAQUE_SERVER_SETUP` is required by `src/server/index.ts`. The server throws at
-startup if it is missing.
+`init` writes `.srs/migrations/`, `.srs/config.json` and `.srs/types.ts`, and
+never replaces keys that are already set. `serve` refuses to start when the
+schemas no longer match the recorded fingerprint, so run `init` again after a
+schema change. `.env.example` lists every setting; @ref-deployment explains
+them. `.env` is git-ignored: never commit it.
 
 === Commands
-When SRS is installed as a library in another project:
-
-```bash
-# generate migrations from a schema folder or files
-bun srs init schemas
-
-# apply migrations and start the server
-bun srs serve
-```
-
-`init` writes `.srs/migrations/`, `.srs/config.json`,
-and generated working files. `serve` refuses to start when the schemas no longer
-match the recorded fingerprint, so run `init` again after a schema change.
 
 For developing the library itself:
 
@@ -87,8 +86,6 @@ bun run dev
 # run the API server once
 bun run start
 ```
-
-To try a running server in a browser, use `bun srs console` (@ref-console).
 
 === Database and migrations
 The database file is `DB_PATH` (default `.db`). `bun run db:generate` writes a

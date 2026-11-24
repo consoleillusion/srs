@@ -18,8 +18,8 @@ edited by hand.
 - Objects no longer in the schema are dropped.
 - An unchanged schema produces no migration.
 - Each applied migration is recorded in `__migrations` and never changes.
-- `srs serve` refuses to start when the schemas differ from the fingerprint
-  recorded by `srs init`.
+- The `serve` command refuses to start when the schemas differ from the fingerprint
+  recorded by the `init` command.
 - CI generates migrations twice and fails if the second run finds changes.
 
 === Consequences

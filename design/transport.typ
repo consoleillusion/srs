@@ -24,7 +24,7 @@ channel by OPAQUE (@accounts), not by Noise.
 
 === Server keys <server-keys>
 
-`srs init` creates a server key bundle and prints its fingerprint:
+The `init` command creates a server key bundle and prints its fingerprint:
 
 - an X25519 static key for Noise;
 - an Ed25519 signing key, used to sign key rotations (@server-key-rotation)

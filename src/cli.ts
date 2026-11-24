@@ -4,36 +4,37 @@ import { config } from 'dotenv'
 
 config({ quiet: true })
 
-const { backup, consolePage, defaultDir, init, restore, rotateKeys, serve, verifySignatures } = await import('./commands.ts')
+const { backup, consolePage, defaultDir, init, invocation, restore, rotateKeys, serve, verifySignatures } = await import('./commands.ts')
 
-const usage = `srs: JSON Schema in, JSON:API server out
+const srs = invocation()
+const usage = `${srs}: JSON Schema in, JSON:API server out
 
-  srs init <schema…> [--dir ${defaultDir}]
+  ${srs} init <schema…> [--dir ${defaultDir}]
       Generate the database migrations for the schema folder(s) or file(s)
       into --dir, and print the settings to add to .env. Run it again after
       every schema change. An existing OPAQUE_SERVER_SETUP is never replaced.
 
-  srs serve [--dir ${defaultDir}] [--port 5734]
+  ${srs} serve [--dir ${defaultDir}] [--port 5734]
       Apply the migrations and start the server. Set SRS_BACKUP_DIR to take
       scheduled backups while it runs.
 
-  srs backup <file>
+  ${srs} backup <file>
       Write a verified copy of the database (DB_PATH). Needs the server stopped.
 
-  srs console [--port 5735] [--host 127.0.0.1]
+  ${srs} console [--port 5735] [--host 127.0.0.1]
       Serve a browser page for using a server: connect with its fingerprint,
       register, log in, and list, create, update and delete resources. Use
       --host 0.0.0.0 to open it from another machine.
 
-  srs rotate-keys [--days 30]
+  ${srs} rotate-keys [--days 30]
       Create a new server key bundle and a transition statement signed by the
       current one (SRS_SERVER_KEYS). Pinned clients follow it for --days days.
 
-  srs verify-signatures
+  ${srs} verify-signatures
       Check every retained request signature against its certificate and the
       user's identity key, from the database alone. Needs the server stopped.
 
-  srs restore <file> [--force]
+  ${srs} restore <file> [--force]
       Replace the database (DB_PATH) with a verified backup. Needs the server stopped.
 `
 

@@ -2,23 +2,33 @@
 
 Status: *Implemented*.
 
-`srs console` serves a browser page for using a server without writing a
+The `console` command serves a browser page for using a server without writing a
 client: connect to it, register, log in, and read and change resources. It uses
 the same secure client as any application (`createSecureClient`), so every
 request goes through the Noise transport and, after login, is signed.
 
 === Running it
 
-```bash
-# terminal 1: the API server, allowing the console's origin
-SRS_CORS_ORIGINS=http://127.0.0.1:5735 bun srs serve
+The quickest way, from the repository root:
 
-# terminal 2: the console page
-bun srs console
+```bash
+bun run try
 ```
 
-Open `http://127.0.0.1:5735`, enter the server URL (`http://127.0.0.1:5734`)
-and the fingerprint printed by `srs init`, and press _Connect_.
+It starts a throwaway server and the console together and prints a link with
+the server URL and fingerprint already filled in (@ref-development). Press
+_Connect_, then register.
+
+Against a server of your own, add the console's origin to the server's
+settings, `SRS_CORS_ORIGINS=http://127.0.0.1:5735`, restart it, and run:
+
+```bash
+bun src/cli.ts console      # bunx srs console where SRS is a dependency
+```
+
+Open `http://127.0.0.1:5735`, enter the server URL and the fingerprint printed
+by `init`, and press _Connect_. A link can fill both in:
+`http://127.0.0.1:5735/?server=http://10.0.0.5:5734&pin=srs1:…`.
 
 #table(
   columns: (auto, 1fr),
@@ -37,7 +47,8 @@ command prints the exact value.
   server_ fills in the fingerprint the server reports; use it only on a network
   you trust, since it is the step pinning protects. A signed key rotation
   updates the pin automatically.
-- *Account.* Register, log in and log out. The password is never stored; the
+- *Account.* Register, log in and log out. Servers in strict mode list their
+  resources only after login. The password is never stored; the
   server URL, fingerprint and username are kept in the browser between visits.
 - *Explorer.* Choose a resource from the catalog. _List_, _Get_, _Create_,
   _Update_ and _Delete_ run the matching JSON:API request; _Template_ fills in a
@@ -53,3 +64,11 @@ The page is served by your own machine. It is only as trustworthy as the
 origin it is loaded from (@threat-model): do not serve it over a network you do
 not trust. It works on plain-HTTP pages, where browsers withhold
 `crypto.subtle`, because the client uses pure JavaScript cryptography.
+
+=== Tests
+
+`spec/browser.test.ts` runs `bun run try` as a process and drives the console in
+headless Chrome through connect, register, create, update, list, a raw request,
+delete, logout and login: once on `127.0.0.1`, and once on the machine's LAN
+address over plain HTTP, where the page has no `crypto.subtle`. It is skipped
+when no Chrome is found; `CHROME_PATH` points it at one.

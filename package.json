@@ -1,6 +1,6 @@
 {
   "name": "resource-server",
-  "version": "0.3.14",
+  "version": "0.3.15",
   "description": "JSON Schema in, JSON:API server out (Bun, Hono, Turso/SQLite)",
   "type": "module",
   "bin": {
@@ -33,7 +33,8 @@
     "docs:check": "bunx typedoc --emit none",
     "typecheck": "tsc --noEmit && tsc --noEmit -p src/console",
     "audit": "bun audit",
-    "design": "sh design/build.sh"
+    "design": "sh design/build.sh",
+    "try": "bun scripts/try.ts"
   },
   "dependencies": {
     "@apidevtools/json-schema-ref-parser": "^16.0.7",
@@ -51,6 +52,7 @@
   },
   "devDependencies": {
     "@types/bun": "^1.4.4",
+    "playwright-core": "1.49",
     "typescript": "^7.0.2"
   }
 }

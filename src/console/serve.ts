@@ -1,5 +1,5 @@
 /**
- * `srs console`: serve a browser page for using a server over the Noise
+ * The `console` command: serve a browser page for using a server over the Noise
  * transport: connect, register, log in, and explore the API (design book,
  * Console). The page is bundled from `app.ts` when the command starts.
  *

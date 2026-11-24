@@ -7,7 +7,7 @@ backups, and restore.
 
 === One process per database
 The database file is locked by the process that opens it. A second process on
-the same file, including `srs backup`, fails to start rather than risk
+the same file, including the `backup` command, fails to start rather than risk
 corrupting it. Run one SRS instance per database; scale a single instance
 up rather than out. The container image declares `/data` and `/backups` as
 volumes for this reason.
@@ -21,7 +21,7 @@ podman run -p 5734:5734 --env-file .env --userns=keep-id \
   -v "$PWD":/project:ro,z -v srs-data:/data -v srs-backups:/backups srs
 ```
 
-`/project` holds your schema files and the `.srs/` folder written by `srs init`.
+`/project` holds your schema files and the `.srs/` folder written by the `init` command.
 `:z` relabels the mount so the container may read it on SELinux systems (Fedora,
 RHEL), and `--userns=keep-id` runs the server as your own user under rootless
 Podman, so it can read the files you own. Without them, the server cannot read
@@ -54,7 +54,7 @@ defaults.
   [Server key bundle for the Noise transport (`srs-keys-v1:` and 64 secret bytes). Changing it breaks every client pinned to its fingerprint],
   [`SRS_PREVIOUS_SERVER_KEYS`, `SRS_KEY_TRANSITION`],
   [none],
-  [Set together by `srs rotate-keys` during a key rotation; remove both after the stop date],
+  [Set together by the `rotate-keys` command during a key rotation; remove both after the stop date],
   [`SRS_TRANSPORT`],
   [`noise`],
   [`noise` serves everything through the encrypted channel and needs `SRS_SERVER_KEYS`; `bearer` serves routes directly and needs TLS and is the only mode that accepts identity-provider tokens],
@@ -156,12 +156,12 @@ renamed into place, so the folder never contains a half-written file. Copy the
 folder off the machine; a backup beside the database does not survive losing the
 disk.
 
-With the server stopped, `srs backup <file>` writes one verified copy by hand.
+With the server stopped, the `backup <file>` command writes one verified copy by hand.
 
 === Restore
 ```bash
 # stop the server first
-srs restore /backups/srs-2026-11-24T07-41-06.218Z.db --force
+bun src/cli.ts restore /backups/srs-2026-11-24T07-41-06.218Z.db --force
 # start the server
 ```
 

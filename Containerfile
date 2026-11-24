@@ -1,5 +1,5 @@
 # SRS server image. Mount your project (schemas plus the `.srs/` folder written
-# by `srs init`) at /project and your data at /data. From the project folder:
+# by the `init` command) at /project and your data at /data. From the project folder:
 #
 #   podman build -t srs -f /path/to/srs/Containerfile /path/to/srs
 #   podman run -p 5734:5734 --env-file .env --userns=keep-id \

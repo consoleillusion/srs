@@ -59,8 +59,8 @@ the user's password unlocks.
 
 === Uses
 
-- *Scaffolding a new application.* Write the schemas, run `srs init` and `srs
-  serve`, and the backend is done: a modern, standardised, secure JSON:API with
+- *Scaffolding a new application.* Write the schemas, run `init` and `serve`, and
+  the backend is done: a modern, standardised, secure JSON:API with
   accounts, ready for a web or mobile front end. The same server carries the
   project from prototype to production without a rewrite.
 - *An API over an existing database.* Import the tables of a database as

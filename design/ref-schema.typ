@@ -392,8 +392,8 @@ Any change to a table's definition rebuilds that table: a new table is
 created, the columns that exist in both the old and new definitions are copied
 across by name, and the old table is dropped. Each migration runs in one
 transaction, so a migration that fails changes nothing. Before running
-`srs init` against a schema change for a database with real data, take a backup
-(`srs backup`) and read the generated SQL in `.srs/migrations/`.
+the `init` command against a schema change for a database with real data, take a backup
+(the `backup` command) and read the generated SQL in `.srs/migrations/`.
 
 #table(
   columns: (1fr, 2fr),
@@ -416,7 +416,7 @@ These behaviours are tested in `spec/unit/db/schema-changes.test.ts`.
 === Templates
 
 `templates/` holds schema folders for common patterns. Copy one into a project
-and run `srs init` on it; each is tested end to end (`spec/templates.test.ts`).
+and run the `init` command on it; each is tested end to end (`spec/templates.test.ts`).
 
 #table(
   columns: (1fr, 2fr),

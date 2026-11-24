@@ -43,28 +43,43 @@ and readable only according to its access rules.
 - **Accountable records**: approvals, inspections, timesheets, logs — each change signed by the person who made it.
 - **Devices and AI agents**, each with its own account and every action attributable.
 - **Published datasets** that anyone can read and only editors change.
-- **An API over an existing database** (planned: `srs import`).
+- **An API over an existing database** (planned: an `import` command).
 
 The design book's first chapter, _Why SRS_, covers these and what SRS is not for.
 
 ## Quick start
 
+From a checkout of this repository:
+
 ```bash
-bun add github:consoleillusion/srs
-
-# 1. Generate migrations and server keys from your schema folder.
-bun srs init schemas
-
-# 2. Add the printed OPAQUE_SERVER_SETUP and SRS_SERVER_KEYS lines to .env,
-#    and note the server fingerprint (srs1:…) clients will pin.
-# 3. Apply migrations and start the server.
-SRS_CORS_ORIGINS=http://127.0.0.1:5735 bun srs serve
-
-# 4. In another terminal, open a browser console for the API.
-bun srs console
+bun install
+bun run try
 ```
 
-`srs init` writes generated migrations and a schema fingerprint to `.srs/`.
+That starts a throwaway server on the sample schemas in `src/schema`, and a
+browser console beside it, and prints a link with everything filled in. Press
+Connect, register, and use the API. `bun run try --host 0.0.0.0` lets you open
+the console from another machine.
+
+To run a server yourself (in this repository the CLI is `bun src/cli.ts`; in a
+project that depends on SRS it is `bunx srs`):
+
+```bash
+# 1. Generate migrations and keys from a schema folder.
+bun src/cli.ts init src/schema
+
+# 2. Put the printed OPAQUE_SERVER_SETUP and SRS_SERVER_KEYS lines in .env,
+#    plus SRS_CORS_ORIGINS=http://127.0.0.1:5735 for the console.
+#    Clients pin the printed fingerprint (srs1:…).
+
+# 3. Start the server on port 5734.
+bun src/cli.ts serve
+
+# 4. In another terminal, serve the console on http://127.0.0.1:5735.
+bun src/cli.ts console
+```
+
+`init` writes generated migrations and a schema fingerprint to `.srs/`.
 Commit that directory. Run `init` again after any schema change or package upgrade.
 
 Every exposed table is available under its snake_case name, through the
