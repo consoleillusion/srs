@@ -14,6 +14,46 @@ import type { Services } from './services.ts'
 type Collection =
   (c: AppContext, resource: ResourceMeta, extra?: Condition[]) => Promise<Response>
 
+/** Schema keywords repeated in the catalog for each attribute. */
+const ATTRIBUTE_KEYWORDS =
+  [ 'description', 'format', 'enum', 'minLength', 'maxLength', 'pattern', 'minimum', 'maximum'
+  , 'exclusiveMinimum', 'exclusiveMaximum', 'multipleOf', 'items', 'default' ] as const
+
+/**
+ * Describe a resource for the catalog: each attribute's type, whether it is
+ * required or read-only, and its limits; each relationship's target type and
+ * cardinality; and who may read and create rows. Enough for a client or an AI
+ * model to write valid documents without reading the schema files.
+ *
+ * @param resource - The resource.
+ */
+export const describeResource =
+  (resource: ResourceMeta) => {
+    const columns = new Map(resource.definition.columns.map(x => [x.columnName, x]))
+    const required = new Set(resource.definition.schema.required ?? [])
+    return (
+      { summary: resource.definition.schema.description ?? null
+      , access: { read: resource.access.read, create: resource.access.create, signed: resource.access.signed }
+      , attributes:
+          Object.fromEntries(resource.attributes.map(name => {
+            const column = columns.get(name)
+            const schema = column?.schema ?? {}
+            const type = Array.isArray(schema.type) ? schema.type.filter(x => x !== 'null')[0] : schema.type
+            return [name,
+              { type: type ?? 'string'
+              , required: required.has(name)
+              // Injected columns are server-managed, except visibility, which the owner sets.
+              , readOnly: schema.readOnly === true || (column?.injected === true && name !== 'visibility')
+              , ...Object.fromEntries(
+                  ATTRIBUTE_KEYWORDS.filter(k => schema[k] !== undefined).map(k => [k, schema[k]]))
+              }]
+          }))
+      , relationships:
+          Object.fromEntries(Object.values(resource.relationships).map(meta =>
+            [meta.label, { type: meta.type, cardinality: meta.cardinality }]))
+      })
+  }
+
 /**
  * Build the handlers for relationship, related-resource and catalog routes.
  *
@@ -131,6 +171,7 @@ export const relationshipHandlers =
                   , readOnly: resource.readOnly
                   , attributes: resource.attributes
                   , relationships: Object.keys(resource.relationships)
+                  , description: describeResource(resource)
                   }))
               }
             })

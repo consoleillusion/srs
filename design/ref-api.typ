@@ -97,6 +97,14 @@ Hidden tables, hidden columns, and hidden relations never appear in the catalog.
 When the server enforces sessions the catalog needs one too.
 The `owner` attribute appears on every exposed resource.
 
+
+Each resource in the catalog also carries `description`: a `summary` (the
+schema's description), its `access` (`read`, `create`, `signed`), each
+attribute's `type`, `required` and `readOnly` flags with its limits (`format`,
+`enum`, `minLength`, `maxLength`, `pattern`, `minimum`, `maximum`, `default`,
+`description`), and each relationship's target `type` and `cardinality`. That
+is enough to write a valid document without reading the schema files.
+
 === Query parameters
 Collections support:
 
