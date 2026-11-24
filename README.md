@@ -25,49 +25,50 @@ You write a schema:
 
 SRS gives you:
 
-- **Tables and relations** in Turso / SQLite, generated from the schema.
+- **Tables and relations** in an embedded SQLite database, with no other service to run.
 - **Migrations** that are deterministic and only change when the schema changes.
 - **A JSON:API** with filtering, sorting, pagination, sparse fieldsets, and includes.
-- **Authentication** with built-in OPAQUE accounts (passwords never reach the server), or bearer tokens from any OpenID Connect provider such as Keycloak, Authentik, Zitadel, Auth0 or Entra ID.
-- **Authorization** with row ownership, private/public visibility, sharing, roles, and audit logs.
-- **A TypeScript client** that works in browsers, Bun, and Node.
+- **Security without TLS**: every request is encrypted to a server key the client pins (Noise), and signed after login.
+- **Accounts** with OPAQUE, so passwords never reach the server, and every write is signed by the user's own key and kept.
+- **Authorization** with row ownership, private/public visibility, sharing, roles, and an append-only audit log.
+- **A TypeScript client** that works in browsers, Bun, and Node, and a browser console for trying the API.
 
 Every resource gets sensible defaults: private by default, owned by its creator,
 and readable only according to its access rules.
 
 ## What you can use it for
 
-SRS is a good fit when you need a backend quickly and mostly need standard
-resource CRUD:
+- **Scaffolding**: from schema files alone, a complete, standard, secure API for a web or mobile app, from prototype to production.
+- **Internal tools and home labs** on networks where setting up TLS is impractical.
+- **Accountable records**: approvals, inspections, timesheets, logs — each change signed by the person who made it.
+- **Devices and AI agents**, each with its own account and every action attributable.
+- **Published datasets** that anyone can read and only editors change.
+- **An API over an existing database** (planned: `srs import`).
 
-- prototypes, internal tools, and admin panels;
-- content sites and catalogs;
-- small SaaS apps where users own their data;
-- frontends and mobile apps that need a ready-made JSON:API;
-- projects that would otherwise rewrite the same auth, permissions, and CRUD code.
-
-It is not an ORM, a general SQL layer, or a replacement for custom business
-logic. Use it for the data and access layer, then add your own code for anything
-unusual.
+The design book's first chapter, _Why SRS_, covers these and what SRS is not for.
 
 ## Quick start
 
 ```bash
 bun add github:consoleillusion/srs
 
-# 1. Generate migrations from your schema folder.
+# 1. Generate migrations and server keys from your schema folder.
 bun srs init schemas
 
-# 2. Add the printed OPAQUE_SERVER_SETUP line to .env
-#    (or set SRS_OIDC_ISSUER and SRS_OIDC_AUDIENCE to use an identity provider).
+# 2. Add the printed OPAQUE_SERVER_SETUP and SRS_SERVER_KEYS lines to .env,
+#    and note the server fingerprint (srs1:…) clients will pin.
 # 3. Apply migrations and start the server.
-bun srs serve
+SRS_CORS_ORIGINS=http://127.0.0.1:5735 bun srs serve
+
+# 4. In another terminal, open a browser console for the API.
+bun srs console
 ```
 
 `srs init` writes generated migrations and a schema fingerprint to `.srs/`.
 Commit that directory. Run `init` again after any schema change or package upgrade.
 
-After that, every exposed table is available under its snake_case name:
+Every exposed table is available under its snake_case name, through the
+encrypted channel at `POST /noise`:
 
 ```text
 GET    /article        list articles
@@ -75,6 +76,13 @@ POST   /article        create an article
 GET    /article/:id    read one article
 PATCH  /article/:id    update an article
 DELETE /article/:id    delete an article
+```
+
+```ts
+import { createSecureClient } from 'srs/client'
+const client = createSecureClient({ baseUrl: 'http://10.0.0.5:5734', serverKey: 'srs1:…' })
+await client.login({ username: 'paul', password: '…' })
+const articles = await client.get('/article')
 ```
 
 ## Learn more
@@ -88,14 +96,10 @@ DELETE /article/:id    delete an article
 
 ## Status
 
-The core is complete: schema generation, relations, views, migrations,
-JSON:API, OPAQUE and OpenID Connect authentication, and owner-based
-authorization with sharing, roles, and signing. It runs as a single process per
-database, with request limits, health checks, request logging, scheduled
-verified backups and a restore command.
-
-The direction, roadmap, stack and protocol are defined in the
-[design book](design/README.md), which is the project's source of truth. Next
-on the roadmap: an encrypted, signed transport that is secure without TLS,
-built and stabilised in TypeScript, then a piece-by-piece move to a single Rust
-binary with a pluggable database.
+Built in TypeScript: schema generation, relations, views, migrations, the
+JSON:API, the Noise transport with OPAQUE accounts and signed requests, the
+account lifecycle, key rotation, access control, operations (limits, health,
+logging, metrics, backups), the browser console and a protocol conformance
+suite. Next: importing existing databases, the remaining conformance suites
+and a wire-format freeze, then a piece-by-piece move to a single Rust binary
+with pluggable databases. The [design book](design/README.md) has the roadmap.

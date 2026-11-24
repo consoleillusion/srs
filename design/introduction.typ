@@ -44,15 +44,17 @@ strings are joined with `‖`. Lengths in byte layouts are in bytes.
 
 === How the book is organised
 
-- *Part I, Project* — goals, stack and architecture.
-- *Part II, Data and API* — schema, migrations, views, access control and the
-  HTTP API.
+- *Part I, Project* — the problem SRS solves and its uses (@why), then goals,
+  stack and architecture.
+- *Part II, Data and API* — schema, migrations, views, importing existing
+  databases, access control and the HTTP API.
 - *Part III, Security* — the threat model and the protocol: transport, accounts,
   signed requests, account lifecycle, and the optional identity-provider mode.
 - *Part IV, Delivery* — operations, the implementation plan and the roadmap.
 - *Part V, Working on SRS* — contributor rules, repository layout, the
   decision log and current status.
 - *Part VI, Reference* — the schema keywords, data model, API, authentication
-  routes, deployment settings and development commands.
+  routes, deployment settings, development commands and the browser console.
 
-A newcomer should read Parts I and V first, then the chapters their task cites.
+Anyone deciding whether to use SRS should read @why. A newcomer to the code
+should read Parts I and V first, then the chapters their task cites.

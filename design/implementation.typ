@@ -124,6 +124,16 @@ interface, so each can be swapped without touching the others.
 
 === Stage 3: pluggable databases
 
+Choosing a database is one setting. With nothing set, SRS uses its embedded
+SQLite file and needs no other service; this stays the default.
+
+#table(
+  columns: (auto, 1fr),
+  table.header([*Setting*], [*Meaning*]),
+  [`SRS_DATABASE_URL`], [Where the database is: `file:path` for SQLite (the default is the `.srs` folder's file), `libsql://…` for a hosted SQLite service, `postgres://…` or `mysql://…`.],
+  [`SRS_DATABASE_TOKEN`], [The access token or password for a hosted database, kept out of the URL so it can come from a secret store.],
+)
+
 Only after Rust owns storage, `srs-store` gains a dialect layer for PostgreSQL
 and MySQL alongside SQLite. The differences it has to cover are known: JSON
 aggregation in views, UUID storage, the `updated_at` triggers, `RETURNING`

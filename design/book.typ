@@ -149,6 +149,7 @@
 // ── Book ───────────────────────────────────────────────────────────────
 #part("I", "Project",
   [What SRS is for, what it is built with, and how its parts fit together.])
+#include "why.typ"
 #include "introduction.typ"
 #include "goals.typ"
 #include "stack.typ"
@@ -159,6 +160,7 @@
 #include "schema.typ"
 #include "migrations.typ"
 #include "authored-views.typ"
+#include "existing-databases.typ"
 #include "access-control.typ"
 #include "http-api.typ"
 
@@ -192,3 +194,4 @@
 #include "ref-auth.typ"
 #include "ref-deployment.typ"
 #include "ref-development.typ"
+#include "ref-console.typ"

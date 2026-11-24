@@ -55,4 +55,7 @@ Add a row before changing a design rule. When a rule is replaced, mark its row
   [D045], [Server keys rotate through a transition statement signed by the old key, with a stop date; both keys work until then], [Pinned clients move without manual repinning, and a stolen-key forgery is no worse than the theft itself],
   [D046], [The protocol is checked by published test vectors, attack tests, conformance suites and real use; there is no formal model or outside review at this stage], [SRS is grassroots: a working implementation, checked over time, matters more than ceremony],
   [D047], [Conformance fixtures are frozen files checked by hand; no second implementation is kept to produce them], [Fewer moving parts and no extra language; published vectors still anchor the cryptography],
+  [D048], [An existing database is imported as schemas plus a copy of its rows, not served in place], [SRS needs its own columns and tables on every resource; adding them to a live database other programs use could break them, and the source stays read-only],
+  [D049], [The database is chosen by `SRS_DATABASE_URL` and `SRS_DATABASE_TOKEN`; embedded SQLite is the default], [One setting to move to a hosted database, and no external service needed to start],
+  [D050], [`srs console` is a separate page on its own port, reaching the server through CORS], [The API server serves no HTML, and the page is the same client any browser application would use],
 )
