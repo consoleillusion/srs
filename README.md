@@ -1,6 +1,6 @@
 # SRS
 
-Secure Resource Server — turn JSON Schema files into a secure backend.
+Standard Resource Server — turn JSON Schema files into a secure backend.
 Describe your data, and it generates the database, API, migrations,
 authentication, and authorization.
 

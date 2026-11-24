@@ -16,15 +16,15 @@
 #set page(
   paper: "a4",
   fill: bone,
-  margin: (x: 2.7cm, top: 3cm, bottom: 2.8cm),
+  margin: 2.5cm,
   header: context {
     let page-no = here().page()
     let starts = query(heading.where(level: 1).or(heading.where(level: 2)))
       .filter(h => h.location().page() == page-no)
     let chapters = query(heading.where(level: 2).before(here()))
     if starts.len() == 0 and chapters.len() > 0 {
-      set text(size: 8pt, fill: muted, tracking: 0.04em)
-      align(right, upper(chapters.last().body))
+      set text(size: 8pt, fill: muted)
+      align(right, chapters.last().body)
     }
   },
   footer: context {
@@ -63,16 +63,24 @@
 // ── Headings: parts (level 1), chapters (2), sections (3), subsections (4)
 #set heading(numbering: none)
 
-#show heading.where(level: 1): it => {
-  v(30%)
-  text(size: 10pt, weight: 600, tracking: 0.25em, fill: accent, upper(it.supplement))
-  v(0.4em)
-  text(size: 34pt, weight: 300, it.body)
+// A title group: a small line above a large one, with a small line below,
+// set close together because they read as one unit.
+#let title-group(above, title, below, size: 34pt) = {
+  set text(top-edge: "cap-height", bottom-edge: "baseline")
+  set par(spacing: 0pt)
+  stack(
+    spacing: 14pt,
+    text(size: 12pt, weight: 600, above),
+    text(size: size, weight: 300, title),
+    if below != none { block(width: 75%, text(size: 12pt, fill: muted, below)) },
+  )
 }
+
+#show heading.where(level: 1): it => block(text(weight: 300, it.body))
 
 #show heading.where(level: 2): it => {
   pagebreak(weak: true)
-  v(1.8cm)
+  v(0.4cm)
   block(below: 1.6em, text(size: 24pt, weight: 500, it.body))
 }
 
@@ -98,15 +106,20 @@
 
 // ── Parts ──────────────────────────────────────────────────────────────
 #let part(numeral, title, summary) = page(header: none, footer: none)[
-  #heading(level: 1, supplement: [Part #numeral], title)
-  #place(top + left, dy: 47%, block(width: 70%, text(size: 11.5pt, fill: muted, summary)))
+  #v(1fr)
+  #title-group([Part #numeral], heading(level: 1, supplement: [Part #numeral], title), summary)
+  #v(1.4fr)
 ]
 
 // ── Contents ───────────────────────────────────────────────────────────
+#show outline: it => {
+  show link: set text(fill: ink)
+  it
+}
 #show outline.entry.where(level: 1): it => {
   v(1.3em, weak: true)
   link(it.element.location(), text(weight: 600)[
-    #text(fill: accent, it.element.supplement) #h(0.6em) #it.element.body #h(1fr) #it.page()
+    #it.element.supplement #h(0.6em) #it.element.body #h(1fr) #it.page()
   ])
 }
 #show outline.entry.where(level: 2): it => {
@@ -115,18 +128,14 @@
 }
 
 // ── Title page ─────────────────────────────────────────────────────────
-#page(header: none, footer: none, margin: (x: 2.7cm, y: 3cm))[
-  #place(bottom + left)[
-    #text(size: 10pt, weight: 600, tracking: 0.25em, fill: accent)[SECURE RESOURCE SERVER]
-    #v(0.5em)
-    #text(size: 44pt, weight: 300)[SRS design]
-    #v(0.3em)
-    #text(size: 13pt, fill: muted)[Goals, rules, protocol and roadmap]
-  ]
+#page(header: none, footer: none)[
+  #place(bottom + left, title-group(
+    [Standard Resource Server], [SRS design], [Goals, rules, protocol and roadmap], size: 44pt,
+  ))
 ]
 
 #page(header: none)[
-  #v(1.8cm)
+  #v(0.4cm)
   #text(size: 24pt, weight: 500)[Contents]
   #v(1.2em)
   #outline(title: none, depth: 2, indent: 1.4em)

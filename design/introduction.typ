@@ -2,7 +2,7 @@
 
 Status: *Implemented* — this book is maintained.
 
-SRS (Secure Resource Server) turns a folder of JSON Schema files into a
+SRS (Standard Resource Server) turns a folder of JSON Schema files into a
 backend: database tables, relations, views, migrations, a JSON:API, user
 accounts and per-row access control. Application authors write schema, not
 CRUD handlers. It is meant to be run by anyone with one command, including on
