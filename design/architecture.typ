@@ -1,6 +1,8 @@
 = Architecture <architecture>
 
-Status: *Implemented*. The transport layer is *Specified* (@transport).
+Status: *Implemented* in TypeScript on Bun. The transport layer is
+*Specified* (@transport); the Rust implementation is *Specified*
+(@implementation).
 
 == Generation
 
@@ -38,7 +40,8 @@ it to the same application, so resource routes do not depend on the transport.
 
 == Storage
 
-One SQLite-compatible database file (Turso), opened by one process. Users,
+One SQLite-compatible database file (Turso), opened by one process.
+PostgreSQL and MySQL are planned once Rust owns storage (@implementation). Users,
 OPAQUE records, identity public keys, login records, session certificates,
 retained signatures and the audit log are stored there. Channel keys and replay
 windows are held in memory only.
@@ -49,3 +52,7 @@ Generation, storage, HTTP, transport and accounts are separate modules. The
 transport knows nothing about resources; resource handlers know nothing about
 encryption; the account layer is the only code that touches OPAQUE and identity
 keys.
+
+These boundaries are also the units of replacement: the server is written in
+TypeScript and is replaced by Rust one module at a time, in the order and with
+the checks given in @implementation.

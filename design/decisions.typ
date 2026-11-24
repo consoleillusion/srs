@@ -36,4 +36,11 @@ Add a row before changing a design rule. When a rule is replaced, mark its row
   [D026], [Strict mode: under `noise`, nothing but the handshake, key bundle and health routes is served in the clear], [No downgrade to an unencrypted route],
   [D027], [Retired and revoked keys, certificates and retained signatures are never deleted; users that own keys are not deleted], [Retained signatures must stay verifiable],
   [D028], [The protocol joins are specified in this book before code is written, and the code follows the book], [The joins between standard parts are where protocol bugs occur],
+  [D029], [SRS is completed and stabilised in TypeScript first; that implementation is the reference], [Settle the protocol and API where change is cheap, and give Rust something to be checked against],
+  [D030], [Rust replaces the server one module at a time, inside the Bun process through Node-API, each behind an `SRS_IMPL_<PIECE>` switch], [The database lock rules out two processes; SRS keeps working at every step and a faulty piece can be switched back],
+  [D031], [Every replaceable piece has a language-neutral conformance suite that both implementations must pass, plus differential tests while both exist], [Equivalence is proved by tests, not assumed],
+  [D032], [The wire format is frozen and versioned before Rust replaces any protocol code], [Two implementations can only agree on a fixed target],
+  [D033], [The client's API stays TypeScript; its cryptography may use the WebAssembly build of the Rust protocol crate], [Clients must be TypeScript or WebAssembly; one protocol implementation on both sides removes a class of mismatch],
+  [D034], [Pluggable databases are added only after Rust owns storage], [The dialect layer is written once, in the final implementation],
+  [D035], [Rust pieces use vetted libraries for every primitive: `opaque-ke`, `snow`, `ed25519-dalek`, RustCrypto], [Rust is chosen because these exist; no primitive is written by hand],
 )

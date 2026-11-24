@@ -19,6 +19,8 @@ backups and restore.
 - Logout of all devices, device listing, password change, revocation, admin
   reset and server key rotation (@lifecycle).
 - Disabling users.
+- Conformance suites, the Rust crates, the single binary and pluggable
+  databases (@implementation).
 
 == Known gaps in what is built
 

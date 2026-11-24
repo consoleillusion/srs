@@ -30,5 +30,7 @@ specification meanings. Identifiers, settings and wire values are written in
 the data and API layers. @threat-model to @external-identity specify security:
 the attacker model, the encrypted transport, accounts and login, signed
 requests, the account lifecycle and the optional identity-provider mode.
-@operations covers running SRS, @decisions is the decision log, and @status
-lists what is built, what is specified and how the protocol will be verified.
+@operations covers running SRS. @implementation sets the build order: a
+stable TypeScript implementation first, then Rust piece by piece. @decisions
+is the decision log, and @status lists what is built, what is specified and
+how the protocol will be verified.

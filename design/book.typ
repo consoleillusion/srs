@@ -2,7 +2,10 @@
 
 #set document(title: "SRS design", author: "SRS")
 #set page(paper: "a4", margin: (x: 2.2cm, y: 2.4cm), numbering: "1")
-#set text(size: 10.5pt)
+#set text(
+  font: ("Inter", "Source Sans 3", "Fira Sans", "Noto Sans", "DejaVu Sans", "Liberation Sans", "Arial"),
+  size: 10.5pt,
+)
 #set par(justify: true)
 #set heading(numbering: "1.1")
 #set table(inset: 6pt, stroke: 0.5pt + luma(180))
@@ -40,5 +43,6 @@
 #include "lifecycle.typ"
 #include "external-identity.typ"
 #include "operations.typ"
+#include "implementation.typ"
 #include "decisions.typ"
 #include "status.typ"

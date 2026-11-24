@@ -20,7 +20,8 @@ with one command, on the internet or on an internal network without TLS.
 - *Accountable writes.* A signed request can be traced to a key that only the
   user's password unlocks, and that the server cannot forge (@requests).
 - *Simple to run.* One process, one database file, settings in environment
-  variables, no external services required.
+  variables, no external services required. The end state is a single static
+  binary that can also use PostgreSQL or MySQL (@implementation).
 - *Deterministic generation.* The same schemas produce the same database objects
   and SQL in the same order.
 - *One runtime contract.* Migration generation and the running server use the
@@ -32,6 +33,8 @@ with one command, on the internet or on an internal network without TLS.
   joins between them, and those are specified here.
 - *Behaviour is tested.* Tests cover generation, migrations, the API,
   authorization, authentication, the transport and the client.
+  Language-neutral conformance suites define correct behaviour for every
+  replaceable piece, so any implementation can be checked against them.
 
 == Constraints
 
@@ -49,7 +52,8 @@ with one command, on the internet or on an internal network without TLS.
 
 - A general-purpose ORM, SQL console or query builder.
 - A policy language beyond the `x-access` model.
-- Horizontal scaling: one process serves one database (@operations).
+- Horizontal scaling on SQLite: one process serves one database
+  (@operations).
 - Protecting a client whose code is delivered over an untrusted network
   (@threat-model).
 - Treating the existence of a hidden row as public information.

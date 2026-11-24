@@ -5,7 +5,9 @@ Status: *Implemented*, except the Noise key files, which are *Specified*.
 == One process per database
 
 The database file is locked by the process that opens it, so a second process
-cannot open it. SRS runs one process per database and scales up, not out.
+cannot open it. SRS runs one process per database and scales up, not out. This
+holds for every database backend until shared channel and replay state is
+designed (@implementation).
 Replay windows, channel keys and the general request rate limit live in that
 process's memory.
 

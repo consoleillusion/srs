@@ -1,6 +1,6 @@
 # Roadmap
 
-Phases 0–6 are complete. Phases 7 and 8 remain.
+Phases 0–6 are complete. Phase 8 is mostly complete. Phases 7 and 9–12 remain.
 
 ## Phase 0 — Foundation and deterministic builder
 
@@ -264,6 +264,43 @@ Exit criteria:
 - the handshake, binding, and certificate steps are modelled and proved in a
   protocol analysis tool;
 - an external protocol review is complete.
+
+## Phase 10 — Stable TypeScript and conformance suites
+
+**Goal:** a stable TypeScript implementation that serves as the reference.
+
+Status: specified in the design book (section Implementation plan); not built.
+
+Deliverables:
+
+- language-neutral conformance suites for the protocol, schema engine, query
+  compiler, access decisions, and HTTP behaviour;
+- the end-to-end tests rewritten to drive the server over HTTP only;
+- the wire format frozen and versioned.
+
+Exit criteria:
+
+- Phase 9 complete, including the external review;
+- the TypeScript implementation passes every conformance suite;
+- at least one real deployment has run without a protocol change.
+
+## Phase 11 — Rust, piece by piece
+
+**Goal:** replace the server with Rust one module at a time, ending in a single
+static binary.
+
+Status: specified in the design book; not built.
+
+Order: protocol core, schema engine, query compiler, access decisions,
+storage, then HTTP and accounts. Each piece runs inside the Bun process through
+Node-API behind an `SRS_IMPL_<PIECE>` switch, and becomes the default only after
+passing its conformance suite and differential tests.
+
+## Phase 12 — Pluggable databases
+
+**Goal:** PostgreSQL and MySQL alongside SQLite, once Rust owns storage.
+
+Status: specified in the design book; not built.
 
 ## Current status
 
