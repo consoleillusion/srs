@@ -38,4 +38,4 @@ x-relations:
     column: id
     cardinality: one
     foreignKey: user_id
-    onDelete: cascade
+    onDelete: restrict

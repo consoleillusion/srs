@@ -58,7 +58,7 @@ routes, graceful shutdown, scheduled verified backups, `srs backup` and
 #table(
   columns: (auto, 1fr, 1.3fr, auto),
   table.header([*Version*], [*Task*], [*Done when*], [*State*]),
-  [v0.2.1], [Make `key.user` `onDelete: restrict`], [The system schema says `restrict`; a migration is generated; a test shows deleting a user who owns keys fails with `409`.], [Next],
+  [v0.2.1], [Make `key.user` `onDelete: restrict`], [The system schema says `restrict`; a migration is generated; a test shows deleting a user who owns keys fails with `409`.], [Done],
   [v0.2.2], [Verify CI on GitHub], [The workflow passes on a push to the repository.], [Next],
   [v0.2.3], [Verify the container image], [`docker build` succeeds; a container with a mounted project serves `/readyz` as `200`, takes a backup, and stops cleanly on `SIGTERM`. Steps recorded in `doc/deployment.md`.], [Next],
   [v0.2.4], [Verify OIDC against a real provider], [A Keycloak or Kanidm instance issues a token that SRS accepts; the exact provider settings, including issuer and audience, are recorded in `doc/auth.md`.], [Next],
