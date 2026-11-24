@@ -24,6 +24,14 @@ Everything with state *Next*, *Later* or *Open* in @roadmap.
 
 === Open questions
 
+- Where the expected outputs of the schema-engine, query-compiler and access
+  suites (v0.5.2 to v0.5.4) come from. @implementation requires fixtures to
+  come from an implementation other than the one under test, as the protocol
+  fixtures do. For these suites that means a second schema engine and query
+  compiler, in Python, which is a large piece of work. The alternative is
+  approved golden files: produced once by the TypeScript implementation, read
+  and approved by a person, and changed only through review. That would need a
+  decision row relaxing the rule for these suites.
 - Whether providers likely to be used with SRS support DPoP, which would let
   provider users sign requests (@external-identity).
 
