@@ -3,20 +3,30 @@ import type { RowDatabase } from './database.ts'
 import { unauthorized } from './errors.ts'
 import { sessionKeyId } from '../auth/session-key.ts'
 import { canonicalUuid, uuidToBuffer } from './uuid.ts'
+import { resolveOidcUser, type OidcVerifier } from '../auth/oidc.ts'
 
 /**
  * Reads `Authorization: Bearer <sessionId>`, validates it against the hidden
  * `key` table, and sets `userId` on the Hono context. Any missing, malformed,
- * expired or consumed session is a 401.
+ * expired or consumed session is a 401. When an external identity provider is
+ * configured, a token shaped like a JWT is verified against it instead, and its
+ * user is created the first time the identity is seen. Those requests carry no
+ * client key, so resources that require signed requests reject them.
  */
 export const sessionMiddleware =
-  (db: RowDatabase) =>
+  (db: RowDatabase, oidc?: OidcVerifier) =>
   async (c: AppContext, next: Next) => {
     const header = c.req.header('authorization') ?? ''
     if (!header.startsWith('Bearer '))
       throw unauthorized('Session is required')
 
     const token = header.slice('Bearer '.length)
+    if (oidc && token.includes('.')) {
+      const claims = await oidc.verify(token)
+      c.set('userId', canonicalUuid(await resolveOidcUser(db, oidc.issuer, claims)))
+      c.set('oidcSubject', claims.sub)
+      return next()
+    }
     try {
       uuidToBuffer(token)
     } catch {

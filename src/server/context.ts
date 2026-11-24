@@ -9,6 +9,7 @@ export type Variables =
   , clientJwk?: unknown
   , signed?: boolean
   , roles?: string[]
+  , oidcSubject?: string
   }
 
 /** The Hono environment used by the resource server. */

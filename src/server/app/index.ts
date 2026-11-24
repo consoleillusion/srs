@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { registerAuthRoutes } from '../../auth/routes.ts'
+import type { OidcVerifier } from '../../auth/oidc.ts'
 import { createAuthService } from '../../auth/service/index.ts'
 import type { BuiltSchema } from '../../db/schema-types.ts'
 import type { AppContext, Env } from '../context.ts'
@@ -27,6 +28,10 @@ export type AppOptions =
   , requireSession?: boolean
   /** Usernames that always hold the "admin" role. */
   , admins?: string[]
+  /** Verifies bearer tokens from an external OpenID Connect provider, alongside OPAQUE sessions. */
+  , oidc?: OidcVerifier
+  /** Subjects of external identities that always hold the "admin" role. */
+  , oidcAdmins?: string[]
   /** Transport settings: body limit, CORS, proxy trust, rate limit and logging. */
   , http?: HttpOptions
   }
@@ -68,7 +73,7 @@ const optionsFor =
  * @returns A Hono app serving every exposed resource.
  */
 export const createApp =
-  ({ built, db, opaqueServerSetup, requireSession, admins = [], http = {} }: AppOptions): Hono => {
+  ({ built, db, opaqueServerSetup, requireSession, admins = [], oidc, oidcAdmins = [], http = {} }: AppOptions): Hono => {
     const s = createServices(built, db)
     const app = new Hono<Env>()
     applyHttp(app, db, http)
@@ -83,12 +88,14 @@ export const createApp =
             , audit: s.registry.get('audit_log') !== undefined
             }))
 
-    const requireAuth = requireSession ? sessionMiddleware(db) : undefined
+    const requireAuth = requireSession ? sessionMiddleware(db, oidc) : undefined
     const guard =
       createGuard(
         { db
         , registry: s.registry
         , adminNames: admins.map(x => x.toLowerCase())
+        , adminSubjects: oidcAdmins
+        , oidcIssuer: oidc?.issuer
         , requireAuth
         })
     for (const path of Object.values(paths)) app.use(path, guard)
