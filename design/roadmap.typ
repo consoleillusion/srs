@@ -83,7 +83,7 @@ its attack tests from the list in @status as it goes.
   [v0.3.4], [Strict mode], [`SRS_TRANSPORT=noise` serves only the clear routes in @http-api; a downgrade test passes.], [Done],
   [v0.3.5], [Identity keys and registration], [Registration creates the wrapped identity key with proof of possession; a test shows a key without proof is refused.], [Done],
   [v0.3.6], [Bound login and certificates], [Login checks the binder, creates login records and accepts certificates per @certificates; relayed-login and swapped-key tests pass.], [Done],
-  [v0.3.7], [Resume], [A client resumes after a server restart without the password; a certificate for an ended login is refused.], [Later],
+  [v0.3.7], [Resume], [A client resumes after a server restart without the password; a certificate for an ended login is refused.], [Done],
   [v0.3.8], [Signing and retention], [Every request after login is verified; audit rows retain signatures and bodies per @retention; an offline verifier script checks a retained signature from the database alone.], [Later],
   [v0.3.9], [Client transport], [`createSecureClient({ baseUrl, serverKey })` speaks the Noise transport end to end against a real `srs serve` process over HTTP.], [Later],
   [v0.3.10], [Logout, devices, password change], [The routes in @lifecycle work, with tests.], [Later],
