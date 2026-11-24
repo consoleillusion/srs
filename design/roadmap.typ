@@ -85,7 +85,7 @@ its attack tests from the list in @status as it goes.
   [v0.3.6], [Bound login and certificates], [Login checks the binder, creates login records and accepts certificates per @certificates; relayed-login and swapped-key tests pass.], [Done],
   [v0.3.7], [Resume], [A client resumes after a server restart without the password; a certificate for an ended login is refused.], [Done],
   [v0.3.8], [Signing and retention], [Every request after login is verified; audit rows retain signatures and bodies per @retention; an offline verifier script checks a retained signature from the database alone.], [Done],
-  [v0.3.9], [Client transport], [`createSecureClient({ baseUrl, serverKey })` speaks the Noise transport end to end against a real `srs serve` process over HTTP.], [Later],
+  [v0.3.9], [Client transport], [`createSecureClient({ baseUrl, serverKey })` speaks the Noise transport end to end against a real `srs serve` process over HTTP.], [Done],
   [v0.3.10], [Logout, devices, password change], [The routes in @lifecycle work, with tests.], [Later],
   [v0.3.11], [Revocation, admin reset, disabling users], [As specified in @lifecycle, including `SRS_ALLOW_RESET`, with tests.], [Later],
   [v0.3.12], [Server key rotation], [`srs rotate-keys` and transition statements work; a forged statement is refused.], [Later],
