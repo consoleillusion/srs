@@ -1,0 +1,22 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: Category
+type: object
+additionalProperties: false
+description: >
+  A catalog category. Anyone can read published categories; only holders of the
+  editor role can create or change them.
+x-access:
+  read: public
+  create: role
+  defaultVisibility: public
+  roles:
+    editor: true
+properties:
+  name:
+    description: Category name
+    type: string
+    minLength: 1
+    maxLength: 100
+    x-unique: true
+required:
+  - name

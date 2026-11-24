@@ -1,0 +1,23 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: Document
+type: object
+additionalProperties: false
+description: >
+  A document its owner can share with users or groups, read-only or editable.
+  Every change is audited, and over the Noise transport every write is signed
+  and its signature retained.
+x-access:
+  shareable: true
+  defaultVisibility: private
+  audited: true
+properties:
+  title:
+    description: Title
+    type: string
+    minLength: 1
+    maxLength: 200
+  content:
+    description: Document text
+    type: string
+required:
+  - title

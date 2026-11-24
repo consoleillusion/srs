@@ -386,6 +386,20 @@ This produces:
 - the `/article` JSON:API resource with a `tag` relationship;
 - an `owner` attribute on `/article`.
 
+=== Templates
+
+`templates/` holds schema folders for common patterns. Copy one into a project
+and run `srs init` on it; each is tested end to end (`spec/templates.test.ts`).
+
+#table(
+  columns: (1fr, 2fr),
+  table.header([*Template*], [*Pattern*]),
+  [`owned-notes`], [Private rows only their owner can read or change; the default, with no `x-access`.],
+  [`shared-documents`], [Rows the owner shares with users or groups, read-only or editable; every change audited.],
+  [`public-catalog`], [Rows anyone can read, that only holders of an `editor` role can create or change; a to-one relation between two resources.],
+  [`chat`], [A shareable parent whose children inherit read access from it (`x-access.inherit`).],
+)
+
 === Meta-schema
 
 Each schema is checked against the meta-schema in `src/db/meta-schema.ts`

@@ -25,6 +25,7 @@ spec/              end-to-end tests through the app
   helpers/         test server, sign-in and client helpers
   unit/            unit tests by module
 design/            this book: one .typ file per chapter, book.typ, build.sh
+templates/         example schema folders for common patterns
 doc/               generated API reference (bun run docs); not committed
 conformance/       language-neutral conformance suites
   protocol/          protocol cases by topic
