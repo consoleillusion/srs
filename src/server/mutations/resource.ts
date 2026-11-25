@@ -57,7 +57,7 @@ export const createResource =
 
     let inserted: Row | undefined
     try {
-      inserted = await insert(context.db, resource.table, assignments, table.idColumn)
+      inserted = await insert(context.db, resource.table, assignments, table.idColumn, idKindOf(table) === 'uuid')
     } catch (error) {
       throw writeError(error)
     }
