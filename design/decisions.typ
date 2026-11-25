@@ -26,7 +26,7 @@ Add a row before changing a design rule. When a rule is replaced, mark its row
   [D016], [The HTTP surface is generated JSON:API], [No per-resource controller code],
   [D017], [Hidden rows return `404`, not `403`], [Do not reveal that an unreadable row exists],
   [D018], [Documentation flows one way: the design book decides behaviour and holds the reference; code carries TSDoc comments; TypeDoc generates the API reference in `doc/`, which is never edited by hand], [Nothing is written twice, so nothing drifts],
-  [D019], [External identity providers are accepted as OIDC bearer tokens in the bearer transport only], [Provider tokens are bearer tokens and cannot be signed; they must not weaken the Noise transport],
+  [D019], [Replaced by D053], [—],
   [D020], [Backups run inside the server; restore runs offline], [The database file is locked by the process that opens it],
   [D021], [One server process per database], [The file lock makes a second process impossible],
   [D022], [The default transport is a Noise NK channel authenticated by a pinned server key], [Secure on networks without TLS; standard, analysed handshake],
@@ -60,4 +60,5 @@ Add a row before changing a design rule. When a rule is replaced, mark its row
   [D050], [The `console` command serves a separate page on its own port, reaching the server through CORS], [The API server serves no HTML, and the page is the same client any browser application would use],
   [D051], [JSON:API 1.1, Dhall schemas and post-quantum cryptography come after the Rust migration], [Each is easier to build once, in Rust, than twice; post-quantum is a new wire format and so v2.0],
   [D052], [Post-quantum changes are hybrid, never post-quantum alone], [The post-quantum algorithms are young; hybrid keeps today's security if they are broken and adds protection if they are not],
+  [D053], [Sign-in is built-in OPAQUE accounts only; there is no external identity provider], [SRS must run with no other service, and provider tokens are bearer tokens that cannot sign requests],
 )

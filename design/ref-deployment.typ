@@ -57,7 +57,7 @@ defaults.
   [Set together by the `rotate-keys` command during a key rotation; remove both after the stop date],
   [`SRS_TRANSPORT`],
   [`noise`],
-  [`noise` serves everything through the encrypted channel and needs `SRS_SERVER_KEYS`; `bearer` serves routes directly and needs TLS and is the only mode that accepts identity-provider tokens],
+  [`noise` serves everything through the encrypted channel and needs `SRS_SERVER_KEYS`; `bearer` serves routes directly and needs TLS],
   [`SRS_RETAIN_READS`],
   [`false`],
   [`true` keeps the signature of every signed read in the audit log, not only reads a resource lists in `x-access.signed`],
@@ -67,18 +67,6 @@ defaults.
   [`SRS_ADMINS`],
   [none],
   [Usernames that always hold the `admin` role],
-  [`SRS_OIDC_ISSUER`],
-  [none],
-  [Turns on sign-in through an external OpenID Connect provider],
-  [`SRS_OIDC_AUDIENCE`],
-  [none],
-  [Required with the issuer: the audience tokens must carry],
-  [`SRS_OIDC_JWKS_URI`],
-  [discovered],
-  [Signing-key URL, when the provider has no discovery document],
-  [`SRS_OIDC_ADMIN_SUBJECTS`],
-  [none],
-  [Provider `sub` values that always hold the `admin` role],
   [`SRS_MAX_BODY_BYTES`],
   [`1048576`],
   [Largest accepted request body],
@@ -105,9 +93,8 @@ defaults.
   [Newest backups to keep],
 )
 
-The server refuses to start when neither `OPAQUE_SERVER_SETUP` nor
-`SRS_OIDC_ISSUER` is set, or when the issuer is unreachable, is not https
-(localhost excepted), or has no audience.
+The server refuses to start without `OPAQUE_SERVER_SETUP`, and, in the
+`noise` transport, without `SRS_SERVER_KEYS`.
 
 === Behind a reverse proxy
 Terminate TLS at the proxy and set `SRS_TRUSTED_PROXY_HOPS` to the number of
@@ -175,9 +162,3 @@ and query it.
 
 Back up `OPAQUE_SERVER_SETUP` separately in a secret store. A database restored
 without it cannot log built-in users in.
-
-=== External identity provider
-Set `SRS_OIDC_ISSUER` and `SRS_OIDC_AUDIENCE` to accept bearer tokens from any
-OpenID Connect provider (Keycloak, Authentik, Zitadel, Auth0, Entra ID, Okta,
-Google and others). See @ref-auth.
-

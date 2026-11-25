@@ -15,7 +15,7 @@ Status: *Implemented* — kept current with every change.
   session certificates, resume, every request signed and retained, an offline
   signature verifier, and the full account lifecycle, including revocation,
   admin resets, disabling users and server key rotation.
-- The bearer transport for TLS deployments, with optional OIDC bearer tokens.
+- The bearer transport for TLS deployments.
 - Operations: request limits, rate limiting, health checks, request logging,
   metrics, backups and restore, graceful shutdown, CI and a container image.
 - The `console` command, a browser page for using a server over the Noise
@@ -43,8 +43,6 @@ Everything with state *Next*, *Later* or *Open* in @roadmap.
 
 === Open questions
 
-- Whether providers likely to be used with SRS support DPoP, which would let
-  provider users sign requests (@external-identity).
 
 === How the protocol is checked
 

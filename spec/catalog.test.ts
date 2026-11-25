@@ -21,7 +21,7 @@ describe('the resource catalog', () => {
     const { app } = await createTestServer({ auth: false })
     const text = await (await app.request('/', { headers: { accept: JSON_API } })).text()
     expect(text).not.toContain('"key"')
-    expect(text).not.toContain('oidc_subject')
+    expect(text).not.toContain('disabled_at')
     expect(text).not.toContain('disabled_at')
   })
 })

@@ -83,7 +83,7 @@ describe('resource-server init and serve', () => {
   test('serve refuses to start without the OPAQUE setup', () => {
     const result = run(['serve'], { SRS_TRANSPORT: 'bearer' })
     expect(result.code).toBe(1)
-    expect(result.out).toContain('Set OPAQUE_SERVER_SETUP')
+    expect(result.out).toContain('OPAQUE_SERVER_SETUP is required')
   })
 
   test('serve refuses an unknown transport', () => {

@@ -1,6 +1,5 @@
 import { Hono } from 'hono'
 import { registerAuthRoutes } from '../../auth/routes.ts'
-import type { OidcVerifier } from '../../auth/oidc.ts'
 import { publicBundle, type KeyTransition } from '../../auth/server-keys.ts'
 import type { ServerKeys } from '../../protocol/server-keys.ts'
 import { createAuthService } from '../../auth/service/index.ts'
@@ -37,10 +36,6 @@ export type AppOptions =
   , requireSession?: boolean
   /** Usernames that always hold the "admin" role. */
   , admins?: string[]
-  /** Verifies bearer tokens from an external OpenID Connect provider, alongside OPAQUE sessions. */
-  , oidc?: OidcVerifier
-  /** Subjects of external identities that always hold the "admin" role. */
-  , oidcAdmins?: string[]
   /** Transport settings: body limit, CORS, proxy trust, rate limit and logging. */
   , http?: HttpOptions
   /** The server key bundle; enables `GET /noise/keys` and the Noise transport. */
@@ -100,15 +95,13 @@ const optionsFor =
  * @returns A Hono app serving every exposed resource.
  */
 export const createApp =
-  ({ built, db, opaqueServerSetup, requireSession, admins = [], oidc, oidcAdmins = [], http = {}, serverKeys, rotation, transport = serverKeys ? 'noise' : 'bearer', retainReads = false, allowReset = true }: AppOptions): Hono => {
+  ({ built, db, opaqueServerSetup, requireSession, admins = [], http = {}, serverKeys, rotation, transport = serverKeys ? 'noise' : 'bearer', retainReads = false, allowReset = true }: AppOptions): Hono => {
     const s = createServices(built, db)
     const app = new Hono<Env>()
     applyHttp(app, db, http)
 
     if (transport === 'noise' && !serverKeys)
       throw new Error('The Noise transport needs a server key bundle')
-    if (transport === 'noise' && oidc)
-      throw new Error('Identity-provider tokens are only accepted in the bearer transport')
     if (transport === 'noise')
       app.use('*', async (c, next) => {
         // Strict mode: nothing but the clear routes is served outside a channel.
@@ -174,14 +167,12 @@ export const createApp =
           })
     }
 
-    const requireAuth = requireSession ? sessionMiddleware(db, oidc) : undefined
+    const requireAuth = requireSession ? sessionMiddleware(db) : undefined
     const guard =
       createGuard(
         { db
         , registry: s.registry
         , adminNames: admins.map(x => x.toLowerCase())
-        , adminSubjects: oidcAdmins
-        , oidcIssuer: oidc?.issuer
         , retainReads
         , requireAuth
         })

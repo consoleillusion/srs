@@ -51,10 +51,4 @@ describe('strict mode', () => {
     expect((await app.request('/tag', { headers: { accept: JSON_API } })).status).toBe(200)
   })
 
-  test('identity-provider tokens are refused in the Noise transport', async () => {
-    const { built, db } = await createTestServer({ session: true })
-    const { keys } = createServerKeys()
-    const oidc = { issuer: 'https://idp.example.test', verify: async () => ({ sub: 'x' }) }
-    expect(() => createApp({ built, db, opaqueServerSetup, serverKeys: keys, oidc })).toThrow('bearer transport')
-  })
 })

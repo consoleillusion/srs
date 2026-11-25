@@ -18,7 +18,6 @@ Status: *Implemented* for the TypeScript stack; the Rust stack is
   [Signatures], [`@noble/curves`], [Ed25519, verified with strict RFC 8032 rules; X25519 for Noise.],
   [Ciphers], [`@noble/ciphers`], [ChaCha20-Poly1305 and XChaCha20-Poly1305.],
   [Hashes], [`@noble/hashes`], [SHA-256, BLAKE2s, HMAC and HKDF.],
-  [Provider tokens], [`jose`], [OIDC JWT verification (@external-identity).],
   [Settings], [`dotenv`], [Loads `.env` for the CLI.],
   [API reference], [TypeDoc (`bunx typedoc`)], [Fails on any undocumented export.],
   [Design book], [Typst], [`bun run design`.],

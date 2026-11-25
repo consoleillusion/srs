@@ -49,7 +49,7 @@ strings are joined with `‖`. Lengths in byte layouts are in bytes.
 - *Part II, Data and API* — schema, migrations, views, importing existing
   databases, access control and the HTTP API.
 - *Part III, Security* — the threat model and the protocol: transport, accounts,
-  signed requests, account lifecycle, and the optional identity-provider mode.
+  signed requests and the account lifecycle.
 - *Part IV, Delivery* — operations, the implementation plan and the roadmap.
 - *Part V, Working on SRS* — contributor rules, repository layout, the
   decision log and current status.

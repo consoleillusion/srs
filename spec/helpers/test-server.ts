@@ -4,7 +4,6 @@ import type { Hono } from 'hono'
 import { buildSchema } from '../../src/db/build-schema.ts'
 import { loadSchemas } from '../../src/db/load-schemas.ts'
 import { applyMigrations } from '../../src/db/migrate.ts'
-import type { OidcVerifier } from '../../src/auth/oidc.ts'
 import { createApp } from '../../src/server/app/index.ts'
 import { createRowDatabase } from '../../src/server/database.ts'
 import { seedDocuments } from '../../src/seed/index.ts'
@@ -17,7 +16,7 @@ export const opaqueServerSetup =
   process.env.OPAQUE_SERVER_SETUP ?? opaque.server.createSetup()
 
 export const createTestServer =
-  async (options: { auth?: boolean, session?: boolean, admins?: string[], oidc?: OidcVerifier, oidcAdmins?: string[] } = {}) => {
+  async (options: { auth?: boolean, session?: boolean, admins?: string[] } = {}) => {
     const connection =
       await connect(
         ':memory:'
@@ -36,8 +35,6 @@ export const createTestServer =
           , opaqueServerSetup
           , requireSession: options.session === true
           , admins: options.admins
-          , oidc: options.oidc
-          , oidcAdmins: options.oidcAdmins
           })
 
     return { app, db, built, connection }

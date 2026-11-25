@@ -37,7 +37,6 @@ The same routes are reached in one of two ways, chosen with `SRS_TRANSPORT`.
   [Network], [Any, including without TLS], [TLS required],
   [Wire format], [Every request is `POST /noise` with an encrypted envelope], [Ordinary HTTP with `Authorization: Bearer`],
   [Signing], [Every request after login], [Per resource, with `x-srs-*` headers],
-  [External identity providers], [Not available], [Available (@external-identity)],
   [Status], [Implemented], [Implemented],
 )
 

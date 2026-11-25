@@ -29,21 +29,6 @@ properties:
     format: date-time
     readOnly: true
     x-exposed: false
-  oidc_issuer:
-    description: Issuer of the external identity this user signed in with, if any
-    type: string
-    readOnly: true
-    maxLength: 255
-    x-exposed: false
-  oidc_subject:
-    description: Subject of the external identity this user signed in with, if any
-    type: string
-    readOnly: true
-    maxLength: 255
-    x-exposed: false
-x-unique-constraints:
-  - - oidc_issuer
-    - oidc_subject
 x-relations:
   keys:
     table: key

@@ -4,7 +4,7 @@ Status: *Implemented*, except the folders marked _planned_.
 
 ```text
 src/
-  auth/            OPAQUE service, /key routes, signing, limits, OIDC, keys
+  auth/            OPAQUE service, /key routes, signing, limits, keys
     service/         registration, login and key handlers
   client/          browser-safe TypeScript client
   console/         the `console` command: the browser page and its server
@@ -52,7 +52,7 @@ the `init` command.
   [`build.sh`], [Compiles the book to `book.pdf`],
   [`introduction.typ`, `goals.typ`, `stack.typ`, `architecture.typ`], [Part I],
   [`schema.typ`, `migrations.typ`, `authored-views.typ`, `access-control.typ`, `http-api.typ`], [Part II],
-  [`threat-model.typ`, `transport.typ`, `accounts.typ`, `requests.typ`, `lifecycle.typ`, `external-identity.typ`], [Part III],
+  [`threat-model.typ`, `transport.typ`, `accounts.typ`, `requests.typ`, `lifecycle.typ`], [Part III],
   [`operations.typ`, `implementation.typ`, `roadmap.typ`], [Part IV],
   [`contributing.typ`, `layout.typ`, `decisions.typ`, `status.typ`], [Part V],
   [`ref-schema.typ`, `ref-data-model.typ`, `ref-api.typ`, `ref-auth.typ`, `ref-deployment.typ`, `ref-development.typ`], [Part VI],

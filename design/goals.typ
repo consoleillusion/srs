@@ -46,7 +46,7 @@ with one command, on the internet or on an internal network without TLS.
 - `owner` always references `user.id`, never a group.
 - Security must not be weakened to adopt a standard or a library. A standard
   option that is weaker than the default stays opt-in and is documented as
-  weaker (@external-identity).
+  weaker.
 
 === Non-goals
 

@@ -15,10 +15,7 @@ export type GuardOptions =
   , registry: Registry
   /** Lower-cased usernames that always hold the `admin` role. */
   , adminNames: string[]
-  /** Subjects of external identities that always hold the `admin` role. */
-  , adminSubjects?: string[]
   /** The configured external issuer; a stored subject only counts when it came from this issuer. */
-  , oidcIssuer?: string
   /** The session middleware, or undefined when sessions are not enforced. */
   , requireAuth?: (c: AppContext, next: Next) => Promise<void>
   /** Keep a signed read's signature even when the resource does not list `read` in `x-access.signed`. */
@@ -33,25 +30,15 @@ export type GuardOptions =
  */
 export const rolesOf =
   async (options: GuardOptions, userId: string): Promise<string[]> => {
-    const { db, registry, adminNames, adminSubjects = [], oidcIssuer } = options
+    const { db, registry, adminNames } = options
     if (!registry.get('user_role')) return []
     const user = uuidToBuffer(userId)
     const roles =
       (await db.all('SELECT `role` FROM `user_role` WHERE `user_id` = ?', [user]))
         .map(x => String(x.role))
-    if ((adminNames.length > 0 || adminSubjects.length > 0) && !roles.includes('admin')) {
-      const row =
-        await db.get(
-          'SELECT lower(`username`) AS `name`, `oidc_issuer` AS `issuer`, `oidc_subject` AS `subject`'
-          + ' FROM `user` WHERE `id` = ?'
-          , [user])
-      const byName = row !== undefined && adminNames.includes(String(row.name))
-      const bySubject =
-        row !== undefined
-        && oidcIssuer !== undefined
-        && row.issuer === oidcIssuer
-        && adminSubjects.includes(String(row.subject))
-      if (byName || bySubject) roles.push('admin')
+    if (adminNames.length > 0 && !roles.includes('admin')) {
+      const row = await db.get('SELECT lower(`username`) AS `name` FROM `user` WHERE `id` = ?', [user])
+      if (row !== undefined && adminNames.includes(String(row.name))) roles.push('admin')
     }
     return roles
   }
