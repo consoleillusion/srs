@@ -1,0 +1,17 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: Customer
+type: object
+additionalProperties: false
+description: A customer keyed by an integer number the database assigns.
+x-access:
+  shareable: true
+  audited: true
+properties:
+  customer_no:
+    type: integer
+    x-primary: true
+  name:
+    type: string
+    maxLength: 100
+required:
+  - name

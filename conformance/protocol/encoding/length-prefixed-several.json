@@ -1,0 +1,13 @@
+{
+  "description": "Fields joined, each prefixed with its 4-byte big-endian length",
+  "operation": "encoding.length-prefixed",
+  "input": {
+    "fields": [
+      "7372732d7265712d7631",
+      "000102",
+      "474554",
+      "2f61727469636c653f736f72743d2d6964"
+    ]
+  },
+  "output": "0000000a7372732d7265712d76310000000300010200000003474554000000112f61727469636c653f736f72743d2d6964"
+}

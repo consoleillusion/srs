@@ -1,0 +1,202 @@
+{
+  "description": "Admins and roles: only admins grant roles, grants apply at once, role rows stay private",
+  "operation": "http.session",
+  "input": {
+    "schemaDir": "src/schema",
+    "users": [
+      "admin",
+      "alice",
+      "bob"
+    ],
+    "admins": [
+      "admin"
+    ],
+    "steps": [
+      {
+        "as": null,
+        "method": "POST",
+        "path": "/feedback",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "feedback",
+            "attributes": {
+              "message": "anonymous"
+            }
+          }
+        },
+        "save": {
+          "f": "data.id"
+        }
+      },
+      {
+        "as": "admin",
+        "method": "GET",
+        "path": "/feedback/{{f}}",
+        "select": [
+          "data.attributes.message"
+        ]
+      },
+      {
+        "as": "admin",
+        "method": "PATCH",
+        "path": "/feedback/{{f}}",
+        "select": [
+          "data.attributes.message"
+        ],
+        "body": {
+          "data": {
+            "type": "feedback",
+            "id": "{{f}}",
+            "attributes": {
+              "message": "seen"
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/feedback/{{f}}",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/user_role",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "user_role",
+            "attributes": {
+              "role": "admin"
+            },
+            "relationships": {
+              "user": {
+                "data": {
+                  "type": "user",
+                  "id": "{{alice}}"
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "as": "admin",
+        "method": "POST",
+        "path": "/user_role",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "user_role",
+            "attributes": {
+              "role": "admin"
+            },
+            "relationships": {
+              "user": {
+                "data": {
+                  "type": "user",
+                  "id": "{{alice}}"
+                }
+              }
+            }
+          }
+        },
+        "save": {
+          "r": "data.id"
+        }
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/feedback/{{f}}",
+        "select": [
+          "data.attributes.message"
+        ]
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/user_role/{{r}}",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "bob",
+        "method": "POST",
+        "path": "/user_group",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "user_group",
+            "attributes": {
+              "name": "admin"
+            }
+          }
+        }
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/feedback/{{f}}",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "admin",
+        "method": "DELETE",
+        "path": "/feedback/{{f}}",
+        "select": []
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 201
+    },
+    {
+      "status": 200,
+      "data.attributes.message": "anonymous"
+    },
+    {
+      "status": 200,
+      "data.attributes.message": "seen"
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 403,
+      "errors.0.status": "403"
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 200,
+      "data.attributes.message": "seen"
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 204
+    }
+  ]
+}

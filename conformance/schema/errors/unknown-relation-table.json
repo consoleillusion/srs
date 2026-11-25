@@ -1,0 +1,22 @@
+{
+  "description": "A relation must target a table that exists",
+  "operation": "schema.build",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Widget",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {},
+        "x-relations": {
+          "thing": {
+            "table": "nothing",
+            "cardinality": "one"
+          }
+        }
+      }
+    ]
+  },
+  "error": "unknown-relation-table"
+}

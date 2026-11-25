@@ -1,16 +1,26 @@
 import { Hono } from 'hono'
 import { registerAuthRoutes } from '../../auth/routes.ts'
+import { publicBundle, type KeyTransition } from '../../auth/server-keys.ts'
+import type { ServerKeys } from '../../protocol/server-keys.ts'
 import { createAuthService } from '../../auth/service/index.ts'
 import type { BuiltSchema } from '../../db/schema-types.ts'
-import type { AppContext, Env } from '../context.ts'
+import { innerOf, type AppContext, type Env } from '../context.ts'
 import { pathParam } from '../context.ts'
 import type { RowDatabase } from '../database.ts'
 import { ApiError } from '../errors.ts'
 import type { Registry } from '../registry.ts'
+import { applyHttp, clientAddress, type HttpOptions } from '../http.ts'
 import { sessionMiddleware } from '../session.ts'
+import { createChannelStore } from '../channels.ts'
+import { registerHandshake } from '../noise-handshake.ts'
+import { registerEnvelopeRoute } from '../noise-route.ts'
+import { registerChannelAccounts } from '../../auth/channel-accounts.ts'
+import { registerChannelLifecycle } from '../../auth/channel-lifecycle.ts'
+import { requestMessage } from '../../protocol/accounts.ts'
+import { ed25519Verify } from '../../client/crypto.ts'
 import { crudHandlers } from './crud.ts'
 import { errorDocument, jsonApi } from './document.ts'
-import { createGuard } from './guard.ts'
+import { createGuard, rolesOf } from './guard.ts'
 import { relationshipHandlers } from './relationships.ts'
 import { createServices } from './services.ts'
 
@@ -26,7 +36,33 @@ export type AppOptions =
   , requireSession?: boolean
   /** Usernames that always hold the "admin" role. */
   , admins?: string[]
+  /** Transport settings: body limit, CORS, proxy trust, rate limit and logging. */
+  , http?: HttpOptions
+  /** The server key bundle; enables `GET /noise/keys` and the Noise transport. */
+  , serverKeys?: ServerKeys
+  /** During a key rotation: the previous bundle and the signed transition to `serverKeys`. */
+  , rotation?: { previous: ServerKeys, transition: KeyTransition }
+  /**
+   * `noise` serves only the handshake, envelope, key-bundle and health routes in
+   * the clear and refuses everything else; `bearer` serves every route directly
+   * and needs TLS. Defaults to `noise` when `serverKeys` is set.
+   */
+  , transport?: 'noise' | 'bearer'
+  /** Retain every signed read, not only reads listed in `x-access.signed`. */
+  , retainReads?: boolean
+  /** Allow admins to issue password reset tokens (default true). */
+  , allowReset?: boolean
+  /**
+   * The path the API is mounted under, such as `/api`, when the platform
+   * strips it before the request reaches SRS. Links and request signatures
+   * include it.
+   */
+  , basePath?: string
   }
+
+/** Routes served outside a Noise channel in strict mode. */
+export const CLEAR_ROUTES =
+  new Set(['/healthz', '/readyz', '/noise/keys', '/noise/handshake', '/noise'])
 
 const paths =
   { collection: '/:type'
@@ -65,18 +101,80 @@ const optionsFor =
  * @returns A Hono app serving every exposed resource.
  */
 export const createApp =
-  ({ built, db, opaqueServerSetup, requireSession, admins = [] }: AppOptions): Hono => {
+  ({ built, db, opaqueServerSetup, requireSession, admins = [], http = {}, serverKeys, rotation, transport = serverKeys ? 'noise' : 'bearer', retainReads = false, allowReset = true, basePath = '' }: AppOptions): Hono => {
     const s = createServices(built, db)
     const app = new Hono<Env>()
+    const base = basePath.replace(/\/+$/, '')
+    if (base && !base.startsWith('/')) throw new Error('basePath must start with /')
+    if (base) app.use('*', async (c, next) => { c.set('base', base); await next() })
+    applyHttp(app, db, http)
+
+    if (transport === 'noise' && !serverKeys)
+      throw new Error('The Noise transport needs a server key bundle')
+    if (transport === 'noise')
+      app.use('*', async (c, next) => {
+        // Strict mode: nothing but the clear routes is served outside a channel.
+        if (innerOf(c) || CLEAR_ROUTES.has(c.req.path)) return next()
+        return jsonApi(
+          c
+          , errorDocument(426, 'Upgrade Required', 'This server accepts requests only through its Noise channel')
+          , 426 as 400)
+      })
+
+    const channels = createChannelStore()
+    if (serverKeys) {
+      app.get('/noise/keys', c => c.json(publicBundle(serverKeys, rotation)))
+      registerHandshake(
+        app
+        , { serverKeys, channels, clientOf: c => clientAddress(c, http.trustedProxyHops)
+          , previous: rotation ? { keys: rotation.previous, until: rotation.transition.stopAt } : undefined })
+      registerEnvelopeRoute(
+        app
+        , { channels
+          , clientOf: c => clientAddress(c, http.trustedProxyHops)
+          , checkSignature: (channel, request, n) => {
+              if (!channel.login) return { signed: false }
+              const contentType = request.headers.find(([name]) => name === 'content-type')?.[1] ?? ''
+              const signedMessage =
+                requestMessage(
+                  { h: channel.handshakeHash, sid: channel.sid, n, method: request.method
+                  , path: request.path, contentType, body: request.body })
+              return ed25519Verify(request.signature, signedMessage, channel.login.sessionPublic)
+                ? { signed: true, signature: request.signature, signedMessage }
+                : { signed: false, rejected: true }
+            }
+          })
+    }
 
     if (opaqueServerSetup)
       registerAuthRoutes(
         app
+        , c => clientAddress(c, http.trustedProxyHops)
         , createAuthService(
             { db
             , serverSetup: opaqueServerSetup
             , audit: s.registry.get('audit_log') !== undefined
+            , onLogin: http.metrics?.login
             }))
+
+    if (opaqueServerSetup && serverKeys) {
+      const auditing = s.registry.get('audit_log') !== undefined
+      registerChannelAccounts(
+        app
+        , { db, serverSetup: opaqueServerSetup, channels, audit: auditing, onLogin: http.metrics?.login })
+      registerChannelLifecycle(
+        app
+        , { db
+          , serverSetup: opaqueServerSetup
+          , channels
+          , audit: auditing
+          , allowReset
+          , isAdmin: async userId =>
+              (await rolesOf(
+                { db, registry: s.registry, adminNames: admins.map(x => x.toLowerCase()) }, userId))
+                .includes('admin')
+          })
+    }
 
     const requireAuth = requireSession ? sessionMiddleware(db) : undefined
     const guard =
@@ -84,6 +182,7 @@ export const createApp =
         { db
         , registry: s.registry
         , adminNames: admins.map(x => x.toLowerCase())
+        , retainReads
         , requireAuth
         })
     for (const path of Object.values(paths)) app.use(path, guard)

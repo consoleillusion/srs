@@ -1,5 +1,7 @@
 import type { ColumnDef, TableDef } from '../db/schema-types.ts'
-import { quote, relationJoin, selectSql, uuidString } from '../db/views.ts'
+import { apiName, quote, relationJoin, selectSql } from '../db/views.ts'
+import { keyParam } from './ids.ts'
+import { columnSql, fromSql, keySql, sortSql } from './rows.ts'
 import type { Row, RowDatabase } from './database.ts'
 import { badRequest } from './errors.ts'
 import type { FilterField, ListQuery } from './query.ts'
@@ -15,23 +17,27 @@ const relationSource =
       ? resource.definition.sourceTable ?? resource.table
       : resource.table
 
-/** The resource's rows as a sub-select named like its view, embedding only the relations this request needs. */
-const sourceSql =
+/**
+ * The SELECT of a resource's rows, straight from its base table aliased with
+ * the view's name, embedding only the relations this request needs. Conditions
+ * then go in this query's own WHERE, where the table's indexes apply.
+ */
+export const rowSelect =
   (tables: Tables, resource: ResourceMeta, query?: Pick<ListQuery, 'fields' | 'include'>) => {
     if (resource.readOnly)
-      return `(SELECT * FROM ${quote(resource.view)}) AS ${quote(resource.view)}`
+      return `SELECT * FROM ${fromSql(resource, resource.view)}`
 
     const selection = query?.fields.get(resource.type)
-    const sql =
-      selectSql(
-        resource.definition
-        , tables
-        , label =>
-            !query || !resource.relationships[label] ? 'none'
-            : query.include.includes(label) ? 'full'
-            : !selection || selection.has(label) ? 'light'
-            : 'none')
-    return `(${sql}) AS ${quote(resource.view)}`
+    return selectSql(
+      resource.definition
+      , tables
+      , label =>
+          !query ? 'full'
+          : !resource.relationships[label] ? 'none'
+          : query.include.includes(label) ? 'full'
+          : !selection || selection.has(label) ? 'light'
+          : 'none'
+      , resource.view)
   }
 
 /** Convert a filter's text value to the column's stored type. */
@@ -65,8 +71,8 @@ const comparison: Record<string, string> =
 const columnScope =
   (resource: ResourceMeta, alias: string, filter: FilterField): Scope => {
     const { key, field, operator, value } = filter
-    const column = resource.definition.columns.find(x => x.columnName === field)!
-    const name = `${quote(alias)}.${quote(field)}`
+    const column = resource.definition.columns.find(x => apiName(resource.definition, x) === field)!
+    const name = columnSql(resource, alias, field)!
     const typed = (raw: string) => filterValue(column, key, raw)
 
     if (comparison[operator])
@@ -119,15 +125,15 @@ const filterScope =
     const fromTable = relationSource(hop.from)
     const toTable = hop.to.view
     const correlated =
-      { sql: `${uuidString(`${quote(s)}.\`id\``)} = ${quote(alias)}.\`id\``, params: [] }
+      { sql: `${quote(s)}.${quote(tables.get(fromTable)!.idColumn)} = ${keySql(resource, alias)}`, params: [] }
     const where = whereSql([correlated, readable, inner])
     return (
       { sql:
           `EXISTS (SELECT 1 FROM ${quote(fromTable)} AS ${quote(s)} `
           + relationJoin(
               hop.from.definition, relation, tables, s, t, j, fromTable)
-          + ` JOIN ${quote(toTable)} AS ${quote(f)}`
-          + ` ON ${quote(f)}.\`id\` = ${uuidString(`${quote(t)}.\`id\``)}`
+          + ` JOIN ${fromSql(hop.to, f)}`
+          + ` ON ${keySql(hop.to, f)} = ${quote(t)}.${quote(tables.get(relation.table)!.idColumn)}`
           + `${where.sql})`
       , params: where.params
       })
@@ -156,29 +162,33 @@ export const listRows =
         [ ...query.filters.map(x => filterScope(tables, x, scopeFor, resource, resource.view))
         , ...scopes
         ])
-    const view = quote(resource.view)
     const order =
       query.sort.length > 0
         ? query.sort
-            .map(x => `${view}.${quote(x.field)} ${x.direction.toUpperCase()}`)
+            .map(x => `${sortSql(resource, resource.view, x.field)} ${x.direction.toUpperCase()}`)
             .join(', ')
-        : `${view}.\`id\` ASC`
+        : `${keySql(resource, resource.view)} ASC`
 
+    // Counting reads every matching row, so a client that needs no total can skip it (page[total]=false).
     const total =
-      Number(
-        (await db.get(
-          `SELECT COUNT(*) AS count FROM ${sourceSql(tables, resource)}${where.sql}`
-          , where.params))
-          ?.count ?? 0)
+      query.total
+        ? Number(
+            (await db.get(
+              `SELECT COUNT(*) AS count FROM ${fromSql(resource, resource.view)}${where.sql}`
+              , where.params))
+              ?.count ?? 0)
+        : undefined
+    // Without a total, one extra row says whether there is a next page.
     const rows =
       await db.all(
-        `SELECT * FROM ${sourceSql(tables, resource, query)}${where.sql}`
+        `${rowSelect(tables, resource, query)}${where.sql}`
         + ` ORDER BY ${order} LIMIT ? OFFSET ?`
         , [ ...where.params
-          , query.pageSize
+          , query.pageSize + (total === undefined ? 1 : 0)
           , (query.pageNumber - 1) * query.pageSize
           ])
-    return { rows, total }
+    const more = rows.length > query.pageSize
+    return { rows: more ? rows.slice(0, query.pageSize) : rows, total, more }
   }
 
 export const readRow =
@@ -190,9 +200,9 @@ export const readRow =
   /** Read one row by id if it passes the scope. */
   , scope: Scope): Promise<Row | undefined> => {
     const where =
-      whereSql([{ sql: `${quote(resource.view)}.\`id\` = ?`, params: [id] }, scope])
+      whereSql([{ sql: `${keySql(resource, resource.view)} = ?`, params: [keyParam(resource.definition, id)] }, scope])
     return db.get(
-      `SELECT * FROM ${sourceSql(tables, resource, query)}${where.sql} LIMIT 1`
+      `${rowSelect(tables, resource, query)}${where.sql} LIMIT 1`
       , where.params)
   }
 
@@ -211,14 +221,14 @@ export const readRowsByIds =
       const chunk = ids.slice(start, start + ID_CHUNK)
       const where =
         whereSql(
-          [ { sql: `${quote(resource.view)}.\`id\` IN (${chunk.map(() => '?').join(', ')})`
-            , params: chunk
+          [ { sql: `${keySql(resource, resource.view)} IN (${chunk.map(() => '?').join(', ')})`
+            , params: chunk.map(x => keyParam(resource.definition, x))
             }
           , scope
           ])
       rows.push(
         ...await db.all(
-          `SELECT * FROM ${sourceSql(tables, resource, query)}${where.sql}`, where.params))
+          `${rowSelect(tables, resource, query)}${where.sql}`, where.params))
     }
     return rows
   }

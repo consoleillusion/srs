@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import nacl from 'tweetnacl'
+import { ed25519Sign, generateKeyPair, randomBytes } from '../src/client/crypto.ts'
 import
   { NONCE_HEADER
   , SIGNATURE_HEADER
@@ -24,7 +24,7 @@ const signed =
   async (app: any, user: SignedIn, method: string, path: string, body?: unknown, options: Options = {}) => {
     const text = body === undefined ? '' : JSON.stringify(body)
     const timestamp = String(options.timestamp ?? Date.now())
-    const nonce = options.nonce ?? Buffer.from(nacl.randomBytes(16)).toString('base64url')
+    const nonce = options.nonce ?? Buffer.from(randomBytes(16)).toString('base64url')
     const message =
       signingMessage(
         { method
@@ -35,7 +35,7 @@ const signed =
         , body: new TextEncoder().encode(options.signBody ?? text)
         })
     const signature =
-      Buffer.from(nacl.sign.detached(message, options.key ?? user.secretKey)).toString('base64url')
+      Buffer.from(ed25519Sign(message, options.key ?? user.secretKey)).toString('base64url')
     return app.request(
       path
       , { method
@@ -91,7 +91,7 @@ describe('signed requests', () => {
     expect(tamperedBody.status).toBe(401)
     const tamperedPath = await signed(app, alice, 'POST', '/payment', payment(), { signPath: '/payment?x=1' })
     expect(tamperedPath.status).toBe(401)
-    const otherKey = await signed(app, alice, 'POST', '/payment', payment(), { key: nacl.sign.keyPair().secretKey })
+    const otherKey = await signed(app, alice, 'POST', '/payment', payment(), { key: generateKeyPair().secretKey })
     expect(otherKey.status).toBe(401)
   })
 
@@ -131,7 +131,7 @@ describe('signed requests', () => {
     const body = resourceDocument('article', { heading: 'Hello', content: 'x' })
 
     expect((await signed(app, alice, 'POST', '/article', body)).status).toBe(201)
-    const bad = await signed(app, alice, 'POST', '/article', body, { key: nacl.sign.keyPair().secretKey })
+    const bad = await signed(app, alice, 'POST', '/article', body, { key: generateKeyPair().secretKey })
     expect(bad.status).toBe(401)
   })
 
@@ -154,7 +154,7 @@ describe('signed requests', () => {
     expect(done.status).toBe(200)
     const sessionId = ((await done.json()) as any).sessionId
 
-    const user = { sessionId, secretKey: nacl.sign.keyPair().secretKey } as SignedIn
+    const user = { sessionId, secretKey: generateKeyPair().secretKey } as SignedIn
     expect((await signed(app, user, 'POST', '/payment', payment())).status).toBe(401)
     const plain =
       await app.request('/article'

@@ -1,0 +1,126 @@
+{
+  "description": "An authored view projects columns of a base table and its relations",
+  "operation": "schema.build",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Author",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "x-relations": {
+          "posts": {
+            "table": "post",
+            "cardinality": "many"
+          }
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Post",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "heading": {
+            "type": "string"
+          }
+        },
+        "x-relations": {
+          "author": {
+            "table": "author",
+            "cardinality": "one",
+            "required": true,
+            "onDelete": "cascade"
+          }
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Post Card",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "x-source": "post.id"
+          },
+          "owner": {
+            "type": "string",
+            "format": "uuid",
+            "x-source": "post.owner"
+          },
+          "visibility": {
+            "type": "string",
+            "x-source": "post.visibility"
+          },
+          "heading": {
+            "type": "string",
+            "x-source": "post.heading"
+          },
+          "author_name": {
+            "type": "string",
+            "x-source": "post.author.name"
+          }
+        },
+        "x-view": true,
+        "x-source": "post"
+      }
+    ]
+  },
+  "output": [
+    {
+      "key": "table:author",
+      "statements": [
+        "CREATE TABLE IF NOT EXISTS `author` (\n  `id` blob PRIMARY KEY DEFAULT (uuid7()) NOT NULL,\n  `updated_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,\n  `owner` blob,\n  `visibility` text DEFAULT 'private' NOT NULL,\n  `name` text NOT NULL,\n  CONSTRAINT `author_owner_fk` FOREIGN KEY (`owner`) REFERENCES `user`(`id`) ON DELETE SET NULL,\n  CONSTRAINT `author_visibility_check` CHECK(`visibility` IN ('private', 'authenticated', 'public'))\n)",
+        "CREATE INDEX IF NOT EXISTS `author_owner_index` ON `author` (`owner`)"
+      ]
+    },
+    {
+      "key": "table:post",
+      "statements": [
+        "CREATE TABLE IF NOT EXISTS `post` (\n  `id` blob PRIMARY KEY DEFAULT (uuid7()) NOT NULL,\n  `updated_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,\n  `owner` blob,\n  `visibility` text DEFAULT 'private' NOT NULL,\n  `heading` text,\n  `author_id` blob NOT NULL,\n  CONSTRAINT `post_author_id_fk` FOREIGN KEY (`author_id`) REFERENCES `author`(`id`) ON DELETE CASCADE,\n  CONSTRAINT `post_owner_fk` FOREIGN KEY (`owner`) REFERENCES `user`(`id`) ON DELETE SET NULL,\n  CONSTRAINT `post_visibility_check` CHECK(`visibility` IN ('private', 'authenticated', 'public'))\n)",
+        "CREATE INDEX IF NOT EXISTS `post_author_id_index` ON `post` (`author_id`)",
+        "CREATE INDEX IF NOT EXISTS `post_owner_index` ON `post` (`owner`)"
+      ]
+    },
+    {
+      "key": "trigger:author_updated",
+      "statements": [
+        "CREATE TRIGGER IF NOT EXISTS `author_updated`\nAFTER UPDATE ON `author`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `author`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE id = OLD.id;\nEND;"
+      ]
+    },
+    {
+      "key": "trigger:post_updated",
+      "statements": [
+        "CREATE TRIGGER IF NOT EXISTS `post_updated`\nAFTER UPDATE ON `post`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `post`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE id = OLD.id;\nEND;"
+      ]
+    },
+    {
+      "key": "view:author_view",
+      "statements": [
+        "CREATE VIEW `author_view` AS\nSELECT\n  `t`.`id` AS `_key`,\n  (CASE WHEN `t`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`id`, 1, 4))) || '-' || lower(hex(substr(`t`.`id`, 5, 2))) || '-' || lower(hex(substr(`t`.`id`, 7, 2))) || '-' || lower(hex(substr(`t`.`id`, 9, 2))) || '-' || lower(hex(substr(`t`.`id`, 11, 6)))) END) AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  `t`.`name` AS `name`,\n  (SELECT coalesce(json_group_array(json_object('id', (CASE WHEN `r`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`id`, 1, 4))) || '-' || lower(hex(substr(`r`.`id`, 5, 2))) || '-' || lower(hex(substr(`r`.`id`, 7, 2))) || '-' || lower(hex(substr(`r`.`id`, 9, 2))) || '-' || lower(hex(substr(`r`.`id`, 11, 6)))) END), 'updated_at', `r`.`updated_at`, 'owner', (CASE WHEN `r`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`owner`, 1, 4))) || '-' || lower(hex(substr(`r`.`owner`, 5, 2))) || '-' || lower(hex(substr(`r`.`owner`, 7, 2))) || '-' || lower(hex(substr(`r`.`owner`, 9, 2))) || '-' || lower(hex(substr(`r`.`owner`, 11, 6)))) END), 'visibility', `r`.`visibility`, 'heading', `r`.`heading`, 'author_id', (CASE WHEN `r`.`author_id` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`author_id`, 1, 4))) || '-' || lower(hex(substr(`r`.`author_id`, 5, 2))) || '-' || lower(hex(substr(`r`.`author_id`, 7, 2))) || '-' || lower(hex(substr(`r`.`author_id`, 9, 2))) || '-' || lower(hex(substr(`r`.`author_id`, 11, 6)))) END))), json('[]')) FROM `post` AS `r` WHERE `r`.`author_id` = `t`.`id` ORDER BY `r`.`id`) AS `posts`\nFROM `author` AS `t`"
+      ]
+    },
+    {
+      "key": "view:post_view",
+      "statements": [
+        "CREATE VIEW `post_view` AS\nSELECT\n  `t`.`id` AS `_key`,\n  (CASE WHEN `t`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`id`, 1, 4))) || '-' || lower(hex(substr(`t`.`id`, 5, 2))) || '-' || lower(hex(substr(`t`.`id`, 7, 2))) || '-' || lower(hex(substr(`t`.`id`, 9, 2))) || '-' || lower(hex(substr(`t`.`id`, 11, 6)))) END) AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  `t`.`heading` AS `heading`,\n  (CASE WHEN `t`.`author_id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`author_id`, 1, 4))) || '-' || lower(hex(substr(`t`.`author_id`, 5, 2))) || '-' || lower(hex(substr(`t`.`author_id`, 7, 2))) || '-' || lower(hex(substr(`t`.`author_id`, 9, 2))) || '-' || lower(hex(substr(`t`.`author_id`, 11, 6)))) END) AS `author_id`,\n  (SELECT json_object('id', (CASE WHEN `r`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`id`, 1, 4))) || '-' || lower(hex(substr(`r`.`id`, 5, 2))) || '-' || lower(hex(substr(`r`.`id`, 7, 2))) || '-' || lower(hex(substr(`r`.`id`, 9, 2))) || '-' || lower(hex(substr(`r`.`id`, 11, 6)))) END), 'updated_at', `r`.`updated_at`, 'owner', (CASE WHEN `r`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`owner`, 1, 4))) || '-' || lower(hex(substr(`r`.`owner`, 5, 2))) || '-' || lower(hex(substr(`r`.`owner`, 7, 2))) || '-' || lower(hex(substr(`r`.`owner`, 9, 2))) || '-' || lower(hex(substr(`r`.`owner`, 11, 6)))) END), 'visibility', `r`.`visibility`, 'name', `r`.`name`) FROM `author` AS `r` WHERE `r`.`id` = `t`.`author_id` LIMIT 1) AS `author`\nFROM `post` AS `t`"
+      ]
+    },
+    {
+      "key": "view:post_card",
+      "statements": [
+        "CREATE VIEW `post_card` AS\nSELECT\n  `t`.`id` AS `_key`,\n  (CASE WHEN `t`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`id`, 1, 4))) || '-' || lower(hex(substr(`t`.`id`, 5, 2))) || '-' || lower(hex(substr(`t`.`id`, 7, 2))) || '-' || lower(hex(substr(`t`.`id`, 9, 2))) || '-' || lower(hex(substr(`t`.`id`, 11, 6)))) END) AS `id`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  `t`.`heading` AS `heading`,\n  (SELECT `r0`.`name` FROM `author` AS `r0` WHERE `r0`.`id` = `t`.`author_id` LIMIT 1) AS `author_name`\nFROM `post` AS `t`"
+      ]
+    }
+  ]
+}

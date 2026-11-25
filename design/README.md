@@ -1,46 +1,26 @@
-# SRS documentation
+# SRS design book
 
-This directory contains the detailed documentation for SRS's generated data
-model, HTTP API, access control, and authentication layer. The root
-[README](../README.md) is the project overview and quick start; the
-[design directory](../design/README.md) records goals and decisions.
+The source of truth for SRS: goals, stack, architecture, the security
+protocol, the roadmap, and the rules for working on the project. Written in
+[Typst](https://typst.app), one file per chapter, joined by `book.typ`.
 
-TypeDoc writes the generated TypeScript API reference into this directory
-(`bun run docs`).
+```bash
+./design/build.sh           # writes design/book.pdf
+./design/build.sh --watch   # rebuilds on save
+bun run design              # same as the first line
+```
 
-## Reading order
+`build.sh` uses the `typst` command if installed, otherwise the `typst` Python
+package.
 
-1. [Architecture](./architecture.md) — how schemas become tables, views,
-   migrations, and HTTP routes, plus the design invariants.
-2. [Data model](./data-model.md) — injected columns, system tables, relations,
-   views, and the hidden key store.
-3. [Schema reference](./schema-reference.md) — every supported JSON Schema
-   keyword, relations, and validation rules.
-4. [Access control](./access-control.md) — `x-access`, visibility, sharing,
-   roles, inheritance, audit, and signed requests.
-5. [API](./api.md) — JSON:API endpoints, queries, writes, errors, and status
-   codes.
-6. [Authentication](./auth.md) — the OPAQUE registration/login flows, session
-   lifecycle, keypairs, TTLs, and response shapes.
-7. [Client](./client.md) — the browser-safe client: registration, login,
-   sessions, storage, requests, and signing.
-8. [Security](./security.md) — key ownership, non-repudiation, threat model, and
-   known gaps.
-9. [Roadmap](./roadmap.md) — phases, deliverables, exit criteria, and status.
-10. [Development](./development.md) — setup, commands, migrations, tests, and
-    conventions.
+| Part | Chapters |
+| --- | --- |
+| I. Project | `introduction`, `goals`, `stack`, `architecture` |
+| II. Data and API | `schema`, `migrations`, `authored-views`, `access-control`, `http-api` |
+| III. Security | `threat-model`, `transport`, `accounts`, `requests`, `lifecycle`, `external-identity` |
+| IV. Delivery | `operations`, `implementation`, `roadmap` |
+| V. Working on SRS | `contributing`, `layout`, `decisions`, `status` |
+| VI. Reference | `ref-schema`, `ref-data-model`, `ref-api`, `ref-auth`, `ref-deployment`, `ref-development` |
 
-## Current status
-
-Phases 0–6 are complete. The server generates tables, relations, join tables,
-views, migrations, and JSON:API endpoints from JSON Schema. It also implements
-stateless OPAQUE registration and login, with all temporary authentication state
-stored in the hidden `key` table.
-
-Authorization is owner-based, with per-row visibility, sharing, roles, inherited
-read access, audit trails, and opt-in request signing. A browser-safe client is
-available at `resource-server/client`; it wraps registration, login, sessions,
-and JSON:API requests.
-
-Remaining work is key rotation and revocation, moderation of inherited rows, and
-the Phase 7–8 items in the [roadmap](./roadmap.md).
+Contributors and agents: start with [AGENTS.md](../AGENTS.md). The generated
+API reference is written to `doc/` by `bun run docs`.

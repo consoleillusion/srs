@@ -1,0 +1,84 @@
+{
+  "description": "Decisions on a table with a declared key find rows by that key",
+  "operation": "access.decide",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Customer",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "customer_no": {
+            "type": "integer",
+            "x-primary": true
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      }
+    ],
+    "rows": [
+      {
+        "table": "user",
+        "values": {
+          "id": "01900000-0000-7000-8000-00000000000a",
+          "username": "alice",
+          "visibility": "authenticated"
+        }
+      },
+      {
+        "table": "user",
+        "values": {
+          "id": "01900000-0000-7000-8000-00000000000b",
+          "username": "bob",
+          "visibility": "authenticated"
+        }
+      },
+      {
+        "table": "customer",
+        "values": {
+          "customer_no": 7,
+          "owner": "01900000-0000-7000-8000-00000000000a",
+          "visibility": "private",
+          "name": "Ada"
+        }
+      }
+    ],
+    "checks": [
+      {
+        "viewer": {
+          "user": "01900000-0000-7000-8000-00000000000a"
+        },
+        "operation": "read",
+        "resource": "customer",
+        "id": "7"
+      },
+      {
+        "viewer": {
+          "user": "01900000-0000-7000-8000-00000000000b"
+        },
+        "operation": "read",
+        "resource": "customer",
+        "id": "7"
+      },
+      {
+        "viewer": {
+          "user": "01900000-0000-7000-8000-00000000000a"
+        },
+        "operation": "read",
+        "resource": "customer",
+        "id": "8"
+      }
+    ]
+  },
+  "output": [
+    "allow",
+    "deny",
+    "deny"
+  ]
+}

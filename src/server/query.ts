@@ -22,6 +22,8 @@ export type FilterField =
 export type ListQuery =
   { pageNumber: number
   , pageSize: number
+  /** False when the client sent `page[total]=false`: no count, so no rows are read just to count them. */
+  , total: boolean
   , sort: SortField[]
   , filters: FilterField[]
   , fields: Map<string, Set<string>>
@@ -192,6 +194,16 @@ const parseInclude =
     return tree
   }
 
+/** Read a `true`/`false` query parameter, or the default when it is absent. */
+const booleanParameter =
+  (params: URLSearchParams, name: string, fallback: boolean) => {
+    const value = params.get(name)
+    if (value === null) return fallback
+    if (value !== 'true' && value !== 'false')
+      throw badRequest(`Query parameter "${name}" must be true or false`, name)
+    return value === 'true'
+  }
+
 export const parseListQuery =
   ( params: URLSearchParams
   , resource: ResourceMeta
@@ -203,6 +215,7 @@ export const parseListQuery =
     , pageSize:
         integerParameter(
           params, 'page[size]', DEFAULT_PAGE_SIZE, 1, MAX_PAGE_SIZE)
+    , total: booleanParameter(params, 'page[total]', true)
     , sort: parseSort(params, resource)
     , filters: parseFilters(params, resource, registry)
     , fields: parseFields(params, registry)

@@ -1,0 +1,8 @@
+{
+  "description": "A path that does not start with / is refused",
+  "operation": "envelope.decode-request",
+  "input": {
+    "plaintext": "0000000347455400000003746167000000000000000000000000"
+  },
+  "error": "invalid-encoding"
+}

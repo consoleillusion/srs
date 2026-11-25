@@ -1,0 +1,19 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: Note
+type: object
+additionalProperties: false
+description: >
+  A private note. Only its owner can read or change it. Nothing in x-access is
+  needed: private, owner-only rows are the default.
+properties:
+  title:
+    description: Title
+    type: string
+    minLength: 1
+    maxLength: 200
+  body:
+    description: Note text
+    type: string
+    maxLength: 100000
+required:
+  - title

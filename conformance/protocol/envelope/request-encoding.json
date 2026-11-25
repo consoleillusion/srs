@@ -1,0 +1,21 @@
+{
+  "description": "A request as length-prefixed method, path, headers, body and signature",
+  "operation": "envelope.encode-request",
+  "input": {
+    "method": "POST",
+    "path": "/article?include=tag",
+    "headers": [
+      [
+        "content-type",
+        "application/vnd.api+json"
+      ],
+      [
+        "accept",
+        "application/vnd.api+json"
+      ]
+    ],
+    "body": "7b2264617461223a7b2274797065223a2261727469636c65227d7d",
+    "signature": "c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff0001020304050607"
+  },
+  "output": "00000004504f5354000000142f61727469636c653f696e636c7564653d746167000000520000000c636f6e74656e742d74797065000000186170706c69636174696f6e2f766e642e6170692b6a736f6e00000006616363657074000000186170706c69636174696f6e2f766e642e6170692b6a736f6e0000001b7b2264617461223a7b2274797065223a2261727469636c65227d7d00000040c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff0001020304050607"
+}

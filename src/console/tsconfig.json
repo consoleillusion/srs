@@ -1,0 +1,7 @@
+{
+  // The console page runs in a browser: check it with the DOM types.
+  "extends": "../../tsconfig.json",
+  "compilerOptions": { "lib": ["ESNext", "DOM", "DOM.Iterable"] },
+  "include": ["app.ts"],
+  "exclude": []
+}

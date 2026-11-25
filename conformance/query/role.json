@@ -1,0 +1,47 @@
+{
+  "description": "A role that may read every row removes the scope",
+  "operation": "query.list",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Report",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "v": {
+            "type": "string"
+          }
+        },
+        "x-access": {
+          "roles": {
+            "auditor": [
+              "read"
+            ]
+          }
+        }
+      }
+    ],
+    "resource": "report",
+    "viewer": {
+      "user": "01900000-0000-7000-8000-00000000000a",
+      "roles": [
+        "auditor"
+      ]
+    },
+    "query": ""
+  },
+  "output": [
+    {
+      "sql": "SELECT COUNT(*) AS count FROM `report` AS `report_view`",
+      "params": []
+    },
+    {
+      "sql": "SELECT\n  `report_view`.`id` AS `_key`,\n  (CASE WHEN `report_view`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`report_view`.`id`, 1, 4))) || '-' || lower(hex(substr(`report_view`.`id`, 5, 2))) || '-' || lower(hex(substr(`report_view`.`id`, 7, 2))) || '-' || lower(hex(substr(`report_view`.`id`, 9, 2))) || '-' || lower(hex(substr(`report_view`.`id`, 11, 6)))) END) AS `id`,\n  `report_view`.`updated_at` AS `updated_at`,\n  (CASE WHEN `report_view`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`report_view`.`owner`, 1, 4))) || '-' || lower(hex(substr(`report_view`.`owner`, 5, 2))) || '-' || lower(hex(substr(`report_view`.`owner`, 7, 2))) || '-' || lower(hex(substr(`report_view`.`owner`, 9, 2))) || '-' || lower(hex(substr(`report_view`.`owner`, 11, 6)))) END) AS `owner`,\n  `report_view`.`visibility` AS `visibility`,\n  `report_view`.`v` AS `v`\nFROM `report` AS `report_view` ORDER BY `report_view`.`id` ASC LIMIT ? OFFSET ?",
+      "params": [
+        20,
+        0
+      ]
+    }
+  ]
+}

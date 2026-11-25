@@ -1,0 +1,11 @@
+{
+  "description": "A modified message 2 fails authentication at the initiator",
+  "operation": "noise.nk.initiator-read",
+  "input": {
+    "prologue": "7372732d6e6f6973652d763140d297e1a2b8e85252568161e4c200281c77bda36b9360286ec5ddcbe055922b",
+    "initiatorEphemeral": "4748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f60616263646566",
+    "responderStaticPublic": "07b8c542487686a78301855fcb6d3f6a8a911cd7f1983a9b44dc9dcd22839d23",
+    "message2": "cd8439107a1ccffec0b7649e78a4d74486b3961213750963af89d47b05caf471775c1110028abf2e7b5b9fb3c29301b5e21f7fa0996fac33314eed0cdc70a521"
+  },
+  "error": "decrypt-failed"
+}

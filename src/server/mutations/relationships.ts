@@ -3,13 +3,14 @@ import type { Row } from '../database.ts'
 import { badRequest, forbidden, notFound } from '../errors.ts'
 import type { ResourceMeta } from '../registry.ts'
 import { joinForeignKeys } from '../../db/views.ts'
-import { writeScope } from '../scope.ts'
+import { readScope, writeScope } from '../scope.ts'
 import { exists, insert, remove, update } from '../sql.ts'
 import { uuidToBuffer } from '../uuid.ts'
+import { idToDb, keyCondition } from '../ids.ts'
 import { type MutationContext, viewerIn, type WriteDocument, type Mode } from './types.ts'
 import { writeError, foreignKeyColumn } from './assign.ts'
 import { readResourceRow } from './row.ts'
-import { updateResource } from './resource.ts'
+import { notWritable, updateResource } from './resource.ts'
 
 /** Reject links to rows the writer does not own (anonymous writers: non-public rows). */
 export const exposedRelations =
@@ -18,6 +19,20 @@ export const exposedRelations =
       ([, relation]) =>
         relation.exposed !== false
         && (cardinality === undefined || relation.cardinality === cardinality))
+
+/**
+ * The error for a related row the writer may not link to: 403 when they can
+ * read it, 404 when they cannot, so an unreadable row stays invisible.
+ */
+const notLinkable =
+  async (context: MutationContext, table: string, id: string) => {
+    const target = context.registry.get(table)
+    const readable =
+      target && await readResourceRow(context.db, target, id, readScope(viewerIn(context), target, context.registry))
+    return readable
+      ? forbidden(`You may read ${table} "${id}" but not link to it`)
+      : notFound(`Related ${table} "${id}" was not found`)
+  }
 
 export const assertRelationshipTargets =
   async (
@@ -35,16 +50,17 @@ export const assertRelationshipTargets =
         if (parent) {
           if (!await readResourceRow(
             context.db, parent, id, writeScope(viewerIn(context), parent)))
-            throw notFound(`Related ${relation.table} "${id}" was not found`)
+            throw await notLinkable(context, relation.table, id)
           continue
         }
         const condition =
           relation['x-link-any'] ? {}
           : context.userId !== undefined ? { owner: uuidToBuffer(context.userId) }
           : { visibility: 'public' }
+        const target = context.built.orderedTables.find(x => x.tableName === relation.table)!
         if (!await exists(
-          context.db, relation.table, { id: uuidToBuffer(id), ...condition }))
-          throw notFound(`Related ${relation.table} "${id}" was not found`)
+          context.db, relation.table, { ...keyCondition(target, id), ...condition }))
+          throw await notLinkable(context, relation.table, id)
       }
     }
   }
@@ -73,7 +89,8 @@ const replaceManyRelationship =
 
       const sourceColumn = sourceForeignKey.columns[0]!
       const targetColumn = targetForeignKey.columns[0]!
-      const sourceBuffer = uuidToBuffer(sourceId)
+      const targetTable = context.built.orderedTables.find(x => x.tableName === relation.table)!
+      const sourceBuffer = idToDb(resource.definition, sourceId)
 
       await remove(context.db, join.tableName, { [sourceColumn]: sourceBuffer })
 
@@ -81,7 +98,7 @@ const replaceManyRelationship =
         await insert(
           context.db, join.tableName
           , { [sourceColumn]: sourceBuffer
-            , [targetColumn]: uuidToBuffer(targetId)
+            , [targetColumn]: idToDb(targetTable, targetId)
             // The link belongs to whoever made it.
             , ...(context.userId ? { owner: uuidToBuffer(context.userId) } : {})
             })
@@ -104,7 +121,7 @@ const replaceManyRelationship =
         + ' a join table or inverse one relation')
 
     const foreignKey = foreignKeyColumn(target, inverse)
-    const sourceBuffer = uuidToBuffer(sourceId)
+    const sourceBuffer = idToDb(resource.definition, sourceId)
 
     await update(
       context.db, target.tableName, { [foreignKey]: null }, { [foreignKey]: sourceBuffer })
@@ -112,7 +129,22 @@ const replaceManyRelationship =
     for (const targetId of targetIds)
       await update(
         context.db, target.tableName
-        , { [foreignKey]: sourceBuffer }, { id: uuidToBuffer(targetId) })
+        , { [foreignKey]: sourceBuffer }, keyCondition(target, targetId))
+  }
+
+/**
+ * Refuse a write that would leave a required to-many relationship empty:
+ * creating or replacing (PUT) without members, or setting it to none.
+ */
+export const assertRequiredMany =
+  (resource: ResourceMeta, document: WriteDocument, mode: Mode | 'create') => {
+    for (const [label, relation] of exposedRelations(resource, 'many')) {
+      if (!relation.required) continue
+      const value = document.relationships.get(label)
+      const empty = Array.isArray(value) ? value.length === 0 : value === undefined && mode !== 'patch'
+      if (empty)
+        throw badRequest(`Relationship "${label}" needs at least one member`, `data.relationships.${label}`)
+    }
   }
 
 export const replaceManyRelationships =
@@ -152,8 +184,7 @@ export const changeRelationship =
     const existing =
       await readResourceRow(
         context.db, resource, id, writeScope(viewerIn(context), resource))
-    if (!existing)
-      throw notFound(`Resource "${resource.type}" with id "${id}" was not found`)
+    if (!existing) throw await notWritable(context, resource, id, 'change')
     if (how === 'add')
       await assertRelationshipTargets(
         context, resource, { attributes: {}, relationships })
@@ -164,6 +195,8 @@ export const changeRelationship =
       how === 'add'
         ? [...new Set([...current, ...value])]
         : current.filter(x => !value.includes(x))
+    if (relation.required && next.length === 0)
+      throw badRequest(`Relationship "${label}" needs at least one member`, `relationships.${label}`)
     try {
       await replaceManyRelationship(context, resource, relation, id, next)
     } catch (error) {

@@ -26,5 +26,7 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
-  }
+  },
+  // The browser console is checked with the DOM types by src/console/tsconfig.json.
+  "exclude": ["node_modules", "src/console/app.ts"]
 }

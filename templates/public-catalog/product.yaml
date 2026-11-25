@@ -1,0 +1,31 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: Product
+type: object
+additionalProperties: false
+description: >
+  A catalog product in one category. Anyone can read published products;
+  only editors can create or change them.
+x-access:
+  read: public
+  create: role
+  defaultVisibility: public
+  roles:
+    editor: true
+properties:
+  name:
+    description: Product name
+    type: string
+    minLength: 1
+    maxLength: 200
+  price_cents:
+    description: Price in cents
+    type: integer
+    minimum: 0
+required:
+  - name
+x-relations:
+  category:
+    table: category
+    column: id
+    cardinality: one
+    foreignKey: category_id

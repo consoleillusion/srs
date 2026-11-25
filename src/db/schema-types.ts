@@ -96,6 +96,8 @@ export type JSONSchema =
   , 'x-unique-constraints'?: string[][]
   // Raw SQL CHECK expressions; used by derived tables
   , 'x-checks'?: string[]
+  /** `true` makes the table reject every `UPDATE` and `DELETE`. */
+  , 'x-append-only'?: boolean
   , [key: string]: unknown
   }
 
@@ -130,6 +132,8 @@ export type ForeignKeyDef =
 export type TableDef =
   { key: string
   , tableName: string
+  /** The column that identifies rows: `id`, or the property marked `x-primary`. */
+  , idColumn: string
   , createSql: string
   , indexSql: string[]
   , schema: JSONSchema
@@ -143,6 +147,8 @@ export type TableDef =
   , uniqueConstraints: string[][]
   , indexes: string[]
   , trigger: string
+  /** Extra triggers by name, such as the append-only guards. */
+  , guardTriggers: Record<string, string>
   // For an authored view, the base table its columns and relations come from
   , sourceTable?: string
   }
@@ -152,6 +158,20 @@ export type ViewDef =
   { name: string
   , sql: string
   , dropSql: string
+  }
+
+/**
+ * Whether a property is stored as JSON text: it is an object or an array, or
+ * it declares no `type` (a `oneOf`, `anyOf` or `$ref` of shapes), so its
+ * value may be any JSON.
+ *
+ * @param property - The property's schema.
+ */
+export const storedAsJson =
+  (property: { type?: unknown }): boolean => {
+    if (property.type === undefined) return true
+    const types = [property.type].flat()
+    return types.includes('object') || types.includes('array')
   }
 
 /** The result of building schemas: tables, authored views, triggers and generated views. */

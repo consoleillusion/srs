@@ -14,6 +14,10 @@ properties:
       - opaque_registration
       - opaque_login_state
       - session
+      - identity
+      - login
+      - certificate
+      - reset_token
     default: jwk
   jwk:
     description: JSON Web Key representation
@@ -28,6 +32,14 @@ properties:
     description: Expiry time for temporary authentication state
     type: string
     format: date-time
+  revoked_at:
+    description: When an identity key was revoked; signatures after it are refused
+    type: string
+    format: date-time
+  retired_at:
+    description: When an identity key was replaced by an admin reset; earlier signatures stay valid
+    type: string
+    format: date-time
   consumed_at:
     description: Time this one-time authentication state was consumed
     type: string
@@ -38,4 +50,4 @@ x-relations:
     column: id
     cardinality: one
     foreignKey: user_id
-    onDelete: cascade
+    onDelete: restrict

@@ -1,6 +1,9 @@
 import type { AppContext, Next } from './context.ts'
 import type { Operation } from '../db/schema-types.ts'
-import { quote, uuidString } from '../db/views.ts'
+import { quote } from '../db/views.ts'
+import type { TableDef } from '../db/schema-types.ts'
+import { keyParam } from './ids.ts'
+import { fromSql, keySql, ownedBy } from './rows.ts'
 import type { Row, RowDatabase } from './database.ts'
 import type { Registry, ResourceMeta } from './registry.ts'
 import { uuidToBuffer } from './uuid.ts'
@@ -45,12 +48,13 @@ export const granted =
 
 /** SQL that is true when a share grants this user (or one of their groups) the permission. */
 const sharedWith =
-  (table: string, idSql: string, userId: string, grant: Grant): Scope => {
+  (definition: TableDef, rowId: string, userId: string, grant: Grant): Scope => {
     const user = uuidToBuffer(userId)
+    const table = definition.tableName
     return (
       { sql:
           `EXISTS (SELECT 1 FROM ${quote(`${table}_share`)} AS \`s\``
-          + ` WHERE ${uuidString(`\`s\`.${quote(`${table}_id`)}`)} = ${idSql}`
+          + ` WHERE \`s\`.${quote(`${table}_id`)} = ${rowId}`
           + ` AND \`s\`.${quote(grant)}`
           + ' AND (`s`.`user_id` = ? OR `s`.`user_group_id` IN'
           + ' (SELECT `m`.`user_group_id` FROM `user_group_membership` AS `m`'
@@ -84,13 +88,14 @@ export const readScope =
     const scopes: Scope[] = []
 
     if (viewer.userId) {
+      const owned = ownedBy(resource, alias, viewer.userId)
       scopes.push(
-        { sql: `${a}.\`owner\` = ? OR ${a}.\`visibility\` IN ('public', 'authenticated')`
-        , params: [viewer.userId]
+        { sql: `${owned.sql} OR ${a}.\`visibility\` IN ('public', 'authenticated')`
+        , params: owned.params
         })
       if (resource.access.shareable) {
         const shared =
-          sharedWith(resource.table, `${a}.\`id\``, viewer.userId, 'can_read')
+          sharedWith(resource.definition, keySql(resource, alias), viewer.userId, 'can_read')
         scopes.push(
           { sql: `(${a}.\`visibility\` = 'shared' AND ${shared.sql})`
           , params: shared.params
@@ -109,8 +114,9 @@ export const readScope =
       const inner = readScope(viewer, parent, registry, p, depth + 1)
       scopes.push(
         { sql:
-            `EXISTS (SELECT 1 FROM ${quote(parent.view)} AS ${quote(p)}`
-            + ` WHERE ${quote(p)}.\`id\` = ${a}.${quote(relation.foreignKey)}`
+            `EXISTS (SELECT 1 FROM ${fromSql(parent, p)}`
+            // Stored key against stored foreign key, so the parent is found by its index.
+            + ` WHERE ${keySql(parent, p)} = ${a}.${quote(relation.foreignKey)}`
             + (inner.sql ? ` AND ${inner.sql}` : '')
             + ')'
         , params: inner.params
@@ -126,11 +132,10 @@ export const writeScope =
     if (!viewer.userId) return viewer.anonymous ? NEVER : NONE
     if (granted(viewer, resource, 'update')) return NONE
 
-    const a = quote(resource.view)
-    const scopes: Scope[] = [{ sql: `${a}.\`owner\` = ?`, params: [viewer.userId] }]
+    const scopes: Scope[] = [ownedBy(resource, resource.view, viewer.userId)]
     if (resource.access.shareable)
       scopes.push(
-        sharedWith(resource.table, `${a}.\`id\``, viewer.userId, 'can_write'))
+        sharedWith(resource.definition, keySql(resource, resource.view), viewer.userId, 'can_write'))
     return anyOf(scopes)
   }
 
@@ -139,7 +144,7 @@ export const deleteScope =
   (viewer: Viewer, resource: ResourceMeta): Scope => {
     if (!viewer.userId) return viewer.anonymous ? NEVER : NONE
     if (granted(viewer, resource, 'delete')) return NONE
-    return { sql: `${quote(resource.view)}.\`owner\` = ?`, params: [viewer.userId] }
+    return ownedBy(resource, resource.view, viewer.userId)
   }
 
 /** Decide from the row alone whether it is readable; undefined means "ask the database". */
@@ -177,9 +182,9 @@ export const createReader =
           const scope = readScope(viewer, resource, registry)
           readable =
             await db.get(
-              `SELECT 1 AS found FROM ${quote(resource.view)} WHERE \`id\` = ?`
+              `SELECT 1 AS found FROM ${fromSql(resource, resource.view)} WHERE ${keySql(resource, resource.view)} = ?`
               + (scope.sql ? ` AND ${scope.sql}` : '')
-              , [row.id, ...scope.params]) !== undefined
+              , [keyParam(resource.definition, String(row.id)), ...scope.params]) !== undefined
         }
         if (readable) result.push(row)
       }

@@ -1,0 +1,359 @@
+{
+  "description": "PATCH, PUT and relationship routes write exactly what they are given",
+  "operation": "http.session",
+  "input": {
+    "schemaDir": "src/schema",
+    "users": [
+      "alice"
+    ],
+    "steps": [
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/tag",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "tag",
+            "attributes": {
+              "name": "a"
+            }
+          }
+        },
+        "save": {
+          "t1": "data.id"
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/tag",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "tag",
+            "attributes": {
+              "name": "b"
+            }
+          }
+        },
+        "save": {
+          "t2": "data.id"
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/tag",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "tag",
+            "attributes": {
+              "name": "c"
+            }
+          }
+        },
+        "save": {
+          "t3": "data.id"
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/article",
+        "select": [
+          "data.relationships.tag.data.length"
+        ],
+        "body": {
+          "data": {
+            "type": "article",
+            "attributes": {
+              "heading": "Post",
+              "subheading": "Sub",
+              "content": "Body"
+            },
+            "relationships": {
+              "tag": {
+                "data": [
+                  {
+                    "type": "tag",
+                    "id": "{{t1}}"
+                  },
+                  {
+                    "type": "tag",
+                    "id": "{{t2}}"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "save": {
+          "a": "data.id"
+        }
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/article/{{a}}",
+        "select": [
+          "data.attributes.heading",
+          "data.attributes.subheading",
+          "data.relationships.tag.data.length"
+        ],
+        "body": {
+          "data": {
+            "type": "article",
+            "id": "{{a}}",
+            "attributes": {
+              "heading": "Edited"
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/article/{{a}}",
+        "select": [
+          "data.attributes.heading",
+          "data.relationships.tag.data.length"
+        ],
+        "body": {
+          "data": {
+            "type": "article",
+            "id": "{{a}}",
+            "attributes": {},
+            "relationships": {
+              "tag": {
+                "data": [
+                  {
+                    "type": "tag",
+                    "id": "{{t3}}"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/article/{{a}}",
+        "select": [
+          "errors.0.status",
+          "errors.0.source.parameter"
+        ],
+        "body": {
+          "data": {
+            "type": "article",
+            "id": "{{a}}",
+            "attributes": {
+              "heading": "x"
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "PUT",
+        "path": "/article/{{a}}",
+        "select": [
+          "data.attributes.subheading",
+          "data.attributes.content",
+          "data.relationships.tag.data.length"
+        ],
+        "body": {
+          "data": {
+            "type": "article",
+            "id": "{{a}}",
+            "attributes": {
+              "heading": "Replaced"
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/article/{{a}}/relationships/tag",
+        "select": [
+          "data.length"
+        ],
+        "body": {
+          "data": [
+            {
+              "type": "tag",
+              "id": "{{t1}}"
+            },
+            {
+              "type": "tag",
+              "id": "{{t2}}"
+            }
+          ]
+        }
+      },
+      {
+        "as": "alice",
+        "method": "DELETE",
+        "path": "/article/{{a}}/relationships/tag",
+        "select": [
+          "data.length"
+        ],
+        "body": {
+          "data": [
+            {
+              "type": "tag",
+              "id": "{{t1}}"
+            }
+          ]
+        }
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/article/{{a}}/relationships/tag",
+        "select": [
+          "data.length"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/article/{{a}}/tag?sort=name",
+        "select": [
+          "data.length",
+          "data.0.attributes.name"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/article/{{a}}/nope",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/article/{{a}}/relationships/tag",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "tag",
+            "id": "{{t1}}"
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "PUT",
+        "path": "/article/00000000-0000-7000-8000-000000000000",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "article",
+            "id": "00000000-0000-7000-8000-000000000000",
+            "attributes": {
+              "heading": "Ghost"
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "DELETE",
+        "path": "/article/{{a}}",
+        "select": []
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/tag/{{t1}}",
+        "select": [
+          "data.attributes.name"
+        ]
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 201
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 201,
+      "data.relationships.tag.data.length": 2
+    },
+    {
+      "status": 200,
+      "data.attributes.heading": "Edited",
+      "data.attributes.subheading": "Sub",
+      "data.relationships.tag.data.length": 2
+    },
+    {
+      "status": 200,
+      "data.attributes.heading": "Edited",
+      "data.relationships.tag.data.length": 1
+    },
+    {
+      "status": 400,
+      "errors.0.status": "400",
+      "errors.0.source.parameter": "data.attributes.heading"
+    },
+    {
+      "status": 200,
+      "data.attributes.subheading": null,
+      "data.attributes.content": null,
+      "data.relationships.tag.data.length": 0
+    },
+    {
+      "status": 200,
+      "data.length": 2
+    },
+    {
+      "status": 200,
+      "data.length": 1
+    },
+    {
+      "status": 200,
+      "data.length": 1
+    },
+    {
+      "status": 200,
+      "data.length": 1,
+      "data.0.attributes.name": "b"
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 400,
+      "errors.0.status": "400"
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 204
+    },
+    {
+      "status": 200,
+      "data.attributes.name": "a"
+    }
+  ]
+}

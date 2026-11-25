@@ -23,6 +23,12 @@ properties:
     description: Display name
     type: string
     maxLength: 100
+  disabled_at:
+    description: When an admin disabled the account; a disabled user cannot log in
+    type: string
+    format: date-time
+    readOnly: true
+    x-exposed: false
 x-relations:
   keys:
     table: key

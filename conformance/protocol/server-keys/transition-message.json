@@ -1,0 +1,12 @@
+{
+  "description": "The key transition statement the old signing key signs",
+  "operation": "server-keys.transition-message",
+  "input": {
+    "previousX25519": "07a37cbc142093c8b755dc1b10e86cb426374ad16aa853ed0bdfc0b2b86d1c7c",
+    "previousEd25519": "e7f162a10bec559afea195e4dce84b69568d5d2cb0963eb446c0685e2b17f2f0",
+    "nextX25519": "64b101b1d0be5a8704bd078f9895001fc03e8e9f9522f188dd128d9846d48466",
+    "nextEd25519": "882d0ea3b2864e7a587f3e698cea4459998312e655e05fa5e8b5119d8baac8cd",
+    "stopAt": 1766592000000
+  },
+  "output": "7372732d726f746174652d7631b579871c4a1efc09e451a003dbcfe1713f18d25a1fe115c79a071789e7990f1f64b101b1d0be5a8704bd078f9895001fc03e8e9f9522f188dd128d9846d48466882d0ea3b2864e7a587f3e698cea4459998312e655e05fa5e8b5119d8baac8cd0000019b5116b000"
+}

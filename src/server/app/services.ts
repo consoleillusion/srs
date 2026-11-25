@@ -17,6 +17,23 @@ import { createSerializer, type RowExpander } from '../serialize.ts'
 import { insert } from '../sql.ts'
 import { uuidToBuffer } from '../uuid.ts'
 import type { ApiDocument } from './document.ts'
+import { bytesToBase64Url } from '../../client/crypto.ts'
+import { innerOf, type InnerRequest } from '../context.ts'
+
+/**
+ * The audit columns that keep a channel request's signature verifiable later:
+ * the signature, the certificate that vouches for its key, the exact signed
+ * bytes, and the body.
+ *
+ * @param inner - The decrypted request.
+ */
+export const retainedSignature =
+  (inner: InnerRequest) => (
+    { signature: inner.signature ? bytesToBase64Url(inner.signature) : null
+    , certificate_id: inner.channel.login ? uuidToBuffer(inner.channel.login.certificateId) : null
+    , signed_message: inner.signedMessage ? bytesToBase64Url(inner.signedMessage) : null
+    , body: inner.body && inner.body.length > 0 ? new TextDecoder().decode(inner.body) : null
+    })
 
 /** Everything the route handlers share: the database, schema, and request helpers. */
 export type Services =
@@ -95,8 +112,11 @@ export const createServices =
       , operation: Operation
       /** Run a write and, for audited operations, record it in the same transaction. */
       , run: (context: MutationContext) => Promise<string>) => {
+        // Signed writes from a channel are always retained (design book, Retention).
+        const inner = innerOf(c)
+        const retained = inner?.signed === true
         const audited =
-          resource.access.audited.includes(operation) && registry.get('audit_log')
+          (resource.access.audited.includes(operation) || retained) && registry.get('audit_log')
         const work =
           async (tx: RowDatabase) => {
             const id = await run({ ...contextFor(c), db: tx })
@@ -107,9 +127,10 @@ export const createServices =
                 , { actor: user ? uuidToBuffer(user) : null
                   , action: operation
                   , resource: resource.type
-                  , resource_id: uuidToBuffer(id)
-                  , signature:
-                      c.get('signed') ? c.req.header(SIGNATURE_HEADER) ?? null : null
+                  , resource_id: id
+                  , ...(retained
+                      ? retainedSignature(inner!)
+                      : { signature: c.get('signed') ? c.req.header(SIGNATURE_HEADER) ?? null : null })
                   })
             }
             return id

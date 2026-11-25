@@ -1,0 +1,124 @@
+{
+  "description": "A shareable resource adds the share check to the read scope",
+  "operation": "query.list",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Author",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "x-relations": {
+          "posts": {
+            "table": "post",
+            "cardinality": "many"
+          }
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Post",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "heading": {
+            "type": "string"
+          }
+        },
+        "x-relations": {
+          "author": {
+            "table": "author",
+            "cardinality": "one",
+            "required": true,
+            "onDelete": "cascade"
+          }
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Document",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string"
+          }
+        },
+        "x-access": {
+          "shareable": true,
+          "audited": true
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Bulletin",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "x-access": {
+          "read": "public",
+          "visibility": [
+            "private",
+            "public"
+          ],
+          "defaultVisibility": "public",
+          "roles": {
+            "editor": [
+              "update",
+              "delete"
+            ]
+          }
+        }
+      }
+    ],
+    "resource": "document",
+    "viewer": {
+      "user": "01900000-0000-7000-8000-00000000000b"
+    },
+    "query": ""
+  },
+  "output": [
+    {
+      "sql": "SELECT COUNT(*) AS count FROM `document` AS `document_view` WHERE ((`document_view`.`owner` = ? OR `document_view`.`visibility` IN ('public', 'authenticated') OR (`document_view`.`visibility` = 'shared' AND EXISTS (SELECT 1 FROM `document_share` AS `s` WHERE `s`.`document_id` = `document_view`.`id` AND `s`.`can_read` AND (`s`.`user_id` = ? OR `s`.`user_group_id` IN (SELECT `m`.`user_group_id` FROM `user_group_membership` AS `m` WHERE `m`.`user_id` = ?))))))",
+      "params": [
+        {
+          "hex": "0190000000007000800000000000000b"
+        },
+        {
+          "hex": "0190000000007000800000000000000b"
+        },
+        {
+          "hex": "0190000000007000800000000000000b"
+        }
+      ]
+    },
+    {
+      "sql": "SELECT\n  `document_view`.`id` AS `_key`,\n  (CASE WHEN `document_view`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`document_view`.`id`, 1, 4))) || '-' || lower(hex(substr(`document_view`.`id`, 5, 2))) || '-' || lower(hex(substr(`document_view`.`id`, 7, 2))) || '-' || lower(hex(substr(`document_view`.`id`, 9, 2))) || '-' || lower(hex(substr(`document_view`.`id`, 11, 6)))) END) AS `id`,\n  `document_view`.`updated_at` AS `updated_at`,\n  (CASE WHEN `document_view`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`document_view`.`owner`, 1, 4))) || '-' || lower(hex(substr(`document_view`.`owner`, 5, 2))) || '-' || lower(hex(substr(`document_view`.`owner`, 7, 2))) || '-' || lower(hex(substr(`document_view`.`owner`, 9, 2))) || '-' || lower(hex(substr(`document_view`.`owner`, 11, 6)))) END) AS `owner`,\n  `document_view`.`visibility` AS `visibility`,\n  `document_view`.`title` AS `title`\nFROM `document` AS `document_view` WHERE ((`document_view`.`owner` = ? OR `document_view`.`visibility` IN ('public', 'authenticated') OR (`document_view`.`visibility` = 'shared' AND EXISTS (SELECT 1 FROM `document_share` AS `s` WHERE `s`.`document_id` = `document_view`.`id` AND `s`.`can_read` AND (`s`.`user_id` = ? OR `s`.`user_group_id` IN (SELECT `m`.`user_group_id` FROM `user_group_membership` AS `m` WHERE `m`.`user_id` = ?)))))) ORDER BY `document_view`.`id` ASC LIMIT ? OFFSET ?",
+      "params": [
+        {
+          "hex": "0190000000007000800000000000000b"
+        },
+        {
+          "hex": "0190000000007000800000000000000b"
+        },
+        {
+          "hex": "0190000000007000800000000000000b"
+        },
+        20,
+        0
+      ]
+    }
+  ]
+}

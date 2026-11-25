@@ -1,0 +1,223 @@
+{
+  "description": "An owner shares a row read-only, then editable; sharing never allows delete",
+  "operation": "http.session",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Document",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string"
+          }
+        },
+        "x-access": {
+          "shareable": true,
+          "audited": true
+        }
+      }
+    ],
+    "users": [
+      "alice",
+      "bob"
+    ],
+    "steps": [
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/document",
+        "body": {
+          "data": {
+            "type": "document",
+            "attributes": {
+              "title": "Plan",
+              "visibility": "shared"
+            }
+          }
+        },
+        "save": {
+          "d": "data.id"
+        },
+        "select": []
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/document/{{d}}",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/document_share",
+        "body": {
+          "data": {
+            "type": "document_share",
+            "attributes": {
+              "can_read": true,
+              "can_write": false
+            },
+            "relationships": {
+              "document": {
+                "data": {
+                  "type": "document",
+                  "id": "{{d}}"
+                }
+              },
+              "user": {
+                "data": {
+                  "type": "user",
+                  "id": "{{bob}}"
+                }
+              }
+            }
+          }
+        },
+        "save": {
+          "s": "data.id"
+        },
+        "select": []
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/document/{{d}}",
+        "select": [
+          "data.attributes.title"
+        ]
+      },
+      {
+        "as": "bob",
+        "method": "PATCH",
+        "path": "/document/{{d}}",
+        "body": {
+          "data": {
+            "type": "document",
+            "id": "{{d}}",
+            "attributes": {
+              "title": "Mine now"
+            }
+          }
+        },
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/document_share/{{s}}",
+        "body": {
+          "data": {
+            "type": "document_share",
+            "id": "{{s}}",
+            "attributes": {
+              "can_write": true
+            }
+          }
+        },
+        "select": []
+      },
+      {
+        "as": "bob",
+        "method": "PATCH",
+        "path": "/document/{{d}}",
+        "body": {
+          "data": {
+            "type": "document",
+            "id": "{{d}}",
+            "attributes": {
+              "title": "Edited"
+            }
+          }
+        },
+        "select": [
+          "data.attributes.title"
+        ]
+      },
+      {
+        "as": "bob",
+        "method": "PATCH",
+        "path": "/document/{{d}}",
+        "body": {
+          "data": {
+            "type": "document",
+            "id": "{{d}}",
+            "attributes": {
+              "visibility": "public"
+            }
+          }
+        },
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "bob",
+        "method": "DELETE",
+        "path": "/document/{{d}}",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/audit_log?filter[resource]=document&sort=updated_at",
+        "select": [
+          "meta.page.total",
+          "data.0.attributes.action",
+          "data.1.attributes.action"
+        ]
+      }
+    ],
+    "admins": [
+      "alice"
+    ]
+  },
+  "output": [
+    {
+      "status": 201
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 200,
+      "data.attributes.title": "Plan"
+    },
+    {
+      "status": 403,
+      "errors.0.status": "403"
+    },
+    {
+      "status": 200
+    },
+    {
+      "status": 200,
+      "data.attributes.title": "Edited"
+    },
+    {
+      "status": 403,
+      "errors.0.status": "403"
+    },
+    {
+      "status": 403,
+      "errors.0.status": "403"
+    },
+    {
+      "status": 200,
+      "meta.page.total": 2,
+      "data.0.attributes.action": "create",
+      "data.1.attributes.action": "update"
+    }
+  ]
+}

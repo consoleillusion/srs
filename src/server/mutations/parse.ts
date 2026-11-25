@@ -2,7 +2,7 @@ import { badRequest } from '../errors.ts'
 import { isObject } from '../guard.ts'
 import { ajv, errorField } from '../ajv.ts'
 import type { ResourceMeta, RelationshipMeta } from '../registry.ts'
-import { UUID_PATTERN } from '../uuid.ts'
+import { canonicalId, idKindOf, isValidId } from '../ids.ts'
 import { type WriteDocument, type AttributeValidator } from './types.ts'
 
 const attributeValidators =
@@ -38,16 +38,16 @@ const buildAttributeValidator =
 const identifier =
   ( value: unknown
   , label: string
-  , expectedType: string) => {
+  , meta: RelationshipMeta) => {
     if (!isObject(value)
-        || value.type !== expectedType
+        || value.type !== meta.type
         || typeof value.id !== 'string'
-        || !UUID_PATTERN.test(value.id))
+        || !isValidId(meta.target, value.id))
       throw badRequest(
-        `Relationship "${label}" must contain "${expectedType}" identifiers`
+        `Relationship "${label}" must contain "${meta.type}" identifiers`
         , `relationships.${label}`)
 
-    return value.id.toLowerCase()
+    return canonicalId(meta.target, value.id)
   }
 
 export const parseRelationship =
@@ -61,14 +61,14 @@ export const parseRelationship =
     if (meta.cardinality === 'one')
       return value.data === null
         ? null
-        : identifier(value.data, label, meta.type)
+        : identifier(value.data, label, meta)
 
     if (!Array.isArray(value.data))
       throw badRequest(
         `Relationship "${label}" must contain an array of identifiers`
         , `relationships.${label}`)
 
-    return [...new Set(value.data.map(x => identifier(x, label, meta.type)))]
+    return [...new Set(value.data.map(x => identifier(x, label, meta)))]
   }
 
 export const parseWriteDocument =
@@ -85,14 +85,20 @@ export const parseWriteDocument =
 
     let id: string | undefined
     if (data.id !== undefined) {
-      if (typeof data.id !== 'string' || !UUID_PATTERN.test(data.id))
-        throw badRequest('Resource id must be a canonical UUID', 'data.id')
-      id = data.id.toLowerCase()
+      const table = resource.definition
+      if (typeof data.id !== 'string' || !isValidId(table, data.id))
+        throw badRequest(
+          { uuid: 'Resource id must be a canonical UUID'
+          , integer: 'Resource id must be a whole number, as a string'
+          , string: 'Resource id must be a string of 1 to 255 characters'
+          }[idKindOf(table)]
+          , 'data.id')
+      id = canonicalId(table, data.id)
     }
 
     if (options.id !== undefined
         && id !== undefined
-        && id !== options.id.toLowerCase())
+        && id !== canonicalId(resource.definition, options.id))
       throw badRequest(
         'Resource id does not match the request path', 'data.id')
 

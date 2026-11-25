@@ -136,7 +136,7 @@ describe('buildSchema column types', () => {
         { a: { type: 'string', 'x-primary': true }
         , b: { type: 'string', 'x-primary': true }
         }
-      })).toThrow('multiple primary keys')
+      })).toThrow('only one property can be x-primary')
 
     expect(() => buildSchema(
       [ loadedSchema({ title: 'Widget', type: 'object', properties: {} })

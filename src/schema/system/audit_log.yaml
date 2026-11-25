@@ -4,6 +4,7 @@ type: object
 additionalProperties: false
 description: Append-only record of audited actions. Written by the server; readable by admins
 x-system: true
+x-append-only: true
 x-access:
   create: role
   visibility:
@@ -23,11 +24,21 @@ properties:
     description: Resource type acted on
     type: string
   resource_id:
-    description: Id of the row acted on
+    description: Id of the row acted on, as the API shows it
     type: string
-    format: uuid
+    maxLength: 255
   signature:
     description: Request signature, when the request was signed
+    type: string
+  certificate_id:
+    description: Session certificate whose key made the signature (Noise transport)
+    type: string
+    format: uuid
+  signed_message:
+    description: The exact signed bytes, base64url, so the signature can be checked later
+    type: string
+  body:
+    description: The signed request body, kept so the signed content can be shown later
     type: string
 required:
   - action

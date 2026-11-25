@@ -1,0 +1,93 @@
+{
+  "description": "An unknown resource is refused",
+  "operation": "query.list",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Author",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "x-relations": {
+          "posts": {
+            "table": "post",
+            "cardinality": "many"
+          }
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Post",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "heading": {
+            "type": "string"
+          }
+        },
+        "x-relations": {
+          "author": {
+            "table": "author",
+            "cardinality": "one",
+            "required": true,
+            "onDelete": "cascade"
+          }
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Document",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string"
+          }
+        },
+        "x-access": {
+          "shareable": true,
+          "audited": true
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Bulletin",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "x-access": {
+          "read": "public",
+          "visibility": [
+            "private",
+            "public"
+          ],
+          "defaultVisibility": "public",
+          "roles": {
+            "editor": [
+              "update",
+              "delete"
+            ]
+          }
+        }
+      }
+    ],
+    "resource": "nothing",
+    "viewer": {
+      "user": "01900000-0000-7000-8000-00000000000a"
+    },
+    "query": ""
+  },
+  "error": "unknown-resource"
+}

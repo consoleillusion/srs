@@ -1,5 +1,5 @@
 import type { Hono } from 'hono'
-import nacl from 'tweetnacl'
+import { ed25519Sign, randomBytes } from '../../src/client/crypto.ts'
 import
   { NONCE_HEADER
   , SIGNATURE_HEADER
@@ -128,7 +128,7 @@ export const signedRequestAs =
   async (app: Hono, user: SignedIn, method: string, path: string, body?: unknown) => {
     const text = body === undefined ? '' : JSON.stringify(body)
     const timestamp = String(Date.now())
-    const nonce = Buffer.from(nacl.randomBytes(16)).toString('base64url')
+    const nonce = Buffer.from(randomBytes(16)).toString('base64url')
     const message =
       signingMessage(
         { method
@@ -146,7 +146,7 @@ export const signedRequestAs =
           , accept: JSON_API
           , 'content-type': JSON_API
           , [SIGNATURE_HEADER]:
-              Buffer.from(nacl.sign.detached(message, user.secretKey)).toString('base64url')
+              Buffer.from(ed25519Sign(message, user.secretKey)).toString('base64url')
           , [TIMESTAMP_HEADER]: timestamp
           , [NONCE_HEADER]: nonce
           }

@@ -1,6 +1,6 @@
 import { snakeCase, type LoadedSchema } from './schema-types.ts'
 import { normalizeAccess } from './access.ts'
-import { DEFAULT_ID, tableNameOf, findProperty, resolveTargetProperty, foreignKeyProperty, validateRelation, hasInverseOne } from './derive/helpers.ts'
+import { keyColumnOf, tableNameOf, findProperty, resolveTargetProperty, foreignKeyProperty, validateRelation, hasInverseOne } from './derive/helpers.ts'
 import { type JoinCandidate, deriveJoinTable } from './derive/join.ts'
 import { deriveShareTable, normalizePropertyTypes } from './derive/share.ts'
 
@@ -44,7 +44,7 @@ export const deriveSchemas =
           throw new Error(
             `${schema.title}: relation "${label}" targets unknown table "${relation.table}"`)
 
-        relation.column = snakeCase(relation.column ?? DEFAULT_ID)
+        relation.column = snakeCase(relation.column ?? keyColumnOf(target.schema))
         const targetProperty =
           resolveTargetProperty(target.schema, relation.table, relation.column)
 

@@ -7,6 +7,31 @@ export const DEFAULT_ID = 'id'
 
 const DEFAULT_UPDATED_AT = 'updated_at'
 
+/**
+ * The column that identifies a table's rows: the property marked
+ * `x-primary: true`, or `id` when there is none (design book, Schema).
+ *
+ * @param schema - A table schema.
+ * @returns The snake_case column name.
+ * @throws When more than one property is marked, or the key's type cannot be a resource id.
+ */
+export const keyColumnOf =
+  (schema: JSONSchema): string => {
+    const marked =
+      Object.entries(schema.properties ?? {}).filter(([, property]) => property['x-primary'] === true)
+    if (marked.length > 1)
+      throw new Error(`${schema.title}: only one property can be x-primary, found ${marked.map(([key]) => key).join(', ')}`)
+    const found = marked[0]
+    if (!found) return DEFAULT_ID
+    const [key, property] = found
+    const type = Array.isArray(property.type) ? property.type.find(x => x !== 'null') : property.type
+    if (type !== 'integer' && type !== 'string')
+      throw new Error(`${schema.title}: x-primary property "${key}" must be an integer or a string`)
+    if (type === 'string' && property.format !== undefined && property.format !== 'uuid')
+      throw new Error(`${schema.title}: x-primary property "${key}" cannot have format "${property.format}"`)
+    return snakeCase(key)
+  }
+
 export const tableNameOf =
   (schema: JSONSchema) => snakeCase(schema.title)
 

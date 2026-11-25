@@ -1,0 +1,16 @@
+{
+  "description": "A request signature only verifies for the counter it was made for",
+  "operation": "accounts.verify-request",
+  "input": {
+    "sessionPublic": "03ff0e60c3634744bf45cec1833341ccdde192a3f66873422378bcbd46a32f1b",
+    "h": "1112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f30",
+    "sid": "b0b1b2b3b4b5b6b7b8b9babbbcbdbebf",
+    "n": "3",
+    "method": "GET",
+    "path": "/tag",
+    "contentType": "",
+    "body": "",
+    "signature": "870d5abb06929089e9a1ed9d506b75564e6075cbb110138d75c6750f6d75e5a7ea11a7416fff2a4f568da929c7c03b1407083b6f6742f27a9df047777f0e8102"
+  },
+  "output": true
+}

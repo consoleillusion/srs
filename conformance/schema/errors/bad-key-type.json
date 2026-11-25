@@ -1,0 +1,21 @@
+{
+  "description": "A key must be an integer or a string",
+  "operation": "schema.build",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Widget",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "a": {
+            "type": "number",
+            "x-primary": true
+          }
+        }
+      }
+    ]
+  },
+  "error": "bad-key-type"
+}

@@ -1,0 +1,155 @@
+{
+  "description": "Nested include paths, merged repeats, and rows the viewer may not read are never included",
+  "operation": "http.session",
+  "input": {
+    "schemaDir": "src/schema",
+    "users": [
+      "alice",
+      "bob"
+    ],
+    "steps": [
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/chat",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "chat",
+            "attributes": {
+              "name": "Team",
+              "visibility": "shared"
+            }
+          }
+        },
+        "save": {
+          "c": "data.id"
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/message",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "message",
+            "attributes": {
+              "text": "hello"
+            },
+            "relationships": {
+              "chat": {
+                "data": {
+                  "type": "chat",
+                  "id": "{{c}}"
+                }
+              }
+            }
+          }
+        },
+        "save": {
+          "m": "data.id"
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/message",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "message",
+            "attributes": {
+              "text": "again"
+            },
+            "relationships": {
+              "chat": {
+                "data": {
+                  "type": "chat",
+                  "id": "{{c}}"
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/message/{{m}}?include=chat.messages",
+        "select": [
+          "included.length",
+          "data.relationships.chat.data.type"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/message?include=chat",
+        "select": [
+          "data.length",
+          "included.length"
+        ]
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/message/{{m}}?include=chat",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/message/{{m}}?include=nope",
+        "select": [
+          "errors.0.status",
+          "errors.0.source.parameter"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/message/{{m}}?include=chat.messages.chat.messages",
+        "select": [
+          "errors.0.status"
+        ]
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 201
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 200,
+      "included.length": 2,
+      "data.relationships.chat.data.type": "chat"
+    },
+    {
+      "status": 200,
+      "data.length": 2,
+      "included.length": 1
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 400,
+      "errors.0.status": "400",
+      "errors.0.source.parameter": "include"
+    },
+    {
+      "status": 400,
+      "errors.0.status": "400"
+    }
+  ]
+}

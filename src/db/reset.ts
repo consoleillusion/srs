@@ -1,7 +1,8 @@
+import { fileURLToPath } from 'node:url'
 import { access, cp, mkdir, rm } from 'node:fs/promises'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 
-const projectRoot = join(import.meta.dir, '../..')
+const projectRoot = resolve(fileURLToPath(new URL('../..', import.meta.url)))
 const backupRoot = '/tmp/opencode'
 
 const paths =

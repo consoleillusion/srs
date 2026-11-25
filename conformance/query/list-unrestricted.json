@@ -1,0 +1,103 @@
+{
+  "description": "With no viewer at all (access control off, as for createApp without accounts), lists are unrestricted",
+  "operation": "query.list",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Author",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "x-relations": {
+          "posts": {
+            "table": "post",
+            "cardinality": "many"
+          }
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Post",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "heading": {
+            "type": "string"
+          }
+        },
+        "x-relations": {
+          "author": {
+            "table": "author",
+            "cardinality": "one",
+            "required": true,
+            "onDelete": "cascade"
+          }
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Document",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string"
+          }
+        },
+        "x-access": {
+          "shareable": true,
+          "audited": true
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Bulletin",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "x-access": {
+          "read": "public",
+          "visibility": [
+            "private",
+            "public"
+          ],
+          "defaultVisibility": "public",
+          "roles": {
+            "editor": [
+              "update",
+              "delete"
+            ]
+          }
+        }
+      }
+    ],
+    "resource": "post",
+    "viewer": {},
+    "query": ""
+  },
+  "output": [
+    {
+      "sql": "SELECT COUNT(*) AS count FROM `post` AS `post_view`",
+      "params": []
+    },
+    {
+      "sql": "SELECT\n  `post_view`.`id` AS `_key`,\n  (CASE WHEN `post_view`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`post_view`.`id`, 1, 4))) || '-' || lower(hex(substr(`post_view`.`id`, 5, 2))) || '-' || lower(hex(substr(`post_view`.`id`, 7, 2))) || '-' || lower(hex(substr(`post_view`.`id`, 9, 2))) || '-' || lower(hex(substr(`post_view`.`id`, 11, 6)))) END) AS `id`,\n  `post_view`.`updated_at` AS `updated_at`,\n  (CASE WHEN `post_view`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`post_view`.`owner`, 1, 4))) || '-' || lower(hex(substr(`post_view`.`owner`, 5, 2))) || '-' || lower(hex(substr(`post_view`.`owner`, 7, 2))) || '-' || lower(hex(substr(`post_view`.`owner`, 9, 2))) || '-' || lower(hex(substr(`post_view`.`owner`, 11, 6)))) END) AS `owner`,\n  `post_view`.`visibility` AS `visibility`,\n  `post_view`.`heading` AS `heading`,\n  (CASE WHEN `post_view`.`author_id` IS NULL THEN NULL ELSE (lower(hex(substr(`post_view`.`author_id`, 1, 4))) || '-' || lower(hex(substr(`post_view`.`author_id`, 5, 2))) || '-' || lower(hex(substr(`post_view`.`author_id`, 7, 2))) || '-' || lower(hex(substr(`post_view`.`author_id`, 9, 2))) || '-' || lower(hex(substr(`post_view`.`author_id`, 11, 6)))) END) AS `author_id`,\n  (SELECT json_object('id', (CASE WHEN `r`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`id`, 1, 4))) || '-' || lower(hex(substr(`r`.`id`, 5, 2))) || '-' || lower(hex(substr(`r`.`id`, 7, 2))) || '-' || lower(hex(substr(`r`.`id`, 9, 2))) || '-' || lower(hex(substr(`r`.`id`, 11, 6)))) END), 'owner', (CASE WHEN `r`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`owner`, 1, 4))) || '-' || lower(hex(substr(`r`.`owner`, 5, 2))) || '-' || lower(hex(substr(`r`.`owner`, 7, 2))) || '-' || lower(hex(substr(`r`.`owner`, 9, 2))) || '-' || lower(hex(substr(`r`.`owner`, 11, 6)))) END), 'visibility', `r`.`visibility`) FROM `author` AS `r` WHERE `r`.`id` = `post_view`.`author_id` LIMIT 1) AS `author`\nFROM `post` AS `post_view` ORDER BY `post_view`.`id` ASC LIMIT ? OFFSET ?",
+      "params": [
+        20,
+        0
+      ]
+    }
+  ]
+}

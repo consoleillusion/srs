@@ -1,0 +1,132 @@
+{
+  "description": "Signed, audited resources record every write; the audit log is append-only and admin-read",
+  "operation": "http.session",
+  "input": {
+    "schemaDir": "src/schema",
+    "users": [
+      "admin",
+      "alice"
+    ],
+    "admins": [
+      "admin"
+    ],
+    "steps": [
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/payment",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "payment",
+            "attributes": {
+              "amount": 500,
+              "currency": "NZD"
+            }
+          }
+        },
+        "save": {
+          "p": "data.id"
+        }
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/payment/{{p}}",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "payment",
+            "id": "{{p}}",
+            "attributes": {
+              "amount": 450
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "DELETE",
+        "path": "/payment/{{p}}",
+        "select": []
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/audit_log",
+        "select": [
+          "meta.page.total"
+        ]
+      },
+      {
+        "as": "admin",
+        "method": "GET",
+        "path": "/audit_log?filter[resource]=payment&sort=updated_at",
+        "select": [
+          "meta.page.total",
+          "data.0.attributes.action",
+          "data.1.attributes.action",
+          "data.2.attributes.action"
+        ],
+        "save": {
+          "e": "data.0.id"
+        }
+      },
+      {
+        "as": "admin",
+        "method": "PATCH",
+        "path": "/audit_log/{{e}}",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "audit_log",
+            "id": "{{e}}",
+            "attributes": {
+              "action": "forged"
+            }
+          }
+        }
+      },
+      {
+        "as": "admin",
+        "method": "DELETE",
+        "path": "/audit_log/{{e}}",
+        "select": [
+          "errors.0.status"
+        ]
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 201
+    },
+    {
+      "status": 200
+    },
+    {
+      "status": 204
+    },
+    {
+      "status": 200,
+      "meta.page.total": 0
+    },
+    {
+      "status": 200,
+      "meta.page.total": 3,
+      "data.0.attributes.action": "create",
+      "data.1.attributes.action": "update",
+      "data.2.attributes.action": "delete"
+    },
+    {
+      "status": 403,
+      "errors.0.status": "403"
+    },
+    {
+      "status": 403,
+      "errors.0.status": "403"
+    }
+  ]
+}

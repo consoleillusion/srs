@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { readFile } from 'node:fs/promises'
+import { readdir, readFile } from 'node:fs/promises'
 import { join, relative, resolve } from 'node:path'
 import * as opaque from '@serenity-kit/opaque'
 import { generateMigrations } from './db/generate-migration.ts'
@@ -7,7 +7,28 @@ import { writeIfChanged } from './db/fs.ts'
 import { loadSchemas } from './db/load-schemas.ts'
 import type { LoadedSchema } from './db/schema-types.ts'
 import { openDatabase } from './db/open.ts'
+import { applyMigrations } from './db/migrate.ts'
+import { createRemoteRowDatabase, migrationConnection, openRemote, remoteSettings } from './db/remote.ts'
+import { backupDatabase, restoreDatabase, startBackupSchedule } from './db/backup.ts'
+import { createMetrics, serveMetrics } from './server/metrics.ts'
+import { verifyRetainedSignatures } from './db/verify-signatures.ts'
+import { generateTypes } from './db/types.ts'
+import { createRowDatabase } from './server/database.ts'
+import { DEFAULT_MAX_BODY_BYTES, httpOptionsFromEnv } from './server/http.ts'
 import { createServerApp } from './server/start.ts'
+import { createServerKeys, createTransition, parseServerKeys } from './auth/server-keys.ts'
+
+/**
+ * How to run the CLI from the current folder, for messages that name a command:
+ * `bunx srs` where SRS is installed as a dependency, otherwise `bun <path to cli.ts>`.
+ */
+export const invocation =
+  (): string => {
+    const script = process.argv[1] ?? ''
+    if (script.includes('node_modules') || !script.endsWith('cli.ts')) return 'bunx srs'
+    const path = relative(process.cwd(), script)
+    return `bun ${path.startsWith('..') ? script : path}`
+  }
 
 export const defaultDir = '.srs'
 
@@ -29,9 +50,27 @@ export const schemaHash =
 /** Read the settings written by init, or fail with the command to run. */
 const readConfig =
   async (dir: string): Promise<ProjectConfig> => {
-    const text = await readFile(configPath(dir), 'utf8').catch(() => undefined)
-    if (text === undefined)
-      throw new Error(`No ${configPath(dir)}. Run \`srs init <schema…>\` first.`)
+    let text: string
+    try {
+      text = await readFile(configPath(dir), 'utf8')
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code
+      if (code === 'ENOENT' && process.env.SRS_IN_CONTAINER === '1') {
+        const mounted = (await readdir(process.cwd()).catch(() => [])).length > 0
+        throw new Error(
+          mounted
+            ? `The folder mounted at ${process.cwd()} has no ${relative(process.cwd(), configPath(dir))}. Run init in that folder on the host first.`
+            : `Nothing is mounted at ${process.cwd()}. From the folder where you ran init, run:\n\n`
+              + '  podman run -p 5734:5734 --userns=keep-id -v "$PWD":/project:ro,z -v srs-data:/data srs\n')
+      }
+      if (code === 'ENOENT')
+        throw new Error(`No ${configPath(dir)}. Run \`${invocation()} init <schema…>\` first, in ${process.cwd()}.`)
+      // Anything else (permission denied, a bad mount) must not be reported as a missing file.
+      throw new Error(
+        `Cannot read ${configPath(dir)}: ${code ?? String(error)}. If the project is mounted into a `
+        + 'container, check that the container user can read it (with Podman: add :z to the mount '
+        + 'on SELinux systems, and run rootless with --userns=keep-id).')
+    }
     return JSON.parse(text) as ProjectConfig
   }
 
@@ -49,7 +88,7 @@ export const init =
   async (options: { schemas: string[], dir?: string }) => {
     const dir = resolve(options.dir ?? defaultDir)
     if (options.schemas.length === 0)
-      throw new Error('Give init a schema folder or files, e.g. `srs init schemas`.')
+      throw new Error(`Give init a schema folder or files, e.g. \`${invocation()} init schemas\`.`)
 
     const loaded = await loadSchemas({ schemaDir: options.schemas })
     const { built } = await generateMigrations(join(dir, 'migrations'), loaded)
@@ -60,6 +99,9 @@ export const init =
       , schemaHash: schemaHash(loaded)
       }
     await writeIfChanged(configPath(dir), JSON.stringify(config, null, 2) + '\n')
+    await writeIfChanged(join(dir, 'types.ts'), generateTypes(built))
+    // The loaded schemas, for a serverless handler that cannot read the schema folder (srs/serverless).
+    await writeIfChanged(join(dir, 'schemas.json'), JSON.stringify(loaded) + '\n')
 
     const key = await serverKey()
     console.log(`\nInitialised ${relative(process.cwd(), dir) || '.'} (${built.orderedTables.length} tables).`)
@@ -67,8 +109,18 @@ export const init =
       console.log(`\nAdd this to your .env (keep it secret; changing it locks every user out):\n\n  OPAQUE_SERVER_SETUP=${key.value}\n`)
     else
       console.log('\nOPAQUE_SERVER_SETUP is already set, so it was kept.')
-    console.log('Optional .env settings: DB_PATH (default .db), PORT (default 5734), SERBER_ADMINS (comma-separated usernames).')
-    console.log('\nThen run `srs serve`. Run init again after any schema change.')
+    if (process.env.SRS_SERVER_KEYS)
+      console.log(
+        `\nSRS_SERVER_KEYS is already set, so it was kept. Clients pin:\n\n  ${parseServerKeys(process.env.SRS_SERVER_KEYS).fingerprint}\n`)
+    else {
+      const created = createServerKeys()
+      console.log(
+        '\nAdd this to your .env too (keep it secret; changing it breaks every pinned client):'
+        + `\n\n  SRS_SERVER_KEYS=${created.setting}\n`
+        + `\nGive clients this fingerprint to pin:\n\n  ${created.keys.fingerprint}\n`)
+    }
+    console.log('Optional .env settings: DB_PATH (default .db), PORT (default 5734), SRS_ADMINS (comma-separated usernames).')
+    console.log(`\nThen run \`${invocation()} serve\`. Run init again after any schema change.`)
   }
 
 /** Start the server for the schemas recorded by init, refusing to run if they changed since. */
@@ -79,16 +131,235 @@ export const serve =
     const loaded = await loadSchemas({ schemaDir: config.schemas })
     if (schemaHash(loaded) !== config.schemaHash)
       throw new Error(
-        'The schemas changed since `init`. Run `srs init '
-        + `${config.schemas.join(' ')}\` again, then serve.`)
+        `The schemas changed since init. Run \`${invocation()} init ${config.schemas.join(' ')}\` again, then serve.`)
 
+    const remote = remoteSettings()
+    const db = remote ? undefined : await openDatabase()
+    if (remote) await applyMigrations(migrationConnection(openRemote(remote)), join(dir, 'migrations'))
+    const metricsPort = process.env.SRS_METRICS_PORT
+    if (metricsPort !== undefined && !/^\d+$/.test(metricsPort))
+      throw new Error(`SRS_METRICS_PORT must be a port number, got "${metricsPort}"`)
+    const metrics = metricsPort ? createMetrics() : undefined
     const app = await createServerApp(
       { loaded
-      , db: await openDatabase()
+      , db
+      , rows: remote ? createRemoteRowDatabase(remote) : undefined
       , migrationsFolder: join(dir, 'migrations')
+      , metrics
       })
+    const metricsServer = metrics && metricsPort ? serveMetrics(metrics, Number(metricsPort)) : undefined
     const port = options.port ?? Number(process.env.PORT ?? 5734)
-    const server = Bun.serve({ port, fetch: app.fetch })
+    const server =
+      Bun.serve(
+        { port
+        , fetch: app.fetch
+        // Refuse oversized bodies at the socket, before the app reads them.
+        , maxRequestBodySize: httpOptionsFromEnv().maxBodyBytes ?? DEFAULT_MAX_BODY_BYTES
+        })
     console.log(`Server listening on http://localhost:${server.port}`)
+
+    // Finish in-flight requests, then close the database, so a deploy never cuts a write short.
+    const backupDir = process.env.SRS_BACKUP_DIR
+    const stopBackups =
+      backupDir && db
+        ? await startBackupSchedule(
+            db
+            , { dir: resolve(backupDir)
+              , intervalMs: Number(process.env.SRS_BACKUP_INTERVAL_HOURS ?? 24) * 3_600_000
+              , keep: Number(process.env.SRS_BACKUP_KEEP ?? 7)
+              , onBackup: metrics?.backup
+              })
+        : undefined
+    if (remote)
+      console.log('Using the remote database at SRS_DATABASE_URL; back it up with Turso.')
+    else if (!backupDir)
+      console.warn('SRS_BACKUP_DIR is not set, so no backups are being taken.')
+
+    const shutdown =
+      async () => {
+        stopBackups?.()
+        metricsServer?.stop()
+        await server.stop()
+        await db?.close()
+        process.exit(0)
+      }
+    process.once('SIGTERM', shutdown)
+    process.once('SIGINT', shutdown)
     return server
+  }
+
+/** Copy the database to a new verified file. Run it with the server stopped, or use SRS_BACKUP_DIR while serving. */
+export const backup =
+  async (options: { file: string }) => {
+    if (remoteSettings())
+      throw new Error('backup copies the embedded database file; a remote database is backed up by Turso (point-in-time recovery).')
+    const db = await openDatabase()
+    try {
+      await backupDatabase(db, options.file)
+    } finally {
+      await db.close()
+    }
+    console.log(`Backed up to ${resolve(options.file)}`)
+  }
+
+/** Replace the database with a verified backup. The server must be stopped. */
+export const restore =
+  async (options: { file: string, force?: boolean }) => {
+    const target = resolve(process.env.DB_PATH ?? '.db')
+    await restoreDatabase(options.file, target, options.force)
+    console.log(`Restored ${resolve(options.file)} to ${target}`)
+  }
+
+/** Check every retained request signature in the database. The server must be stopped. */
+export const verifySignatures =
+  async () => {
+    const db = await openDatabase()
+    try {
+      const results = await verifyRetainedSignatures(createRowDatabase(db))
+      const invalid = results.filter(x => !x.valid)
+      for (const result of results)
+        console.log(
+          `${result.valid ? 'ok     ' : 'INVALID'} ${result.auditId} ${result.action} ${result.resource}`
+          + (result.reason ? ` (${result.reason})` : ''))
+      console.log(`\n${results.length} retained signatures, ${invalid.length} invalid.`)
+      if (invalid.length > 0) process.exitCode = 1
+    } finally {
+      await db.close()
+    }
+  }
+
+/**
+ * Start a server key rotation: create a new bundle and a transition statement
+ * signed by the current one. Prints the settings to deploy.
+ *
+ * @param options - How many days the old keys keep working.
+ */
+export const rotateKeys =
+  (options: { days?: number }) => {
+    const current = process.env.SRS_SERVER_KEYS
+    if (!current) throw new Error('SRS_SERVER_KEYS must be set to the bundle being replaced')
+    const days = options.days ?? 30
+    if (!Number.isFinite(days) || days < 1) throw new Error('--days must be at least 1')
+    const previous = parseServerKeys(current)
+    const next = createServerKeys()
+    const stopAt = Date.now() + days * 24 * 60 * 60_000
+    const { setting } = createTransition(previous, next.keys, stopAt)
+    console.log(
+      'Set these three settings (keep them secret), then restart:\n'
+      + `\n  SRS_SERVER_KEYS=${next.setting}`
+      + `\n  SRS_PREVIOUS_SERVER_KEYS=${current}`
+      + `\n  SRS_KEY_TRANSITION=${setting}\n`
+      + `\nClients pinned to ${previous.fingerprint} move to ${next.keys.fingerprint} on their own`
+      + ` until ${new Date(stopAt).toISOString()}. After that, remove SRS_PREVIOUS_SERVER_KEYS and`
+      + ' SRS_KEY_TRANSITION; clients that have not moved must be given the new fingerprint by hand.')
+  }
+
+/**
+ * Serve the browser console for using a server over the Noise transport.
+ *
+ * @param options - Port and host for the console page.
+ */
+export const consolePage =
+  async (options: { port?: number, host?: string }) => {
+    const { serveConsole } = await import('./console/serve.ts')
+    const server = await serveConsole(options)
+    const origin = `http://${server.hostname === '0.0.0.0' ? 'YOUR-ADDRESS' : server.hostname}:${server.port}`
+    console.log(
+      `SRS console: ${origin}\n`
+      + `\nThe page and the server are different origins, so start the server with:\n`
+      + `\n  SRS_CORS_ORIGINS=${origin}\n`
+      + '\nThen open the page, enter the server URL and the fingerprint printed by init, and connect.')
+  }
+
+/**
+ * Plan an import from an existing SQLite database: write one schema per table,
+ * and a report of what could not be carried over (design book, Existing databases).
+ *
+ * @param options - The source file, the folder for the schemas, whether to replace files there, and where to write the report.
+ */
+export const importSchemas =
+  async (options: { file: string, out: string, force?: boolean, report?: string }) => {
+    const { planImport } = await import('./db/import.ts')
+    const { stringify } = await import('yaml')
+    const { mkdir, writeFile, access } = await import('node:fs/promises')
+    const plan = planImport(resolve(options.file))
+    const out = resolve(options.out)
+    await mkdir(out, { recursive: true })
+    for (const table of plan.tables) {
+      const path = join(out, `${table.target}.yaml`)
+      if (!options.force && await access(path).then(() => true, () => false))
+        throw new Error(`${path} exists. Use --force to replace it, or another --out folder.`)
+    }
+    for (const table of plan.tables)
+      await writeFile(join(out, `${table.target}.yaml`), stringify(table.schema, { lineWidth: 0 }))
+    const report =
+      `# Import report\n\nSource: ${resolve(options.file)}\n\n`
+      + `${plan.tables.length} tables: ${plan.tables.map(x => x.target).join(', ')}\n\n`
+      + (plan.notes.length ? plan.notes.map(x => `- ${x}`).join('\n') + '\n' : 'Everything was carried over.\n')
+    // Beside the schema folder, not in it: the folder holds schema files only.
+    await writeFile(resolve(options.report ?? 'import-report.md'), report)
+    console.log(report)
+    console.log(
+      `Wrote ${plan.tables.length} schemas to ${out}, and this report to import-report.md.\nReview the schemas (add x-access rules), then:\n`
+      + `\n  ${invocation()} init ${relative(process.cwd(), out) || '.'}`
+      + `\n  ${invocation()} serve            # register the user who will own the rows, then stop it`
+      + `\n  ${invocation()} import ${options.file} --data --owner <username>`)
+  }
+
+/**
+ * Copy the rows of an existing SQLite database into the SRS database built
+ * from its imported schemas. The server must be stopped.
+ *
+ * @param options - The source file, the owning username, and the project folder.
+ */
+export const importData =
+  async (options: { file: string, owner: string, dir?: string }) => {
+    const { planImport, copyRows } = await import('./db/import.ts')
+    const { applyMigrations } = await import('./db/migrate.ts')
+    const { buildSchema } = await import('./db/build-schema.ts')
+    const { canonicalUuid } = await import('./server/uuid.ts')
+    const dir = resolve(options.dir ?? defaultDir)
+    const config = await readConfig(dir)
+    const loaded = await loadSchemas({ schemaDir: config.schemas })
+    if (schemaHash(loaded) !== config.schemaHash)
+      throw new Error(`The schemas changed since init. Run \`${invocation()} init ${config.schemas.join(' ')}\` again first.`)
+    const remote = remoteSettings()
+    const db = remote ? migrationConnection(openRemote(remote)) : await openDatabase()
+    try {
+      await applyMigrations(db, join(dir, 'migrations'))
+      const rows = remote ? createRemoteRowDatabase(remote) : createRowDatabase(db as Awaited<ReturnType<typeof openDatabase>>)
+      const user = await rows.get('SELECT `id` FROM `user` WHERE lower(`username`) = lower(?)', [options.owner])
+      if (!user)
+        throw new Error(`No user "${options.owner}". Start the server, register that user, stop the server, and run this again.`)
+      const counts =
+        await copyRows(resolve(options.file), planImport(resolve(options.file)), rows, buildSchema(loaded).orderedTables, canonicalUuid(user.id))
+      for (const [table, count] of Object.entries(counts)) console.log(`${table}: ${count} rows`)
+      console.log(`\nImported into ${remote ? remote.url : resolve(process.env.DB_PATH ?? '.db')}, owned by ${options.owner}.`)
+    } finally {
+      await db.close()
+    }
+  }
+
+/**
+ * Apply the migrations written by init to the database: the embedded file, or
+ * the remote one when SRS_DATABASE_URL is set. A serverless deployment, which
+ * never runs serve, applies them this way before each deploy.
+ *
+ * @param options - The project folder written by init.
+ */
+export const migrate =
+  async (options: { dir?: string }) => {
+    const dir = resolve(options.dir ?? defaultDir)
+    const config = await readConfig(dir)
+    const loaded = await loadSchemas({ schemaDir: config.schemas })
+    if (schemaHash(loaded) !== config.schemaHash)
+      throw new Error(`The schemas changed since init. Run \`${invocation()} init ${config.schemas.join(' ')}\` again first.`)
+    const remote = remoteSettings()
+    const connection = remote ? migrationConnection(openRemote(remote)) : await openDatabase()
+    try {
+      await applyMigrations(connection, join(dir, 'migrations'))
+    } finally {
+      await connection.close()
+    }
+    console.log(`Migrations applied to ${remote ? remote.url : resolve(process.env.DB_PATH ?? '.db')}.`)
   }

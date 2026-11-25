@@ -1,4 +1,4 @@
-import { pathParam, type AppContext } from '../context.ts'
+import { linkRoot, pathParam, type AppContext } from '../context.ts'
 import { readJson } from '../io.ts'
 import
   { assertMayCreate
@@ -29,7 +29,7 @@ export const crudHandlers =
     const collection =
       async (c: AppContext, resource: ResourceMeta, extra: Condition[] = []) => {
         const query = s.queryOf(c, resource)
-        const { rows, total } =
+        const { rows, total, more } =
           await listRows(
             db, tables, resource, query, [s.reading(c, resource), ...extra]
             , (target, alias) => s.readingAs(c, target, alias))
@@ -43,12 +43,11 @@ export const crudHandlers =
                     { page:
                       { number: query.pageNumber
                       , size: query.pageSize
-                      , total
-                      , pages: Math.ceil(total / query.pageSize)
+                      , ...(total === undefined ? {} : { total, pages: Math.ceil(total / query.pageSize) })
                       }
                     }
                 }
-              , pageLinks(c, query, total)))
+              , pageLinks(c, query, total, more)))
       }
 
     const list = (c: AppContext) => collection(c, s.resourceFor(c))
@@ -78,14 +77,14 @@ export const crudHandlers =
 
         const row =
           await readRow(db, tables, resource, query, id, { sql: '', params: [] })
-        const location = `${new URL(c.req.url).origin}/${resource.type}/${id}`
+        const location = `${linkRoot(c)}/${resource.type}/${id}`
         return jsonApi(
           c
           , { ...withLinks(c, await s.serialize(c, resource, query, row))
             , links: { self: location }
             }
           , 201
-          , { location: `/${resource.type}/${id}` })
+          , { location: `${c.get('base') ?? ''}/${resource.type}/${id}` })
       }
 
     const update =

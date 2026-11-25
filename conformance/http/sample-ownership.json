@@ -1,0 +1,162 @@
+{
+  "description": "Ownership is the signed-in creator and cannot be handed over or cleared",
+  "operation": "http.session",
+  "input": {
+    "schemaDir": "src/schema",
+    "users": [
+      "alice",
+      "bob"
+    ],
+    "steps": [
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/article",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "article",
+            "attributes": {
+              "heading": "Mine",
+              "owner": "{{bob}}"
+            }
+          }
+        },
+        "save": {
+          "a": "data.id"
+        }
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/article/{{a}}",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/article/{{a}}",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "article",
+            "id": "{{a}}",
+            "attributes": {
+              "owner": "{{bob}}"
+            }
+          }
+        }
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/article/{{a}}",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "PUT",
+        "path": "/article/{{a}}",
+        "select": [
+          "data.attributes.heading"
+        ],
+        "body": {
+          "data": {
+            "type": "article",
+            "id": "{{a}}",
+            "attributes": {
+              "heading": "Still mine"
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/article/{{a}}",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "article",
+            "id": "{{a}}",
+            "attributes": {
+              "owner": null
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/article/{{a}}",
+        "select": [
+          "data.attributes.heading"
+        ]
+      },
+      {
+        "as": "bob",
+        "method": "POST",
+        "path": "/article",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "article",
+            "id": "{{a}}",
+            "attributes": {
+              "heading": "Taken"
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/article/{{a}}",
+        "select": [
+          "data.attributes.heading"
+        ]
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 201
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 200
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 200,
+      "data.attributes.heading": "Still mine"
+    },
+    {
+      "status": 400
+    },
+    {
+      "status": 200,
+      "data.attributes.heading": "Still mine"
+    },
+    {
+      "status": 409,
+      "errors.0.status": "409"
+    },
+    {
+      "status": 200,
+      "data.attributes.heading": "Still mine"
+    }
+  ]
+}

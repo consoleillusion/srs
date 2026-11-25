@@ -10,7 +10,7 @@ const app =
     , db
     , migrationsFolder
     })
-const port = Number(process.env.PORT ?? process.env.ELYSIA_PORT ?? 5734)
+const port = Number(process.env.PORT ?? 5734)
 
 console.log(`Server listening on http://localhost:${port}`)
 

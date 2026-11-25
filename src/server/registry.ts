@@ -1,4 +1,5 @@
 import type { BuiltSchema, TableDef } from '../db/schema-types.ts'
+import { apiName, quote, selectSql } from '../db/views.ts'
 
 export type RelationshipMeta =
   { label: string
@@ -6,6 +7,8 @@ export type RelationshipMeta =
   , table: string
   , type: string
   , linkAny: boolean
+  /** The related table, whose key decides what its ids look like. */
+  , target: TableDef
   }
 
 export type ResourceMeta =
@@ -20,6 +23,8 @@ export type ResourceMeta =
   , attributes: string[]
   , foreignKeyColumns: string[]
   , relationships: Record<string, RelationshipMeta>
+  /** SELECT of every column and relation of a row, from the base table aliased as the view (see rows.ts). */
+  , select: string
   }
 
 export type Registry =
@@ -30,6 +35,7 @@ export type Registry =
 export const buildRegistry =
   (built: BuiltSchema): Registry => {
     const resources = new Map<string, ResourceMeta>()
+    const tablesByName = new Map(built.orderedTables.map(x => [x.tableName, x]))
     const exposedTables =
       new Set(
         built.orderedTables.filter(x => x.exposed).map(x => x.tableName))
@@ -68,7 +74,7 @@ export const buildRegistry =
               column =>
                 column.exposed
                 && !hiddenRelationForeignKeys.has(column.columnName))
-            .map(column => column.columnName)
+            .map(column => apiName(table, column))
         const attributes =
           columns.filter(
             x =>
@@ -85,6 +91,7 @@ export const buildRegistry =
                 , table: relation.table
                 , type: relation.table
                 , linkAny: relation['x-link-any'] === true
+                , target: tablesByName.get(relation.table)!
                 }
               ])))
 
@@ -101,6 +108,10 @@ export const buildRegistry =
             , foreignKeyColumns:
                 [...new Set(table.foreignKeys.flatMap(x => x.columns))]
             , relationships
+            , select:
+                readOnly
+                  ? `SELECT * FROM ${quote(view)} AS ${quote(view)}`
+                  : selectSql(table, tablesByName, () => 'full', view)
             }
           )
       }

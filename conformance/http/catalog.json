@@ -1,0 +1,107 @@
+{
+  "description": "The catalog lists each resource the caller can use and describes it",
+  "operation": "http.session",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Author",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "x-relations": {
+          "posts": {
+            "table": "post",
+            "cardinality": "many"
+          }
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Post",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "heading": {
+            "type": "string"
+          },
+          "rank": {
+            "type": "integer"
+          }
+        },
+        "x-relations": {
+          "author": {
+            "table": "author",
+            "cardinality": "one"
+          },
+          "tags": {
+            "table": "tag",
+            "cardinality": "many"
+          }
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Tag",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "x-unique": true
+          }
+        },
+        "x-relations": {
+          "posts": {
+            "table": "post",
+            "cardinality": "many"
+          }
+        }
+      }
+    ],
+    "users": [
+      "alice"
+    ],
+    "steps": [
+      {
+        "as": null,
+        "method": "GET",
+        "path": "/",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/",
+        "select": [
+          "meta.resources.[type=author].description.attributes.name.type",
+          "meta.resources.[type=author].description.relationships.posts.cardinality",
+          "meta.resources.[type=post].description.relationships.tags.cardinality",
+          "meta.resources.[type=key]"
+        ]
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 401,
+      "errors.0.status": "401"
+    },
+    {
+      "status": 200,
+      "meta.resources.[type=author].description.attributes.name.type": "string",
+      "meta.resources.[type=author].description.relationships.posts.cardinality": "many",
+      "meta.resources.[type=post].description.relationships.tags.cardinality": "many",
+      "meta.resources.[type=key]": null
+    }
+  ]
+}

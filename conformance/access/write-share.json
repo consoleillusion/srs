@@ -1,0 +1,115 @@
+{
+  "description": "A write share lets the user update the row, but never delete it",
+  "operation": "access.decide",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Document",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string"
+          }
+        },
+        "x-access": {
+          "shareable": true,
+          "visibility": [
+            "private",
+            "shared",
+            "authenticated",
+            "public"
+          ]
+        }
+      }
+    ],
+    "rows": [
+      {
+        "table": "user",
+        "values": {
+          "id": "01900000-0000-7000-8000-00000000000a",
+          "username": "alice",
+          "visibility": "authenticated"
+        }
+      },
+      {
+        "table": "user",
+        "values": {
+          "id": "01900000-0000-7000-8000-00000000000b",
+          "username": "bob",
+          "visibility": "authenticated"
+        }
+      },
+      {
+        "table": "document",
+        "values": {
+          "id": "01900000-0000-7000-8000-0000000000d1",
+          "owner": "01900000-0000-7000-8000-00000000000a",
+          "visibility": "private",
+          "title": "private"
+        }
+      },
+      {
+        "table": "document",
+        "values": {
+          "id": "01900000-0000-7000-8000-0000000000d2",
+          "owner": "01900000-0000-7000-8000-00000000000a",
+          "visibility": "shared",
+          "title": "shared"
+        }
+      },
+      {
+        "table": "document",
+        "values": {
+          "id": "01900000-0000-7000-8000-0000000000d3",
+          "owner": "01900000-0000-7000-8000-00000000000a",
+          "visibility": "public",
+          "title": "public"
+        }
+      },
+      {
+        "table": "document",
+        "values": {
+          "id": "01900000-0000-7000-8000-0000000000d4",
+          "owner": "01900000-0000-7000-8000-00000000000a",
+          "visibility": "authenticated",
+          "title": "auth"
+        }
+      },
+      {
+        "table": "document_share",
+        "values": {
+          "id": "01900000-0000-7000-8000-0000000000e1",
+          "owner": "01900000-0000-7000-8000-00000000000a",
+          "document_id": "01900000-0000-7000-8000-0000000000d2",
+          "user_id": "01900000-0000-7000-8000-00000000000b",
+          "can_read": true,
+          "can_write": true
+        }
+      }
+    ],
+    "checks": [
+      {
+        "viewer": {
+          "user": "01900000-0000-7000-8000-00000000000b"
+        },
+        "operation": "update",
+        "resource": "document",
+        "id": "01900000-0000-7000-8000-0000000000d2"
+      },
+      {
+        "viewer": {
+          "user": "01900000-0000-7000-8000-00000000000b"
+        },
+        "operation": "delete",
+        "resource": "document",
+        "id": "01900000-0000-7000-8000-0000000000d2"
+      }
+    ]
+  },
+  "output": [
+    "allow",
+    "deny"
+  ]
+}

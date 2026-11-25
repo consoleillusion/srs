@@ -1,0 +1,150 @@
+{
+  "description": "Totals, pages, filters, sorts and sparse fieldsets never widen what a user sees",
+  "operation": "http.session",
+  "input": {
+    "schemaDir": "src/schema",
+    "users": [
+      "alice",
+      "bob"
+    ],
+    "steps": [
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/article",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "article",
+            "attributes": {
+              "heading": "Alpha"
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/article",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "article",
+            "attributes": {
+              "heading": "Beta"
+            }
+          }
+        }
+      },
+      {
+        "as": "bob",
+        "method": "POST",
+        "path": "/article",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "article",
+            "attributes": {
+              "heading": "Gamma"
+            }
+          }
+        }
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/article",
+        "select": [
+          "meta.page.total",
+          "data.length",
+          "data.0.attributes.heading"
+        ]
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/article?filter[heading]=Alpha",
+        "select": [
+          "meta.page.total"
+        ]
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/article?filter[heading]=x' OR '1'='1",
+        "select": [
+          "meta.page.total"
+        ]
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/article?filter[heading][starts]=%25",
+        "select": [
+          "meta.page.total"
+        ]
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/article?sort=-heading&fields[article]=heading",
+        "select": [
+          "meta.page.total",
+          "data.0.attributes.heading",
+          "data.0.attributes.content"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/article?sort=heading&page[size]=1",
+        "select": [
+          "meta.page.total",
+          "meta.page.pages",
+          "data.0.attributes.heading"
+        ]
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 201
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 200,
+      "meta.page.total": 1,
+      "data.length": 1,
+      "data.0.attributes.heading": "Gamma"
+    },
+    {
+      "status": 200,
+      "meta.page.total": 0
+    },
+    {
+      "status": 200,
+      "meta.page.total": 0
+    },
+    {
+      "status": 200,
+      "meta.page.total": 0
+    },
+    {
+      "status": 200,
+      "meta.page.total": 1,
+      "data.0.attributes.heading": "Gamma",
+      "data.0.attributes.content": null
+    },
+    {
+      "status": 200,
+      "meta.page.total": 2,
+      "meta.page.pages": 2,
+      "data.0.attributes.heading": "Alpha"
+    }
+  ]
+}

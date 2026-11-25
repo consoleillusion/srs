@@ -169,6 +169,7 @@ describe('authored views', () => {
     const query: ListQuery =
       { pageNumber: 1
       , pageSize: 20
+      , total: true
       , sort: [{ field: 'heading', direction: 'desc' }]
       , filters:
           [ { key: 'filter[heading]'
@@ -190,9 +191,9 @@ describe('authored views', () => {
     await listRows(db, tables, resource, query, [], scopeFor)
 
     expect(calls[0]).toContain(
-      'SELECT COUNT(*) AS count FROM (SELECT * FROM `article_preview`)')
+      "SELECT COUNT(*) AS count FROM `article_preview` AS `article_preview`")
     expect(calls[1]).toContain(
-      'SELECT * FROM (SELECT * FROM `article_preview`)')
+      'SELECT * FROM `article_preview` AS `article_preview`')
     expect(calls[1]).toContain('WHERE (`article_preview`.`heading` = ?)')
     expect(calls[1]).toContain('ORDER BY `article_preview`.`heading` DESC')
   })

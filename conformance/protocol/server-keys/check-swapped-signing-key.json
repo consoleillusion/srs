@@ -1,0 +1,10 @@
+{
+  "description": "A bundle whose signing key differs from the pinned one is refused",
+  "operation": "server-keys.check",
+  "input": {
+    "x25519": "07a37cbc142093c8b755dc1b10e86cb426374ad16aa853ed0bdfc0b2b86d1c7c",
+    "ed25519": "51d9edcc44cc7d25375b9ca6ca7835547eab296f9d185b704f764b284eaf0e25",
+    "pinned": "srs1:wv4yohckd36atzcruab5xt7boe7rrus2d7qrlr42a4lytz4zb4pq"
+  },
+  "error": "fingerprint-mismatch"
+}

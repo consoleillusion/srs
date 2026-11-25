@@ -1,9 +1,8 @@
-import type { AppContext, Next } from '../server/context.ts'
-import nacl from 'tweetnacl'
+import { publicUrl, type AppContext, type Next } from '../server/context.ts'
 import type { RowDatabase } from '../server/database.ts'
 import { unauthorized } from '../server/errors.ts'
 import { insert } from '../server/sql.ts'
-import { signingMessage } from '../client/crypto.ts'
+import { ed25519Verify, signingMessage } from '../client/crypto.ts'
 import { parsePublicJwk } from './keys.ts'
 
 // One implementation of the signed bytes, shared with the client so they cannot drift
@@ -37,7 +36,7 @@ export const verifySignedRequest =
     if (!jwk) throw unauthorized('This session has no client key to verify signatures')
     const publicKey = Buffer.from(parsePublicJwk(jwk).x, 'base64url')
 
-    const url = new URL(c.req.url)
+    const url = publicUrl(c)
     const body = new Uint8Array(await c.req.raw.clone().arrayBuffer())
     const message =
       signingMessage(
@@ -49,8 +48,7 @@ export const verifySignedRequest =
         , body
         })
     const bytes = Buffer.from(signature, 'base64url')
-    if (bytes.length !== nacl.sign.signatureLength
-        || !nacl.sign.detached.verify(message, bytes, publicKey))
+    if (!ed25519Verify(bytes, message, publicKey))
       throw unauthorized('Request signature is invalid')
 
     // Only a valid signature burns a nonce, so forged requests cannot use up nonces.

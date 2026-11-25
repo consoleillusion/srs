@@ -1,0 +1,24 @@
+{
+  "description": "A table with a declared key cannot also have an id column",
+  "operation": "schema.build",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Widget",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string",
+            "x-primary": true
+          },
+          "id": {
+            "type": "string"
+          }
+        }
+      }
+    ]
+  },
+  "error": "key-and-id"
+}

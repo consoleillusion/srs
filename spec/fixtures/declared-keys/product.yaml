@@ -1,0 +1,17 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: Product
+type: object
+additionalProperties: false
+description: A product keyed by a code the client chooses.
+x-access:
+  visibility: [private, public]
+  defaultVisibility: public
+properties:
+  sku:
+    type: string
+    maxLength: 40
+    x-primary: true
+  title:
+    type: string
+required:
+  - title

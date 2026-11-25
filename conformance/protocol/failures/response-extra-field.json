@@ -1,0 +1,8 @@
+{
+  "description": "A response with a fifth field is refused",
+  "operation": "envelope.decode-response",
+  "input": {
+    "plaintext": "0000000332303000000000000000000000000000000000"
+  },
+  "error": "invalid-encoding"
+}

@@ -1,0 +1,157 @@
+{
+  "description": "Create, read, list, update and delete a resource",
+  "operation": "http.session",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Note",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ]
+      }
+    ],
+    "users": [
+      "alice"
+    ],
+    "steps": [
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/note",
+        "body": {
+          "data": {
+            "type": "note",
+            "attributes": {
+              "title": "First",
+              "body": "one"
+            }
+          }
+        },
+        "save": {
+          "n": "data.id"
+        },
+        "select": [
+          "data.type",
+          "data.attributes.title",
+          "data.attributes.visibility"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/note/{{n}}",
+        "select": [
+          "data.attributes.title",
+          "data.attributes.body"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/note/{{n}}",
+        "body": {
+          "data": {
+            "type": "note",
+            "id": "{{n}}",
+            "attributes": {
+              "title": "Changed"
+            }
+          }
+        },
+        "select": [
+          "data.attributes.title",
+          "data.attributes.body"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "PUT",
+        "path": "/note/{{n}}",
+        "body": {
+          "data": {
+            "type": "note",
+            "id": "{{n}}",
+            "attributes": {
+              "title": "Replaced"
+            }
+          }
+        },
+        "select": [
+          "data.attributes.title",
+          "data.attributes.body"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/note",
+        "select": [
+          "meta.page.total",
+          "data.0.attributes.title"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "DELETE",
+        "path": "/note/{{n}}",
+        "select": []
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/note/{{n}}",
+        "select": [
+          "errors.0.status"
+        ]
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 201,
+      "data.type": "note",
+      "data.attributes.title": "First",
+      "data.attributes.visibility": "private"
+    },
+    {
+      "status": 200,
+      "data.attributes.title": "First",
+      "data.attributes.body": "one"
+    },
+    {
+      "status": 200,
+      "data.attributes.title": "Changed",
+      "data.attributes.body": "one"
+    },
+    {
+      "status": 200,
+      "data.attributes.title": "Replaced",
+      "data.attributes.body": null
+    },
+    {
+      "status": 200,
+      "meta.page.total": 1,
+      "data.0.attributes.title": "Replaced"
+    },
+    {
+      "status": 204
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    }
+  ]
+}

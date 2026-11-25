@@ -1,7 +1,7 @@
-import { DERIVED_SOURCE } from '../derive/helpers.ts'
+import { DERIVED_SOURCE, keyColumnOf } from '../derive/helpers.ts'
 import { pascalCase, snakeCase, type ColumnDef, type ForeignKeyDef, type JSONSchemaProperty, type LoadedSchema, type TableDef } from '../schema-types.ts'
 import { normalizeAccess } from '../access.ts'
-import { createUpdatedTrigger, validateExposure, buildColumn } from './columns.ts'
+import { createAppendOnlyTriggers, createUpdatedTrigger, validateExposure, buildColumn } from './columns.ts'
 import { validateRelation, foreignKeyColumnOf, buildUniqueConstraints } from './relations.ts'
 
 
@@ -15,9 +15,11 @@ export const buildTablePlan =
     const declared = Object.entries(schema.properties ?? {})
 
     const access = normalizeAccess(schema)
+    // A property marked x-primary replaces the generated uuid id (design book, Schema).
+    const idColumn = keyColumnOf(schema)
 
     const systemColumns: [string, JSONSchemaProperty][] =
-      [ ['id', { type: 'string', format: 'uuid', 'x-primary': true }]
+      [ ...(idColumn === 'id' ? [['id', { type: 'string', format: 'uuid', 'x-primary': true }] as [string, JSONSchemaProperty]] : [])
       , ['updated_at', { type: 'string', format: 'date-time' }]
       , [ 'owner'
         , { type: 'string', format: 'uuid', description: 'Owner user id' }
@@ -37,11 +39,13 @@ export const buildTablePlan =
       (key: string) => systemColumns.some(([name]) => snakeCase(key) === name)
 
     // System columns come first, taken from the schema when it declares them.
+    const keyEntry = idColumn === 'id' ? [] : declared.filter(([key]) => snakeCase(key) === idColumn)
     const orderedEntries =
-      [ ...systemColumns.map(
+      [ ...keyEntry
+      , ...systemColumns.map(
           ([name, fallback]) =>
             declared.find(([key]) => snakeCase(key) === name) ?? [name, fallback])
-      , ...declared.filter(([key]) => !isSystemKey(key))
+      , ...declared.filter(([key]) => !isSystemKey(key) && snakeCase(key) !== idColumn)
       ] as [string, JSONSchemaProperty][]
     const injected =
       new Set(
@@ -58,14 +62,14 @@ export const buildTablePlan =
         validateExposure(schema.title, property['x-exposed'], `property "${key}"`)
         const isRequired =
           requiredNames.has(columnName)
-          || columnName === 'id'
+          || (columnName === idColumn && property.type !== 'integer')
           || columnName === 'updated_at'
           || columnName === 'visibility'
         return (
           { key
           , columnName
           , schema: property
-          , sql: buildColumn(key, property, isRequired)
+          , sql: buildColumn(key, property, isRequired, columnName === idColumn)
           , required: isRequired
           , injected: injected.has(columnName)
           , exposed: property['x-exposed'] !== false
@@ -79,10 +83,9 @@ export const buildTablePlan =
       columnNames.add(column.columnName)
     }
 
-    const primaryKeys = columns.filter(x => x.schema['x-primary'] || x.columnName === 'id')
-    if (primaryKeys.length > 1)
+    if (idColumn !== 'id' && columnNames.has('id'))
       throw new Error(
-        `${schema.title}: multiple primary keys: ${primaryKeys.map(x => x.columnName).join(', ')}`)
+        `${schema.title}: "${idColumn}" is the x-primary key, so there cannot also be a column "id"`)
 
     const relations = schema['x-relations'] ?? {}
     for (const [label, relation] of Object.entries(relations)) {
@@ -126,10 +129,14 @@ export const buildTablePlan =
       [...new Set([...foreignKeys.flatMap(x => x.columns), 'owner'])]
 
     const tableName = snakeCase(schema.title)
+    if (schema['x-append-only'] !== undefined
+        && typeof schema['x-append-only'] !== 'boolean')
+      throw new Error(`${schema.title}: x-append-only must be a boolean`)
 
     return (
       { key: pascalCase(schema.title)
       , tableName
+      , idColumn
       , schema
       , columns
       , isSystem:
@@ -143,6 +150,8 @@ export const buildTablePlan =
       , foreignKeys
       , uniqueConstraints
       , indexes
-      , trigger: createUpdatedTrigger(tableName)
+      , trigger: createUpdatedTrigger(tableName, idColumn)
+      , guardTriggers:
+          schema['x-append-only'] === true ? createAppendOnlyTriggers(tableName) : {}
       })
   }

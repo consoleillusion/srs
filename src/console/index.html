@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SRS console</title>
+<link rel="icon" href="data:,">
+<style>
+  :root { --bg: #f3eee3; --ink: #1c1814e6; --muted: #1c181480; --rule: #1c181426; --shade: #e9e2d3; --accent: #7a2e1d; --bad: #9b2c2c; --good: #2f6b3a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 Inter, "Source Sans 3", "Fira Sans", "Noto Sans", system-ui, sans-serif; }
+  header { background: #1f1e1c; color: #ece6d8e0; padding: 18px 28px; display: flex; align-items: baseline; gap: 16px; }
+  header h1 { margin: 0; font-weight: 300; font-size: 22px; }
+  header span { color: #ece6d88c; font-size: 13px; }
+  main { display: grid; grid-template-columns: minmax(300px, 360px) 1fr; gap: 24px; padding: 24px 28px; }
+  section { background: #fbf8f2; border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; margin-bottom: 20px; }
+  h2 { font-size: 15px; font-weight: 600; margin: 0 0 12px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+  input, select, textarea { width: 100%; font: inherit; padding: 7px 9px; border: 1px solid var(--rule); border-radius: 4px; background: #fff; color: var(--ink); }
+  textarea { font: 13px/1.45 "DejaVu Sans Mono", ui-monospace, monospace; min-height: 160px; resize: vertical; }
+  .row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .row > * { flex: 1; }
+  button { font: inherit; padding: 7px 12px; border: 1px solid var(--rule); border-radius: 4px; background: var(--shade); color: var(--ink); cursor: pointer; }
+  button.primary { background: #1f1e1c; color: #ece6d8; border-color: #1f1e1c; }
+  button:disabled { opacity: .5; cursor: default; }
+  .status { font-size: 13px; margin-top: 10px; color: var(--muted); }
+  .status.good { color: var(--good); } .status.bad { color: var(--bad); }
+  pre { margin: 0; background: var(--shade); border-radius: 4px; padding: 12px; font: 12.5px/1.45 "DejaVu Sans Mono", ui-monospace, monospace; overflow: auto; max-height: 520px; white-space: pre-wrap; word-break: break-word; }
+  .log { font: 12.5px/1.6 "DejaVu Sans Mono", ui-monospace, monospace; max-height: 220px; overflow: auto; }
+  .log div { border-bottom: 1px solid var(--rule); padding: 2px 0; }
+  .note { font-size: 13px; color: var(--muted); margin: 8px 0 0; }
+  .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header><h1>SRS console</h1><span>Standard Resource Server</span><span id="crypto"></span></header>
+<main>
+  <div>
+    <section>
+      <h2>Server</h2>
+      <label for="url">Server URL</label>
+      <input id="url" placeholder="http://192.168.1.10:5734">
+      <label for="pin">Server key fingerprint (srs1:…)</label>
+      <input id="pin" placeholder="printed by the init command">
+      <div class="row"><button id="connect" class="primary">Connect</button><button id="trust">Trust key from server</button></div>
+      <p class="note">“Trust key from server” takes the fingerprint the server reports. Only use it on a network you trust; otherwise paste the fingerprint printed by the init command.</p>
+      <div id="server-status" class="status"></div>
+    </section>
+    <section>
+      <h2>Account</h2>
+      <div class="fields">
+        <div><label for="username">Username</label><input id="username" autocomplete="username"></div>
+        <div><label for="password">Password</label><input id="password" type="password" autocomplete="current-password"></div>
+      </div>
+      <div class="row"><button id="register">Register</button><button id="login" class="primary">Log in</button><button id="logout">Log out</button></div>
+      <div id="account-status" class="status">Not logged in.</div>
+    </section>
+    <section>
+      <h2>Requests</h2>
+      <div class="log" id="log"></div>
+      <p class="note">Every request travels as an encrypted <code>POST /noise</code>; after login every request is signed.</p>
+    </section>
+  </div>
+  <div>
+    <section>
+      <h2>Explorer</h2>
+      <div class="fields">
+        <div><label for="resource">Resource</label><select id="resource"><option value="">Connect to load the catalog</option></select></div>
+        <div><label for="id">Id (for get, update, delete)</label><input id="id" placeholder="uuid"></div>
+      </div>
+      <div class="row">
+        <button id="list">List</button><button id="get">Get</button><button id="create" class="primary">Create</button>
+        <button id="update">Update</button><button id="delete">Delete</button><button id="template">Template</button>
+      </div>
+      <label for="body">Document (for create and update)</label>
+      <textarea id="body" spellcheck="false"></textarea>
+      <label for="path">Or any request</label>
+      <div class="row" style="margin-top:0"><select id="method" style="flex:0 0 110px"><option>GET</option><option>POST</option><option>PATCH</option><option>PUT</option><option>DELETE</option></select><input id="path" placeholder="/article?sort=-updated_at&amp;page[size]=10"><button id="send" style="flex:0 0 80px">Send</button></div>
+    </section>
+    <section>
+      <h2>Response <span id="response-status" class="status"></span></h2>
+      <pre id="response">—</pre>
+    </section>
+  </div>
+</main>
+<script type="module" src="/app.js"></script>
+</body>
+</html>

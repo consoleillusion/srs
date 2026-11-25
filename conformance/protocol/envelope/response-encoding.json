@@ -1,0 +1,16 @@
+{
+  "description": "A response as length-prefixed status, headers, body and signature",
+  "operation": "envelope.encode-response",
+  "input": {
+    "status": 201,
+    "headers": [
+      [
+        "location",
+        "/article/1"
+      ]
+    ],
+    "body": "7b7d",
+    "signature": ""
+  },
+  "output": "000000033230310000001a000000086c6f636174696f6e0000000a2f61727469636c652f31000000027b7d00000000"
+}

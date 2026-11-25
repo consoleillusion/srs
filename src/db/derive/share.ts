@@ -1,6 +1,6 @@
 import { pascalCase, type JSONSchema, type JSONSchemaProperty, type LoadedSchema, type RelationConfig } from '../schema-types.ts'
 import { normalizeAccess } from '../access.ts'
-import { DERIVED_SOURCE, DEFAULT_ID, tableNameOf } from './helpers.ts'
+import { DERIVED_SOURCE, DEFAULT_ID, keyColumnOf, tableNameOf } from './helpers.ts'
 
 /** Build the <table>_share schema granting read/write on rows to users or groups. */
 export const deriveShareTable =
@@ -13,7 +13,7 @@ export const deriveShareTable =
     /** A cascading one-relation from the share row to its note, user or group. */
     const target = (name: string, required = false): RelationConfig =>
       ({ table: name
-      , column: DEFAULT_ID
+      , column: name === table ? keyColumnOf(source) : DEFAULT_ID
       , cardinality: 'one'
       , foreignKey: `${name}_id`
       , onDelete: 'cascade'
