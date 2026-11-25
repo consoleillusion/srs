@@ -1,0 +1,88 @@
+{
+  "description": "Removing a column rebuilds the table without it",
+  "operation": "schema.migrate",
+  "input": {
+    "before": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Note",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ]
+      }
+    ],
+    "after": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Note",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "title"
+        ]
+      }
+    ]
+  },
+  "output": [
+    "DROP TRIGGER IF EXISTS `audit_log_updated`",
+    "DROP TRIGGER IF EXISTS `auth_limit_updated`",
+    "DROP TRIGGER IF EXISTS `key_updated`",
+    "DROP TRIGGER IF EXISTS `note_updated`",
+    "DROP TRIGGER IF EXISTS `request_nonce_updated`",
+    "DROP TRIGGER IF EXISTS `schema_updated`",
+    "DROP TRIGGER IF EXISTS `user_updated`",
+    "DROP TRIGGER IF EXISTS `user_group_updated`",
+    "DROP TRIGGER IF EXISTS `user_group_membership_updated`",
+    "DROP TRIGGER IF EXISTS `user_role_updated`",
+    "DROP TRIGGER IF EXISTS `audit_log_no_update`",
+    "DROP TRIGGER IF EXISTS `audit_log_no_delete`",
+    "DROP VIEW IF EXISTS `audit_log_view`",
+    "DROP VIEW IF EXISTS `note_view`",
+    "DROP VIEW IF EXISTS `schema_view`",
+    "DROP VIEW IF EXISTS `user_view`",
+    "DROP VIEW IF EXISTS `user_group_view`",
+    "DROP VIEW IF EXISTS `user_group_membership_view`",
+    "DROP VIEW IF EXISTS `user_role_view`",
+    "CREATE TABLE `__new_note` (\n  `id` blob PRIMARY KEY DEFAULT (uuid7()) NOT NULL,\n  `updated_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,\n  `owner` blob,\n  `visibility` text DEFAULT 'private' NOT NULL,\n  `title` text NOT NULL,\n  CONSTRAINT `note_owner_fk` FOREIGN KEY (`owner`) REFERENCES `user`(`id`) ON DELETE SET NULL,\n  CONSTRAINT `note_visibility_check` CHECK(`visibility` IN ('private', 'authenticated', 'public'))\n)",
+    "INSERT INTO `__new_note` (`id`, `updated_at`, `owner`, `visibility`, `title`) SELECT `id`, `updated_at`, `owner`, `visibility`, `title` FROM `note`",
+    "DROP TABLE `note`",
+    "ALTER TABLE `__new_note` RENAME TO `note`",
+    "CREATE INDEX IF NOT EXISTS `note_owner_index` ON `note` (`owner`)",
+    "CREATE TRIGGER IF NOT EXISTS `audit_log_updated`\nAFTER UPDATE ON `audit_log`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `audit_log`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE id = OLD.id;\nEND;",
+    "CREATE TRIGGER IF NOT EXISTS `auth_limit_updated`\nAFTER UPDATE ON `auth_limit`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `auth_limit`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE id = OLD.id;\nEND;",
+    "CREATE TRIGGER IF NOT EXISTS `key_updated`\nAFTER UPDATE ON `key`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `key`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE id = OLD.id;\nEND;",
+    "CREATE TRIGGER IF NOT EXISTS `note_updated`\nAFTER UPDATE ON `note`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `note`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE id = OLD.id;\nEND;",
+    "CREATE TRIGGER IF NOT EXISTS `request_nonce_updated`\nAFTER UPDATE ON `request_nonce`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `request_nonce`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE id = OLD.id;\nEND;",
+    "CREATE TRIGGER IF NOT EXISTS `schema_updated`\nAFTER UPDATE ON `schema`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `schema`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE id = OLD.id;\nEND;",
+    "CREATE TRIGGER IF NOT EXISTS `user_updated`\nAFTER UPDATE ON `user`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `user`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE id = OLD.id;\nEND;",
+    "CREATE TRIGGER IF NOT EXISTS `user_group_updated`\nAFTER UPDATE ON `user_group`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `user_group`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE id = OLD.id;\nEND;",
+    "CREATE TRIGGER IF NOT EXISTS `user_group_membership_updated`\nAFTER UPDATE ON `user_group_membership`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `user_group_membership`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE id = OLD.id;\nEND;",
+    "CREATE TRIGGER IF NOT EXISTS `user_role_updated`\nAFTER UPDATE ON `user_role`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `user_role`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE id = OLD.id;\nEND;",
+    "CREATE TRIGGER IF NOT EXISTS `audit_log_no_update`\nBEFORE UPDATE ON `audit_log`\nFOR EACH ROW\nBEGIN SELECT RAISE(ABORT, 'audit_log is append-only'); END;",
+    "CREATE TRIGGER IF NOT EXISTS `audit_log_no_delete`\nBEFORE DELETE ON `audit_log`\nFOR EACH ROW\nBEGIN SELECT RAISE(ABORT, 'audit_log is append-only'); END;",
+    "CREATE VIEW `audit_log_view` AS\nSELECT\n  (CASE WHEN `t`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`id`, 1, 4))) || '-' || lower(hex(substr(`t`.`id`, 5, 2))) || '-' || lower(hex(substr(`t`.`id`, 7, 2))) || '-' || lower(hex(substr(`t`.`id`, 9, 2))) || '-' || lower(hex(substr(`t`.`id`, 11, 6)))) END) AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  (CASE WHEN `t`.`actor` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`actor`, 1, 4))) || '-' || lower(hex(substr(`t`.`actor`, 5, 2))) || '-' || lower(hex(substr(`t`.`actor`, 7, 2))) || '-' || lower(hex(substr(`t`.`actor`, 9, 2))) || '-' || lower(hex(substr(`t`.`actor`, 11, 6)))) END) AS `actor`,\n  `t`.`action` AS `action`,\n  `t`.`resource` AS `resource`,\n  `t`.`resource_id` AS `resource_id`,\n  `t`.`signature` AS `signature`,\n  (CASE WHEN `t`.`certificate_id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`certificate_id`, 1, 4))) || '-' || lower(hex(substr(`t`.`certificate_id`, 5, 2))) || '-' || lower(hex(substr(`t`.`certificate_id`, 7, 2))) || '-' || lower(hex(substr(`t`.`certificate_id`, 9, 2))) || '-' || lower(hex(substr(`t`.`certificate_id`, 11, 6)))) END) AS `certificate_id`,\n  `t`.`signed_message` AS `signed_message`,\n  `t`.`body` AS `body`\nFROM `audit_log` AS `t`",
+    "CREATE VIEW `note_view` AS\nSELECT\n  (CASE WHEN `t`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`id`, 1, 4))) || '-' || lower(hex(substr(`t`.`id`, 5, 2))) || '-' || lower(hex(substr(`t`.`id`, 7, 2))) || '-' || lower(hex(substr(`t`.`id`, 9, 2))) || '-' || lower(hex(substr(`t`.`id`, 11, 6)))) END) AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  `t`.`title` AS `title`\nFROM `note` AS `t`",
+    "CREATE VIEW `schema_view` AS\nSELECT\n  (CASE WHEN `t`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`id`, 1, 4))) || '-' || lower(hex(substr(`t`.`id`, 5, 2))) || '-' || lower(hex(substr(`t`.`id`, 7, 2))) || '-' || lower(hex(substr(`t`.`id`, 9, 2))) || '-' || lower(hex(substr(`t`.`id`, 11, 6)))) END) AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  `t`.`table_name` AS `table_name`,\n  `t`.`jsonschema` AS `jsonschema`\nFROM `schema` AS `t`",
+    "CREATE VIEW `user_view` AS\nSELECT\n  (CASE WHEN `t`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`id`, 1, 4))) || '-' || lower(hex(substr(`t`.`id`, 5, 2))) || '-' || lower(hex(substr(`t`.`id`, 7, 2))) || '-' || lower(hex(substr(`t`.`id`, 9, 2))) || '-' || lower(hex(substr(`t`.`id`, 11, 6)))) END) AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  `t`.`username` AS `username`,\n  `t`.`email` AS `email`,\n  `t`.`display_name` AS `display_name`,\n  (SELECT coalesce(json_group_array(json_object('id', (CASE WHEN `r`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`id`, 1, 4))) || '-' || lower(hex(substr(`r`.`id`, 5, 2))) || '-' || lower(hex(substr(`r`.`id`, 7, 2))) || '-' || lower(hex(substr(`r`.`id`, 9, 2))) || '-' || lower(hex(substr(`r`.`id`, 11, 6)))) END), 'updated_at', `r`.`updated_at`, 'owner', (CASE WHEN `r`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`owner`, 1, 4))) || '-' || lower(hex(substr(`r`.`owner`, 5, 2))) || '-' || lower(hex(substr(`r`.`owner`, 7, 2))) || '-' || lower(hex(substr(`r`.`owner`, 9, 2))) || '-' || lower(hex(substr(`r`.`owner`, 11, 6)))) END), 'visibility', `r`.`visibility`, 'name', `r`.`name`, 'description', `r`.`description`)), json('[]')) FROM `user_group` AS `r` JOIN `user_group_membership` AS `j` ON `j`.`user_group_id` = `r`.`id` WHERE `j`.`user_id` = `t`.`id` ORDER BY `r`.`id`) AS `groups`\nFROM `user` AS `t`",
+    "CREATE VIEW `user_group_view` AS\nSELECT\n  (CASE WHEN `t`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`id`, 1, 4))) || '-' || lower(hex(substr(`t`.`id`, 5, 2))) || '-' || lower(hex(substr(`t`.`id`, 7, 2))) || '-' || lower(hex(substr(`t`.`id`, 9, 2))) || '-' || lower(hex(substr(`t`.`id`, 11, 6)))) END) AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  `t`.`name` AS `name`,\n  `t`.`description` AS `description`,\n  (SELECT coalesce(json_group_array(json_object('id', (CASE WHEN `r`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`id`, 1, 4))) || '-' || lower(hex(substr(`r`.`id`, 5, 2))) || '-' || lower(hex(substr(`r`.`id`, 7, 2))) || '-' || lower(hex(substr(`r`.`id`, 9, 2))) || '-' || lower(hex(substr(`r`.`id`, 11, 6)))) END), 'updated_at', `r`.`updated_at`, 'owner', (CASE WHEN `r`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`owner`, 1, 4))) || '-' || lower(hex(substr(`r`.`owner`, 5, 2))) || '-' || lower(hex(substr(`r`.`owner`, 7, 2))) || '-' || lower(hex(substr(`r`.`owner`, 9, 2))) || '-' || lower(hex(substr(`r`.`owner`, 11, 6)))) END), 'visibility', `r`.`visibility`, 'username', `r`.`username`, 'email', `r`.`email`, 'display_name', `r`.`display_name`)), json('[]')) FROM `user` AS `r` JOIN `user_group_membership` AS `j` ON `j`.`user_id` = `r`.`id` WHERE `j`.`user_group_id` = `t`.`id` ORDER BY `r`.`id`) AS `users`\nFROM `user_group` AS `t`",
+    "CREATE VIEW `user_group_membership_view` AS\nSELECT\n  (CASE WHEN `t`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`id`, 1, 4))) || '-' || lower(hex(substr(`t`.`id`, 5, 2))) || '-' || lower(hex(substr(`t`.`id`, 7, 2))) || '-' || lower(hex(substr(`t`.`id`, 9, 2))) || '-' || lower(hex(substr(`t`.`id`, 11, 6)))) END) AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  (CASE WHEN `t`.`user_id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`user_id`, 1, 4))) || '-' || lower(hex(substr(`t`.`user_id`, 5, 2))) || '-' || lower(hex(substr(`t`.`user_id`, 7, 2))) || '-' || lower(hex(substr(`t`.`user_id`, 9, 2))) || '-' || lower(hex(substr(`t`.`user_id`, 11, 6)))) END) AS `user_id`,\n  (CASE WHEN `t`.`user_group_id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`user_group_id`, 1, 4))) || '-' || lower(hex(substr(`t`.`user_group_id`, 5, 2))) || '-' || lower(hex(substr(`t`.`user_group_id`, 7, 2))) || '-' || lower(hex(substr(`t`.`user_group_id`, 9, 2))) || '-' || lower(hex(substr(`t`.`user_group_id`, 11, 6)))) END) AS `user_group_id`,\n  (SELECT json_object('id', (CASE WHEN `r`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`id`, 1, 4))) || '-' || lower(hex(substr(`r`.`id`, 5, 2))) || '-' || lower(hex(substr(`r`.`id`, 7, 2))) || '-' || lower(hex(substr(`r`.`id`, 9, 2))) || '-' || lower(hex(substr(`r`.`id`, 11, 6)))) END), 'updated_at', `r`.`updated_at`, 'owner', (CASE WHEN `r`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`owner`, 1, 4))) || '-' || lower(hex(substr(`r`.`owner`, 5, 2))) || '-' || lower(hex(substr(`r`.`owner`, 7, 2))) || '-' || lower(hex(substr(`r`.`owner`, 9, 2))) || '-' || lower(hex(substr(`r`.`owner`, 11, 6)))) END), 'visibility', `r`.`visibility`, 'username', `r`.`username`, 'email', `r`.`email`, 'display_name', `r`.`display_name`) FROM `user` AS `r` WHERE `r`.`id` = `t`.`user_id` LIMIT 1) AS `user`,\n  (SELECT json_object('id', (CASE WHEN `r`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`id`, 1, 4))) || '-' || lower(hex(substr(`r`.`id`, 5, 2))) || '-' || lower(hex(substr(`r`.`id`, 7, 2))) || '-' || lower(hex(substr(`r`.`id`, 9, 2))) || '-' || lower(hex(substr(`r`.`id`, 11, 6)))) END), 'updated_at', `r`.`updated_at`, 'owner', (CASE WHEN `r`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`owner`, 1, 4))) || '-' || lower(hex(substr(`r`.`owner`, 5, 2))) || '-' || lower(hex(substr(`r`.`owner`, 7, 2))) || '-' || lower(hex(substr(`r`.`owner`, 9, 2))) || '-' || lower(hex(substr(`r`.`owner`, 11, 6)))) END), 'visibility', `r`.`visibility`, 'name', `r`.`name`, 'description', `r`.`description`) FROM `user_group` AS `r` WHERE `r`.`id` = `t`.`user_group_id` LIMIT 1) AS `user_group`\nFROM `user_group_membership` AS `t`",
+    "CREATE VIEW `user_role_view` AS\nSELECT\n  (CASE WHEN `t`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`id`, 1, 4))) || '-' || lower(hex(substr(`t`.`id`, 5, 2))) || '-' || lower(hex(substr(`t`.`id`, 7, 2))) || '-' || lower(hex(substr(`t`.`id`, 9, 2))) || '-' || lower(hex(substr(`t`.`id`, 11, 6)))) END) AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  `t`.`role` AS `role`,\n  (CASE WHEN `t`.`user_id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`user_id`, 1, 4))) || '-' || lower(hex(substr(`t`.`user_id`, 5, 2))) || '-' || lower(hex(substr(`t`.`user_id`, 7, 2))) || '-' || lower(hex(substr(`t`.`user_id`, 9, 2))) || '-' || lower(hex(substr(`t`.`user_id`, 11, 6)))) END) AS `user_id`,\n  (SELECT json_object('id', (CASE WHEN `r`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`id`, 1, 4))) || '-' || lower(hex(substr(`r`.`id`, 5, 2))) || '-' || lower(hex(substr(`r`.`id`, 7, 2))) || '-' || lower(hex(substr(`r`.`id`, 9, 2))) || '-' || lower(hex(substr(`r`.`id`, 11, 6)))) END), 'updated_at', `r`.`updated_at`, 'owner', (CASE WHEN `r`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`owner`, 1, 4))) || '-' || lower(hex(substr(`r`.`owner`, 5, 2))) || '-' || lower(hex(substr(`r`.`owner`, 7, 2))) || '-' || lower(hex(substr(`r`.`owner`, 9, 2))) || '-' || lower(hex(substr(`r`.`owner`, 11, 6)))) END), 'visibility', `r`.`visibility`, 'username', `r`.`username`, 'email', `r`.`email`, 'display_name', `r`.`display_name`) FROM `user` AS `r` WHERE `r`.`id` = `t`.`user_id` LIMIT 1) AS `user`\nFROM `user_role` AS `t`"
+  ]
+}

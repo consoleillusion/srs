@@ -1,0 +1,122 @@
+{
+  "description": "Without a session nothing of a session-only resource is readable",
+  "operation": "access.decide",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Document",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string"
+          }
+        },
+        "x-access": {
+          "shareable": true,
+          "visibility": [
+            "private",
+            "shared",
+            "authenticated",
+            "public"
+          ]
+        }
+      }
+    ],
+    "rows": [
+      {
+        "table": "user",
+        "values": {
+          "id": "01900000-0000-7000-8000-00000000000a",
+          "username": "alice",
+          "visibility": "authenticated"
+        }
+      },
+      {
+        "table": "user",
+        "values": {
+          "id": "01900000-0000-7000-8000-00000000000b",
+          "username": "bob",
+          "visibility": "authenticated"
+        }
+      },
+      {
+        "table": "document",
+        "values": {
+          "id": "01900000-0000-7000-8000-0000000000d1",
+          "owner": "01900000-0000-7000-8000-00000000000a",
+          "visibility": "private",
+          "title": "private"
+        }
+      },
+      {
+        "table": "document",
+        "values": {
+          "id": "01900000-0000-7000-8000-0000000000d2",
+          "owner": "01900000-0000-7000-8000-00000000000a",
+          "visibility": "shared",
+          "title": "shared"
+        }
+      },
+      {
+        "table": "document",
+        "values": {
+          "id": "01900000-0000-7000-8000-0000000000d3",
+          "owner": "01900000-0000-7000-8000-00000000000a",
+          "visibility": "public",
+          "title": "public"
+        }
+      },
+      {
+        "table": "document",
+        "values": {
+          "id": "01900000-0000-7000-8000-0000000000d4",
+          "owner": "01900000-0000-7000-8000-00000000000a",
+          "visibility": "authenticated",
+          "title": "auth"
+        }
+      }
+    ],
+    "checks": [
+      {
+        "viewer": {
+          "anonymous": true
+        },
+        "operation": "read",
+        "resource": "document",
+        "id": "01900000-0000-7000-8000-0000000000d1"
+      },
+      {
+        "viewer": {
+          "anonymous": true
+        },
+        "operation": "read",
+        "resource": "document",
+        "id": "01900000-0000-7000-8000-0000000000d2"
+      },
+      {
+        "viewer": {
+          "anonymous": true
+        },
+        "operation": "read",
+        "resource": "document",
+        "id": "01900000-0000-7000-8000-0000000000d3"
+      },
+      {
+        "viewer": {
+          "anonymous": true
+        },
+        "operation": "read",
+        "resource": "document",
+        "id": "01900000-0000-7000-8000-0000000000d4"
+      }
+    ]
+  },
+  "output": [
+    "deny",
+    "deny",
+    "deny",
+    "deny"
+  ]
+}

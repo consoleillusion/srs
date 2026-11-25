@@ -1,0 +1,330 @@
+{
+  "description": "Relations are written, included, filtered on and replaced",
+  "operation": "http.session",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Author",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "x-relations": {
+          "posts": {
+            "table": "post",
+            "cardinality": "many"
+          }
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Post",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "heading": {
+            "type": "string"
+          },
+          "rank": {
+            "type": "integer"
+          }
+        },
+        "x-relations": {
+          "author": {
+            "table": "author",
+            "cardinality": "one"
+          },
+          "tags": {
+            "table": "tag",
+            "cardinality": "many"
+          }
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Tag",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "x-unique": true
+          }
+        },
+        "x-relations": {
+          "posts": {
+            "table": "post",
+            "cardinality": "many"
+          }
+        }
+      }
+    ],
+    "users": [
+      "alice"
+    ],
+    "steps": [
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/author",
+        "body": {
+          "data": {
+            "type": "author",
+            "attributes": {
+              "name": "Ada"
+            }
+          }
+        },
+        "save": {
+          "a": "data.id"
+        },
+        "select": []
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/tag",
+        "body": {
+          "data": {
+            "type": "tag",
+            "attributes": {
+              "name": "math"
+            }
+          }
+        },
+        "save": {
+          "t1": "data.id"
+        },
+        "select": []
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/tag",
+        "body": {
+          "data": {
+            "type": "tag",
+            "attributes": {
+              "name": "history"
+            }
+          }
+        },
+        "save": {
+          "t2": "data.id"
+        },
+        "select": []
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/tag",
+        "body": {
+          "data": {
+            "type": "tag",
+            "attributes": {
+              "name": "math"
+            }
+          }
+        },
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/post",
+        "body": {
+          "data": {
+            "type": "post",
+            "attributes": {
+              "heading": "Engines",
+              "rank": 2
+            },
+            "relationships": {
+              "author": {
+                "data": {
+                  "type": "author",
+                  "id": "{{a}}"
+                }
+              },
+              "tags": {
+                "data": [
+                  {
+                    "type": "tag",
+                    "id": "{{t1}}"
+                  },
+                  {
+                    "type": "tag",
+                    "id": "{{t2}}"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "save": {
+          "p": "data.id"
+        },
+        "select": []
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/post",
+        "body": {
+          "data": {
+            "type": "post",
+            "attributes": {
+              "heading": "Notes",
+              "rank": 1
+            },
+            "relationships": {
+              "author": {
+                "data": {
+                  "type": "author",
+                  "id": "{{a}}"
+                }
+              }
+            }
+          }
+        },
+        "select": []
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/post/{{p}}?include=author,tags",
+        "select": [
+          "included.length",
+          "data.relationships.author.data.type"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/post?filter[tags.name]=history",
+        "select": [
+          "meta.page.total",
+          "data.0.attributes.heading"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/post?filter[author.name]=Ada&sort=rank",
+        "select": [
+          "meta.page.total",
+          "data.0.attributes.heading",
+          "data.1.attributes.heading"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/author/{{a}}/posts?sort=-rank",
+        "select": [
+          "data.0.attributes.heading"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/post/{{p}}/relationships/tags",
+        "body": {
+          "data": [
+            {
+              "type": "tag",
+              "id": "{{t2}}"
+            }
+          ]
+        },
+        "select": [
+          "data.length"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/post?filter[tags.name]=math",
+        "select": [
+          "meta.page.total"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/post/{{p}}/relationships/author",
+        "body": {
+          "data": {
+            "type": "author",
+            "id": "not-an-id"
+          }
+        },
+        "select": [
+          "errors.0.status"
+        ]
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 201
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 409,
+      "errors.0.status": "409"
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 200,
+      "included.length": 3,
+      "data.relationships.author.data.type": "author"
+    },
+    {
+      "status": 200,
+      "meta.page.total": 1,
+      "data.0.attributes.heading": "Engines"
+    },
+    {
+      "status": 200,
+      "meta.page.total": 2,
+      "data.0.attributes.heading": "Notes",
+      "data.1.attributes.heading": "Engines"
+    },
+    {
+      "status": 200,
+      "data.0.attributes.heading": "Engines"
+    },
+    {
+      "status": 200,
+      "data.length": 1
+    },
+    {
+      "status": 200,
+      "meta.page.total": 0
+    },
+    {
+      "status": 400,
+      "errors.0.status": "400"
+    }
+  ]
+}

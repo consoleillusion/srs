@@ -1,0 +1,112 @@
+{
+  "description": "A filter on a related field reads only related rows the caller may read",
+  "operation": "query.list",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Author",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "x-relations": {
+          "posts": {
+            "table": "post",
+            "cardinality": "many"
+          }
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Post",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "heading": {
+            "type": "string"
+          }
+        },
+        "x-relations": {
+          "author": {
+            "table": "author",
+            "cardinality": "one",
+            "required": true,
+            "onDelete": "cascade"
+          }
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Document",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string"
+          }
+        },
+        "x-access": {
+          "shareable": true,
+          "audited": true
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Bulletin",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "x-access": {
+          "read": "public",
+          "visibility": [
+            "private",
+            "public"
+          ],
+          "defaultVisibility": "public",
+          "roles": {
+            "editor": [
+              "update",
+              "delete"
+            ]
+          }
+        }
+      }
+    ],
+    "resource": "post",
+    "viewer": {
+      "user": "01900000-0000-7000-8000-00000000000a"
+    },
+    "query": "filter[author.name]=Ada"
+  },
+  "output": [
+    {
+      "sql": "SELECT COUNT(*) AS count FROM (SELECT\n  (CASE WHEN `t`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`id`, 1, 4))) || '-' || lower(hex(substr(`t`.`id`, 5, 2))) || '-' || lower(hex(substr(`t`.`id`, 7, 2))) || '-' || lower(hex(substr(`t`.`id`, 9, 2))) || '-' || lower(hex(substr(`t`.`id`, 11, 6)))) END) AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  `t`.`heading` AS `heading`,\n  (CASE WHEN `t`.`author_id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`author_id`, 1, 4))) || '-' || lower(hex(substr(`t`.`author_id`, 5, 2))) || '-' || lower(hex(substr(`t`.`author_id`, 7, 2))) || '-' || lower(hex(substr(`t`.`author_id`, 9, 2))) || '-' || lower(hex(substr(`t`.`author_id`, 11, 6)))) END) AS `author_id`\nFROM `post` AS `t`) AS `post_view` WHERE (EXISTS (SELECT 1 FROM `post` AS `s0` JOIN `author` AS `t0` ON `t0`.`id` = `s0`.`author_id` JOIN `author_view` AS `f0` ON `f0`.`id` = (CASE WHEN `t0`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t0`.`id`, 1, 4))) || '-' || lower(hex(substr(`t0`.`id`, 5, 2))) || '-' || lower(hex(substr(`t0`.`id`, 7, 2))) || '-' || lower(hex(substr(`t0`.`id`, 9, 2))) || '-' || lower(hex(substr(`t0`.`id`, 11, 6)))) END) WHERE ((CASE WHEN `s0`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`s0`.`id`, 1, 4))) || '-' || lower(hex(substr(`s0`.`id`, 5, 2))) || '-' || lower(hex(substr(`s0`.`id`, 7, 2))) || '-' || lower(hex(substr(`s0`.`id`, 9, 2))) || '-' || lower(hex(substr(`s0`.`id`, 11, 6)))) END) = `post_view`.`id`) AND ((`f0`.`owner` = ? OR `f0`.`visibility` IN ('public', 'authenticated'))) AND (`f0`.`name` = ?))) AND ((`post_view`.`owner` = ? OR `post_view`.`visibility` IN ('public', 'authenticated')))",
+      "params": [
+        "01900000-0000-7000-8000-00000000000a",
+        "Ada",
+        "01900000-0000-7000-8000-00000000000a"
+      ]
+    },
+    {
+      "sql": "SELECT * FROM (SELECT\n  (CASE WHEN `t`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`id`, 1, 4))) || '-' || lower(hex(substr(`t`.`id`, 5, 2))) || '-' || lower(hex(substr(`t`.`id`, 7, 2))) || '-' || lower(hex(substr(`t`.`id`, 9, 2))) || '-' || lower(hex(substr(`t`.`id`, 11, 6)))) END) AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  `t`.`heading` AS `heading`,\n  (CASE WHEN `t`.`author_id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`author_id`, 1, 4))) || '-' || lower(hex(substr(`t`.`author_id`, 5, 2))) || '-' || lower(hex(substr(`t`.`author_id`, 7, 2))) || '-' || lower(hex(substr(`t`.`author_id`, 9, 2))) || '-' || lower(hex(substr(`t`.`author_id`, 11, 6)))) END) AS `author_id`,\n  (SELECT json_object('id', (CASE WHEN `r`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`id`, 1, 4))) || '-' || lower(hex(substr(`r`.`id`, 5, 2))) || '-' || lower(hex(substr(`r`.`id`, 7, 2))) || '-' || lower(hex(substr(`r`.`id`, 9, 2))) || '-' || lower(hex(substr(`r`.`id`, 11, 6)))) END), 'owner', (CASE WHEN `r`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`owner`, 1, 4))) || '-' || lower(hex(substr(`r`.`owner`, 5, 2))) || '-' || lower(hex(substr(`r`.`owner`, 7, 2))) || '-' || lower(hex(substr(`r`.`owner`, 9, 2))) || '-' || lower(hex(substr(`r`.`owner`, 11, 6)))) END), 'visibility', `r`.`visibility`) FROM `author` AS `r` WHERE `r`.`id` = `t`.`author_id` LIMIT 1) AS `author`\nFROM `post` AS `t`) AS `post_view` WHERE (EXISTS (SELECT 1 FROM `post` AS `s0` JOIN `author` AS `t0` ON `t0`.`id` = `s0`.`author_id` JOIN `author_view` AS `f0` ON `f0`.`id` = (CASE WHEN `t0`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t0`.`id`, 1, 4))) || '-' || lower(hex(substr(`t0`.`id`, 5, 2))) || '-' || lower(hex(substr(`t0`.`id`, 7, 2))) || '-' || lower(hex(substr(`t0`.`id`, 9, 2))) || '-' || lower(hex(substr(`t0`.`id`, 11, 6)))) END) WHERE ((CASE WHEN `s0`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`s0`.`id`, 1, 4))) || '-' || lower(hex(substr(`s0`.`id`, 5, 2))) || '-' || lower(hex(substr(`s0`.`id`, 7, 2))) || '-' || lower(hex(substr(`s0`.`id`, 9, 2))) || '-' || lower(hex(substr(`s0`.`id`, 11, 6)))) END) = `post_view`.`id`) AND ((`f0`.`owner` = ? OR `f0`.`visibility` IN ('public', 'authenticated'))) AND (`f0`.`name` = ?))) AND ((`post_view`.`owner` = ? OR `post_view`.`visibility` IN ('public', 'authenticated'))) ORDER BY `post_view`.`id` ASC LIMIT ? OFFSET ?",
+      "params": [
+        "01900000-0000-7000-8000-00000000000a",
+        "Ada",
+        "01900000-0000-7000-8000-00000000000a",
+        20,
+        0
+      ]
+    }
+  ]
+}

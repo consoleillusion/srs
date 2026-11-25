@@ -71,8 +71,8 @@ describe('sharing with users', () => {
     const list = await (await bob.request('GET', '/note')).json() as any
     expect(list.data.map((x: any) => x.id)).toEqual([note])
 
-    expect((await patchNote(bob, note, { title: 'Mine now' })).status).toBe(404)
-    expect((await bob.request('DELETE', `/note/${note}`)).status).toBe(404)
+    expect((await patchNote(bob, note, { title: 'Mine now' })).status).toBe(403)
+    expect((await bob.request('DELETE', `/note/${note}`)).status).toBe(403)
     expect(await titleOf(alice, note)).toBe('Plans')
   })
 
@@ -110,7 +110,7 @@ describe('sharing with users', () => {
     const after = await (await alice.request('GET', `/note/${note}`)).json() as any
     expect(after.data.attributes.visibility).toBe('shared')
 
-    expect((await bob.request('DELETE', `/note/${note}`)).status).toBe(404)
+    expect((await bob.request('DELETE', `/note/${note}`)).status).toBe(403)
     expect((await share(bob, note, { user: carol.userId })).status).toBe(404)
     expect(await titleOf(carol, note)).toBeUndefined()
   })

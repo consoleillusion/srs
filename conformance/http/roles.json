@@ -1,0 +1,177 @@
+{
+  "description": "Anyone reads public rows; only holders of a role create and change them",
+  "operation": "http.session",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Bulletin",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "x-access": {
+          "read": "public",
+          "visibility": [
+            "private",
+            "public"
+          ],
+          "defaultVisibility": "public",
+          "create": "role",
+          "roles": {
+            "editor": [
+              "create",
+              "update",
+              "delete"
+            ]
+          }
+        }
+      }
+    ],
+    "users": [
+      "admin",
+      "editor",
+      "reader"
+    ],
+    "admins": [
+      "admin"
+    ],
+    "steps": [
+      {
+        "as": "editor",
+        "method": "POST",
+        "path": "/bulletin",
+        "body": {
+          "data": {
+            "type": "bulletin",
+            "attributes": {
+              "text": "Hello"
+            }
+          }
+        },
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "admin",
+        "method": "POST",
+        "path": "/user_role",
+        "body": {
+          "data": {
+            "type": "user_role",
+            "attributes": {
+              "role": "editor"
+            },
+            "relationships": {
+              "user": {
+                "data": {
+                  "type": "user",
+                  "id": "{{editor}}"
+                }
+              }
+            }
+          }
+        },
+        "select": []
+      },
+      {
+        "as": "editor",
+        "method": "POST",
+        "path": "/bulletin",
+        "body": {
+          "data": {
+            "type": "bulletin",
+            "attributes": {
+              "text": "Hello"
+            }
+          }
+        },
+        "save": {
+          "b": "data.id"
+        },
+        "select": [
+          "data.attributes.visibility"
+        ]
+      },
+      {
+        "as": null,
+        "method": "GET",
+        "path": "/bulletin/{{b}}",
+        "select": [
+          "data.attributes.text"
+        ]
+      },
+      {
+        "as": "reader",
+        "method": "PATCH",
+        "path": "/bulletin/{{b}}",
+        "body": {
+          "data": {
+            "type": "bulletin",
+            "id": "{{b}}",
+            "attributes": {
+              "text": "Defaced"
+            }
+          }
+        },
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "reader",
+        "method": "POST",
+        "path": "/bulletin",
+        "body": {
+          "data": {
+            "type": "bulletin",
+            "attributes": {
+              "text": "Mine"
+            }
+          }
+        },
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "editor",
+        "method": "DELETE",
+        "path": "/bulletin/{{b}}",
+        "select": []
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 403,
+      "errors.0.status": "403"
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 201,
+      "data.attributes.visibility": "public"
+    },
+    {
+      "status": 200,
+      "data.attributes.text": "Hello"
+    },
+    {
+      "status": 403,
+      "errors.0.status": "403"
+    },
+    {
+      "status": 403,
+      "errors.0.status": "403"
+    },
+    {
+      "status": 204
+    }
+  ]
+}

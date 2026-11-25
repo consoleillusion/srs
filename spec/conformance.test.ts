@@ -10,9 +10,9 @@ const suites = readdirSync(CONFORMANCE_ROOT, { withFileTypes: true })
 for (const suite of suites)
   describe(`conformance: ${suite}`, () => {
     for (const [file, item] of loadSuite(suite))
-      test(`${file}: ${item.description}`, () => {
+      test(`${file}: ${item.description}`, async () => {
         expect(typeof item.operation).toBe('string')
         expect((item.output === undefined) !== (item.error === undefined)).toBe(true)
-        expect(runCase(operations, item)).toBeUndefined()
+        expect(await runCase(operations, item)).toBeUndefined()
       })
   })

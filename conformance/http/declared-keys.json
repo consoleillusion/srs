@@ -1,0 +1,280 @@
+{
+  "description": "Tables keyed by an integer the database assigns and by text the client chooses",
+  "operation": "http.session",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Customer",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "customer_no": {
+            "type": "integer",
+            "x-primary": true
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Product",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "sku": {
+            "type": "string",
+            "maxLength": 40,
+            "x-primary": true
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Sale",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "type": "string"
+          }
+        },
+        "x-relations": {
+          "customer": {
+            "table": "customer",
+            "cardinality": "one",
+            "foreignKey": "customer_no"
+          },
+          "products": {
+            "table": "product",
+            "cardinality": "many"
+          }
+        }
+      }
+    ],
+    "users": [
+      "alice"
+    ],
+    "steps": [
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/customer",
+        "body": {
+          "data": {
+            "type": "customer",
+            "attributes": {
+              "name": "Ada"
+            }
+          }
+        },
+        "select": [
+          "data.id"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/customer",
+        "body": {
+          "data": {
+            "type": "customer",
+            "id": "42",
+            "attributes": {
+              "name": "Bo"
+            }
+          }
+        },
+        "select": [
+          "data.id"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/customer",
+        "body": {
+          "data": {
+            "type": "customer",
+            "id": "042",
+            "attributes": {
+              "name": "X"
+            }
+          }
+        },
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/product",
+        "body": {
+          "data": {
+            "type": "product",
+            "attributes": {
+              "title": "Lamp"
+            }
+          }
+        },
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/product",
+        "body": {
+          "data": {
+            "type": "product",
+            "id": "LAMP-1",
+            "attributes": {
+              "title": "Lamp"
+            }
+          }
+        },
+        "select": [
+          "data.id"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/product",
+        "body": {
+          "data": {
+            "type": "product",
+            "id": "LAMP-1",
+            "attributes": {
+              "title": "Again"
+            }
+          }
+        },
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/sale",
+        "body": {
+          "data": {
+            "type": "sale",
+            "attributes": {
+              "note": "first"
+            },
+            "relationships": {
+              "customer": {
+                "data": {
+                  "type": "customer",
+                  "id": "1"
+                }
+              },
+              "products": {
+                "data": [
+                  {
+                    "type": "product",
+                    "id": "LAMP-1"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "save": {
+          "s": "data.id"
+        },
+        "select": []
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/sale/{{s}}?include=customer,products",
+        "select": [
+          "data.relationships.customer.data.id",
+          "data.relationships.products.data.0.id",
+          "included.length"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/customer/42",
+        "select": [
+          "data.attributes.name"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "DELETE",
+        "path": "/customer/1",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "DELETE",
+        "path": "/customer/42",
+        "select": []
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 201,
+      "data.id": "1"
+    },
+    {
+      "status": 201,
+      "data.id": "42"
+    },
+    {
+      "status": 400,
+      "errors.0.status": "400"
+    },
+    {
+      "status": 400,
+      "errors.0.status": "400"
+    },
+    {
+      "status": 201,
+      "data.id": "LAMP-1"
+    },
+    {
+      "status": 409,
+      "errors.0.status": "409"
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 200,
+      "data.relationships.customer.data.id": "1",
+      "data.relationships.products.data.0.id": "LAMP-1",
+      "included.length": 2
+    },
+    {
+      "status": 200,
+      "data.attributes.name": "Bo"
+    },
+    {
+      "status": 409,
+      "errors.0.status": "409"
+    },
+    {
+      "status": 204
+    }
+  ]
+}

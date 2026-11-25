@@ -1,0 +1,21 @@
+{
+  "description": "An unknown x- keyword is refused by the meta-schema",
+  "operation": "schema.build",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Widget",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "a": {
+            "type": "string",
+            "x-colour": "red"
+          }
+        }
+      }
+    ]
+  },
+  "error": "invalid-schema"
+}

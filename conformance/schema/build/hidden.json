@@ -1,0 +1,69 @@
+{
+  "description": "x-exposed false keeps a column, or a whole table, out of every view",
+  "operation": "schema.build",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Secret",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "value": {
+            "type": "string"
+          },
+          "internal": {
+            "type": "string",
+            "x-exposed": false
+          }
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Internal",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "value": {
+            "type": "string"
+          }
+        },
+        "x-exposed": false
+      }
+    ]
+  },
+  "output": [
+    {
+      "key": "table:internal",
+      "statements": [
+        "CREATE TABLE IF NOT EXISTS `internal` (\n  `id` blob PRIMARY KEY DEFAULT (uuid7()) NOT NULL,\n  `updated_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,\n  `owner` blob,\n  `value` text,\n  CONSTRAINT `internal_owner_fk` FOREIGN KEY (`owner`) REFERENCES `user`(`id`) ON DELETE SET NULL\n)",
+        "CREATE INDEX IF NOT EXISTS `internal_owner_index` ON `internal` (`owner`)"
+      ]
+    },
+    {
+      "key": "table:secret",
+      "statements": [
+        "CREATE TABLE IF NOT EXISTS `secret` (\n  `id` blob PRIMARY KEY DEFAULT (uuid7()) NOT NULL,\n  `updated_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,\n  `owner` blob,\n  `visibility` text DEFAULT 'private' NOT NULL,\n  `value` text,\n  `internal` text,\n  CONSTRAINT `secret_owner_fk` FOREIGN KEY (`owner`) REFERENCES `user`(`id`) ON DELETE SET NULL,\n  CONSTRAINT `secret_visibility_check` CHECK(`visibility` IN ('private', 'authenticated', 'public'))\n)",
+        "CREATE INDEX IF NOT EXISTS `secret_owner_index` ON `secret` (`owner`)"
+      ]
+    },
+    {
+      "key": "trigger:internal_updated",
+      "statements": [
+        "CREATE TRIGGER IF NOT EXISTS `internal_updated`\nAFTER UPDATE ON `internal`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `internal`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE id = OLD.id;\nEND;"
+      ]
+    },
+    {
+      "key": "trigger:secret_updated",
+      "statements": [
+        "CREATE TRIGGER IF NOT EXISTS `secret_updated`\nAFTER UPDATE ON `secret`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `secret`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE id = OLD.id;\nEND;"
+      ]
+    },
+    {
+      "key": "view:secret_view",
+      "statements": [
+        "CREATE VIEW `secret_view` AS\nSELECT\n  (CASE WHEN `t`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`id`, 1, 4))) || '-' || lower(hex(substr(`t`.`id`, 5, 2))) || '-' || lower(hex(substr(`t`.`id`, 7, 2))) || '-' || lower(hex(substr(`t`.`id`, 9, 2))) || '-' || lower(hex(substr(`t`.`id`, 11, 6)))) END) AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  `t`.`value` AS `value`\nFROM `secret` AS `t`"
+      ]
+    }
+  ]
+}

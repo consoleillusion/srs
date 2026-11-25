@@ -82,6 +82,27 @@ needed:
 - Results are compared as canonical JSON, so field order in an `output` object
   matters and is fixed by the case.
 
+=== Operations
+
+#table(
+  columns: (auto, 1fr, 1fr),
+  table.header([*Operation*], [*Input*], [*Output*]),
+  [`schema.build`], [Schemas, and `only`: `user` (default) or `system`], [Every table, trigger and view as `{ key, statements }`, in build order. Errors: `several-keys`, `bad-key-type`, `bad-key-format`, `key-and-id`, `unknown-relation-table`, `duplicate-table`, `link-any-without-join`, `invalid-schema`, and others listed in the TypeScript adapter.],
+  [`schema.migrate`], [Schemas `before` and `after`], [The migration statements, in order.],
+  [`query.list`], [Schemas, a resource, a viewer (`user`, `roles`, `anonymous`) and a query string], [Each SQL statement a list runs, with its parameters; bytes as `{ "hex": … }`. Errors: `bad-query`, `unknown-resource`.],
+  [`access.decide`], [Schemas, rows to insert, and checks of viewer, operation, resource and id], [`allow` or `deny` for each check.],
+  [`http.session`], [Schemas, users to register, admins, and steps], [For each step: its status and the values at the paths it selects.],
+)
+
+An HTTP session starts the real server as a process (`bun src/cli.ts`, or the
+command in `SRS_CONFORMANCE_SERVER`), registers its users through the Noise
+channel, and runs each step as one of them, as nobody (`as: null`), or outside
+the channel (`clear: true`). A step can `save` a value, such as a new id, and
+later steps use it as `{{name}}`; each user's id is saved under their name.
+Selected paths are dotted (`data.0.id`); `length` is an array's length, and
+`[type=author]` picks the first element with that field. A case selects only
+values that are the same on every run, never generated ids or times.
+
 === Fixtures
 
 Fixtures are frozen files. Once a case is committed it changes only when the
@@ -92,6 +113,8 @@ implementation cannot check itself against output it just produced. Published
 vectors, such as the Noise test vectors, are included as cases and name their
 source. The TypeScript runner is `spec/conformance.test.ts` and runs with the
 rest of the tests; a later implementation must pass the same files.
+`bun scripts/conformance-case.ts <case.json> --write` fills in a new case's
+result for reading.
 
 === Stage 2: Rust, piece by piece
 

@@ -1,0 +1,89 @@
+{
+  "description": "Lists of a table with a declared key are ordered by it",
+  "operation": "query.list",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Customer",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "customer_no": {
+            "type": "integer",
+            "x-primary": true
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Product",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "sku": {
+            "type": "string",
+            "maxLength": 40,
+            "x-primary": true
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Sale",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "type": "string"
+          }
+        },
+        "x-relations": {
+          "customer": {
+            "table": "customer",
+            "cardinality": "one",
+            "foreignKey": "customer_no"
+          },
+          "products": {
+            "table": "product",
+            "cardinality": "many"
+          }
+        }
+      }
+    ],
+    "resource": "sale",
+    "viewer": {
+      "user": "01900000-0000-7000-8000-00000000000a"
+    },
+    "query": "filter[customer.name]=Ada"
+  },
+  "output": [
+    {
+      "sql": "SELECT COUNT(*) AS count FROM (SELECT\n  (CASE WHEN `t`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`id`, 1, 4))) || '-' || lower(hex(substr(`t`.`id`, 5, 2))) || '-' || lower(hex(substr(`t`.`id`, 7, 2))) || '-' || lower(hex(substr(`t`.`id`, 9, 2))) || '-' || lower(hex(substr(`t`.`id`, 11, 6)))) END) AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  `t`.`note` AS `note`,\n  `t`.`customer_no` AS `customer_no`\nFROM `sale` AS `t`) AS `sale_view` WHERE (EXISTS (SELECT 1 FROM `sale` AS `s0` JOIN `customer` AS `t0` ON `t0`.`customer_no` = `s0`.`customer_no` JOIN `customer_view` AS `f0` ON `f0`.`id` = `t0`.`customer_no` WHERE ((CASE WHEN `s0`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`s0`.`id`, 1, 4))) || '-' || lower(hex(substr(`s0`.`id`, 5, 2))) || '-' || lower(hex(substr(`s0`.`id`, 7, 2))) || '-' || lower(hex(substr(`s0`.`id`, 9, 2))) || '-' || lower(hex(substr(`s0`.`id`, 11, 6)))) END) = `sale_view`.`id`) AND ((`f0`.`owner` = ? OR `f0`.`visibility` IN ('public', 'authenticated'))) AND (`f0`.`name` = ?))) AND ((`sale_view`.`owner` = ? OR `sale_view`.`visibility` IN ('public', 'authenticated')))",
+      "params": [
+        "01900000-0000-7000-8000-00000000000a",
+        "Ada",
+        "01900000-0000-7000-8000-00000000000a"
+      ]
+    },
+    {
+      "sql": "SELECT * FROM (SELECT\n  (CASE WHEN `t`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`id`, 1, 4))) || '-' || lower(hex(substr(`t`.`id`, 5, 2))) || '-' || lower(hex(substr(`t`.`id`, 7, 2))) || '-' || lower(hex(substr(`t`.`id`, 9, 2))) || '-' || lower(hex(substr(`t`.`id`, 11, 6)))) END) AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  `t`.`note` AS `note`,\n  `t`.`customer_no` AS `customer_no`,\n  (SELECT json_object('id', `r`.`customer_no`, 'owner', (CASE WHEN `r`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`owner`, 1, 4))) || '-' || lower(hex(substr(`r`.`owner`, 5, 2))) || '-' || lower(hex(substr(`r`.`owner`, 7, 2))) || '-' || lower(hex(substr(`r`.`owner`, 9, 2))) || '-' || lower(hex(substr(`r`.`owner`, 11, 6)))) END), 'visibility', `r`.`visibility`) FROM `customer` AS `r` WHERE `r`.`customer_no` = `t`.`customer_no` LIMIT 1) AS `customer`,\n  (SELECT coalesce(json_group_array(json_object('id', `r`.`sku`, 'owner', (CASE WHEN `r`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`owner`, 1, 4))) || '-' || lower(hex(substr(`r`.`owner`, 5, 2))) || '-' || lower(hex(substr(`r`.`owner`, 7, 2))) || '-' || lower(hex(substr(`r`.`owner`, 9, 2))) || '-' || lower(hex(substr(`r`.`owner`, 11, 6)))) END), 'visibility', `r`.`visibility`)), json('[]')) FROM `product` AS `r` JOIN `product_sale` AS `j` ON `j`.`product_id` = `r`.`sku` WHERE `j`.`sale_id` = `t`.`id` ORDER BY `r`.`sku`) AS `products`\nFROM `sale` AS `t`) AS `sale_view` WHERE (EXISTS (SELECT 1 FROM `sale` AS `s0` JOIN `customer` AS `t0` ON `t0`.`customer_no` = `s0`.`customer_no` JOIN `customer_view` AS `f0` ON `f0`.`id` = `t0`.`customer_no` WHERE ((CASE WHEN `s0`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`s0`.`id`, 1, 4))) || '-' || lower(hex(substr(`s0`.`id`, 5, 2))) || '-' || lower(hex(substr(`s0`.`id`, 7, 2))) || '-' || lower(hex(substr(`s0`.`id`, 9, 2))) || '-' || lower(hex(substr(`s0`.`id`, 11, 6)))) END) = `sale_view`.`id`) AND ((`f0`.`owner` = ? OR `f0`.`visibility` IN ('public', 'authenticated'))) AND (`f0`.`name` = ?))) AND ((`sale_view`.`owner` = ? OR `sale_view`.`visibility` IN ('public', 'authenticated'))) ORDER BY `sale_view`.`id` ASC LIMIT ? OFFSET ?",
+      "params": [
+        "01900000-0000-7000-8000-00000000000a",
+        "Ada",
+        "01900000-0000-7000-8000-00000000000a",
+        20,
+        0
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "description": "Only one property can be x-primary",
+  "operation": "schema.build",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Widget",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "a": {
+            "type": "integer",
+            "x-primary": true
+          },
+          "b": {
+            "type": "string",
+            "x-primary": true
+          }
+        }
+      }
+    ]
+  },
+  "error": "several-keys"
+}

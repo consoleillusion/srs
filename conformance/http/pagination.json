@@ -1,0 +1,227 @@
+{
+  "description": "Pages, sizes and sorting",
+  "operation": "http.session",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Post",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "heading": {
+            "type": "string"
+          },
+          "rank": {
+            "type": "integer"
+          }
+        },
+        "x-relations": {
+          "author": {
+            "table": "author",
+            "cardinality": "one"
+          },
+          "tags": {
+            "table": "tag",
+            "cardinality": "many"
+          }
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Author",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "x-relations": {
+          "posts": {
+            "table": "post",
+            "cardinality": "many"
+          }
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Tag",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "x-unique": true
+          }
+        },
+        "x-relations": {
+          "posts": {
+            "table": "post",
+            "cardinality": "many"
+          }
+        }
+      }
+    ],
+    "users": [
+      "alice"
+    ],
+    "steps": [
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/post",
+        "body": {
+          "data": {
+            "type": "post",
+            "attributes": {
+              "heading": "P5",
+              "rank": 5
+            }
+          }
+        },
+        "select": []
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/post",
+        "body": {
+          "data": {
+            "type": "post",
+            "attributes": {
+              "heading": "P3",
+              "rank": 3
+            }
+          }
+        },
+        "select": []
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/post",
+        "body": {
+          "data": {
+            "type": "post",
+            "attributes": {
+              "heading": "P1",
+              "rank": 1
+            }
+          }
+        },
+        "select": []
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/post",
+        "body": {
+          "data": {
+            "type": "post",
+            "attributes": {
+              "heading": "P4",
+              "rank": 4
+            }
+          }
+        },
+        "select": []
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/post",
+        "body": {
+          "data": {
+            "type": "post",
+            "attributes": {
+              "heading": "P2",
+              "rank": 2
+            }
+          }
+        },
+        "select": []
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/post?sort=rank&page[size]=2",
+        "select": [
+          "meta.page.total",
+          "meta.page.pages",
+          "data.length",
+          "data.0.attributes.rank",
+          "data.1.attributes.rank"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/post?sort=rank&page[size]=2&page[number]=3",
+        "select": [
+          "data.length",
+          "data.0.attributes.rank"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/post?sort=-rank&filter[rank][gt]=2",
+        "select": [
+          "meta.page.total",
+          "data.0.attributes.rank"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/post?page[size]=0",
+        "select": [
+          "errors.0.status"
+        ]
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 201
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 200,
+      "meta.page.total": 5,
+      "meta.page.pages": 3,
+      "data.length": 2,
+      "data.0.attributes.rank": 1,
+      "data.1.attributes.rank": 2
+    },
+    {
+      "status": 200,
+      "data.length": 1,
+      "data.0.attributes.rank": 5
+    },
+    {
+      "status": 200,
+      "meta.page.total": 3,
+      "data.0.attributes.rank": 5
+    },
+    {
+      "status": 400,
+      "errors.0.status": "400"
+    }
+  ]
+}

@@ -20,6 +20,8 @@ import
   } from '../../src/protocol/accounts.ts'
 import { ed25519PublicKey, ed25519Sign, ed25519Verify } from '../../src/client/crypto.ts'
 import type { Operation } from './runner.ts'
+import { engineOperations } from './engine-operations.ts'
+import { httpOperations } from './http-operations.ts'
 
 type CertificateInput =
   { userId: string, loginId: string, sid: string, h: string, sessionPublic: string
@@ -183,4 +185,6 @@ export const operations: Record<string, Operation> =
             { h: hexToBytes(input.h), sid: hexToBytes(input.sid), n: BigInt(input.n), method: input.method
             , path: input.path, contentType: input.contentType, body: hexToBytes(input.body) })
         , hexToBytes(input.sessionPublic))
+  , ...engineOperations
+  , ...httpOperations
   }

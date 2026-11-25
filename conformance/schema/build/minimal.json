@@ -1,0 +1,47 @@
+{
+  "description": "A table gets id, updated_at, owner and visibility, a view, and an updated trigger",
+  "operation": "schema.build",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Note",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ]
+      }
+    ]
+  },
+  "output": [
+    {
+      "key": "table:note",
+      "statements": [
+        "CREATE TABLE IF NOT EXISTS `note` (\n  `id` blob PRIMARY KEY DEFAULT (uuid7()) NOT NULL,\n  `updated_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,\n  `owner` blob,\n  `visibility` text DEFAULT 'private' NOT NULL,\n  `title` text NOT NULL,\n  `body` text,\n  CONSTRAINT `note_owner_fk` FOREIGN KEY (`owner`) REFERENCES `user`(`id`) ON DELETE SET NULL,\n  CONSTRAINT `note_visibility_check` CHECK(`visibility` IN ('private', 'authenticated', 'public'))\n)",
+        "CREATE INDEX IF NOT EXISTS `note_owner_index` ON `note` (`owner`)"
+      ]
+    },
+    {
+      "key": "trigger:note_updated",
+      "statements": [
+        "CREATE TRIGGER IF NOT EXISTS `note_updated`\nAFTER UPDATE ON `note`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `note`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE id = OLD.id;\nEND;"
+      ]
+    },
+    {
+      "key": "view:note_view",
+      "statements": [
+        "CREATE VIEW `note_view` AS\nSELECT\n  (CASE WHEN `t`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`id`, 1, 4))) || '-' || lower(hex(substr(`t`.`id`, 5, 2))) || '-' || lower(hex(substr(`t`.`id`, 7, 2))) || '-' || lower(hex(substr(`t`.`id`, 9, 2))) || '-' || lower(hex(substr(`t`.`id`, 11, 6)))) END) AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  `t`.`title` AS `title`,\n  `t`.`body` AS `body`\nFROM `note` AS `t`"
+      ]
+    }
+  ]
+}

@@ -77,8 +77,8 @@ describe('audit trail', () => {
       await alice.request(
         'PATCH', `/audit_log/${id}`
         , { data: { type: 'audit_log', id, attributes: { action: 'nothing' } } })
-    expect(patch.status).toBe(404)
-    expect((await alice.request('DELETE', `/audit_log/${id}`)).status).toBe(404)
+    expect(patch.status).toBe(403)
+    expect((await alice.request('DELETE', `/audit_log/${id}`)).status).toBe(403)
   })
 })
 

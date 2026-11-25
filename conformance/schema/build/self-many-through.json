@@ -1,0 +1,68 @@
+{
+  "description": "A self-referential many relation uses its named join table",
+  "operation": "schema.build",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Person",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "x-relations": {
+          "friends": {
+            "table": "person",
+            "cardinality": "many",
+            "through": "friendship"
+          }
+        }
+      }
+    ]
+  },
+  "output": [
+    {
+      "key": "table:friendship",
+      "statements": [
+        "CREATE TABLE IF NOT EXISTS `friendship` (\n  `id` blob PRIMARY KEY DEFAULT (uuid7()) NOT NULL,\n  `updated_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,\n  `owner` blob,\n  `visibility` text DEFAULT 'private' NOT NULL,\n  `person_id` blob NOT NULL,\n  `related_person_id` blob NOT NULL,\n  CONSTRAINT `friendship_person_id_fk` FOREIGN KEY (`person_id`) REFERENCES `person`(`id`),\n  CONSTRAINT `friendship_related_person_id_fk` FOREIGN KEY (`related_person_id`) REFERENCES `person`(`id`),\n  CONSTRAINT `friendship_owner_fk` FOREIGN KEY (`owner`) REFERENCES `user`(`id`) ON DELETE SET NULL,\n  CONSTRAINT `friendship_person_id_related_person_id_unique` UNIQUE(`person_id`, `related_person_id`),\n  CONSTRAINT `friendship_visibility_check` CHECK(`visibility` IN ('private', 'authenticated', 'public'))\n)",
+        "CREATE INDEX IF NOT EXISTS `friendship_person_id_index` ON `friendship` (`person_id`)",
+        "CREATE INDEX IF NOT EXISTS `friendship_related_person_id_index` ON `friendship` (`related_person_id`)",
+        "CREATE INDEX IF NOT EXISTS `friendship_owner_index` ON `friendship` (`owner`)"
+      ]
+    },
+    {
+      "key": "table:person",
+      "statements": [
+        "CREATE TABLE IF NOT EXISTS `person` (\n  `id` blob PRIMARY KEY DEFAULT (uuid7()) NOT NULL,\n  `updated_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,\n  `owner` blob,\n  `visibility` text DEFAULT 'private' NOT NULL,\n  `name` text,\n  CONSTRAINT `person_owner_fk` FOREIGN KEY (`owner`) REFERENCES `user`(`id`) ON DELETE SET NULL,\n  CONSTRAINT `person_visibility_check` CHECK(`visibility` IN ('private', 'authenticated', 'public'))\n)",
+        "CREATE INDEX IF NOT EXISTS `person_owner_index` ON `person` (`owner`)"
+      ]
+    },
+    {
+      "key": "trigger:friendship_updated",
+      "statements": [
+        "CREATE TRIGGER IF NOT EXISTS `friendship_updated`\nAFTER UPDATE ON `friendship`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `friendship`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE id = OLD.id;\nEND;"
+      ]
+    },
+    {
+      "key": "trigger:person_updated",
+      "statements": [
+        "CREATE TRIGGER IF NOT EXISTS `person_updated`\nAFTER UPDATE ON `person`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `person`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE id = OLD.id;\nEND;"
+      ]
+    },
+    {
+      "key": "view:friendship_view",
+      "statements": [
+        "CREATE VIEW `friendship_view` AS\nSELECT\n  (CASE WHEN `t`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`id`, 1, 4))) || '-' || lower(hex(substr(`t`.`id`, 5, 2))) || '-' || lower(hex(substr(`t`.`id`, 7, 2))) || '-' || lower(hex(substr(`t`.`id`, 9, 2))) || '-' || lower(hex(substr(`t`.`id`, 11, 6)))) END) AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  (CASE WHEN `t`.`person_id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`person_id`, 1, 4))) || '-' || lower(hex(substr(`t`.`person_id`, 5, 2))) || '-' || lower(hex(substr(`t`.`person_id`, 7, 2))) || '-' || lower(hex(substr(`t`.`person_id`, 9, 2))) || '-' || lower(hex(substr(`t`.`person_id`, 11, 6)))) END) AS `person_id`,\n  (CASE WHEN `t`.`related_person_id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`related_person_id`, 1, 4))) || '-' || lower(hex(substr(`t`.`related_person_id`, 5, 2))) || '-' || lower(hex(substr(`t`.`related_person_id`, 7, 2))) || '-' || lower(hex(substr(`t`.`related_person_id`, 9, 2))) || '-' || lower(hex(substr(`t`.`related_person_id`, 11, 6)))) END) AS `related_person_id`,\n  (SELECT json_object('id', (CASE WHEN `r`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`id`, 1, 4))) || '-' || lower(hex(substr(`r`.`id`, 5, 2))) || '-' || lower(hex(substr(`r`.`id`, 7, 2))) || '-' || lower(hex(substr(`r`.`id`, 9, 2))) || '-' || lower(hex(substr(`r`.`id`, 11, 6)))) END), 'updated_at', `r`.`updated_at`, 'owner', (CASE WHEN `r`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`owner`, 1, 4))) || '-' || lower(hex(substr(`r`.`owner`, 5, 2))) || '-' || lower(hex(substr(`r`.`owner`, 7, 2))) || '-' || lower(hex(substr(`r`.`owner`, 9, 2))) || '-' || lower(hex(substr(`r`.`owner`, 11, 6)))) END), 'visibility', `r`.`visibility`, 'name', `r`.`name`) FROM `person` AS `r` WHERE `r`.`id` = `t`.`person_id` LIMIT 1) AS `person`,\n  (SELECT json_object('id', (CASE WHEN `r`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`id`, 1, 4))) || '-' || lower(hex(substr(`r`.`id`, 5, 2))) || '-' || lower(hex(substr(`r`.`id`, 7, 2))) || '-' || lower(hex(substr(`r`.`id`, 9, 2))) || '-' || lower(hex(substr(`r`.`id`, 11, 6)))) END), 'updated_at', `r`.`updated_at`, 'owner', (CASE WHEN `r`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`owner`, 1, 4))) || '-' || lower(hex(substr(`r`.`owner`, 5, 2))) || '-' || lower(hex(substr(`r`.`owner`, 7, 2))) || '-' || lower(hex(substr(`r`.`owner`, 9, 2))) || '-' || lower(hex(substr(`r`.`owner`, 11, 6)))) END), 'visibility', `r`.`visibility`, 'name', `r`.`name`) FROM `person` AS `r` WHERE `r`.`id` = `t`.`related_person_id` LIMIT 1) AS `related_person`\nFROM `friendship` AS `t`"
+      ]
+    },
+    {
+      "key": "view:person_view",
+      "statements": [
+        "CREATE VIEW `person_view` AS\nSELECT\n  (CASE WHEN `t`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`id`, 1, 4))) || '-' || lower(hex(substr(`t`.`id`, 5, 2))) || '-' || lower(hex(substr(`t`.`id`, 7, 2))) || '-' || lower(hex(substr(`t`.`id`, 9, 2))) || '-' || lower(hex(substr(`t`.`id`, 11, 6)))) END) AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  `t`.`name` AS `name`,\n  (SELECT coalesce(json_group_array(json_object('id', (CASE WHEN `r`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`id`, 1, 4))) || '-' || lower(hex(substr(`r`.`id`, 5, 2))) || '-' || lower(hex(substr(`r`.`id`, 7, 2))) || '-' || lower(hex(substr(`r`.`id`, 9, 2))) || '-' || lower(hex(substr(`r`.`id`, 11, 6)))) END), 'updated_at', `r`.`updated_at`, 'owner', (CASE WHEN `r`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`owner`, 1, 4))) || '-' || lower(hex(substr(`r`.`owner`, 5, 2))) || '-' || lower(hex(substr(`r`.`owner`, 7, 2))) || '-' || lower(hex(substr(`r`.`owner`, 9, 2))) || '-' || lower(hex(substr(`r`.`owner`, 11, 6)))) END), 'visibility', `r`.`visibility`, 'name', `r`.`name`)), json('[]')) FROM `person` AS `r` JOIN `friendship` AS `j` ON `j`.`related_person_id` = `r`.`id` WHERE `j`.`person_id` = `t`.`id` ORDER BY `r`.`id`) AS `friends`\nFROM `person` AS `t`"
+      ]
+    }
+  ]
+}

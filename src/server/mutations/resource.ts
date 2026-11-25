@@ -2,7 +2,7 @@ import type { Row } from '../database.ts'
 import { badRequest, forbidden, notFound } from '../errors.ts'
 import { idFromDb, idKindOf, idToDb, keyCondition } from '../ids.ts'
 import type { ResourceMeta } from '../registry.ts'
-import { deleteScope, granted, writeScope } from '../scope.ts'
+import { deleteScope, granted, readScope, writeScope } from '../scope.ts'
 import { insert, remove, update } from '../sql.ts'
 import { uuidToBuffer } from '../uuid.ts'
 import { type MutationContext, viewerIn, type WriteDocument } from './types.ts'
@@ -20,6 +20,17 @@ export const assertMayCreate =
         && !granted(viewerIn(context), resource, 'create'))
       throw forbidden(`Creating "${resource.type}" needs a role that allows it`)
   }
+
+/**
+ * The error for a row the caller may not change: 403 when they can read it,
+ * because pretending it does not exist would be a lie to someone who just saw
+ * it; 404 otherwise, so a row they cannot read stays invisible.
+ */
+export const notWritable =
+  async (context: MutationContext, resource: ResourceMeta, id: string, action: string) =>
+    await readResourceRow(context.db, resource, id, readScope(viewerIn(context), resource, context.registry))
+      ? forbidden(`You may read this ${resource.type} but not ${action} it`)
+      : notFound(`Resource "${resource.type}" with id "${id}" was not found`)
 
 export const createResource =
   async ( context: MutationContext
@@ -64,8 +75,7 @@ export const updateResource =
     const existing =
       await readResourceRow(
         context.db, resource, id, writeScope(viewerIn(context), resource))
-    if (!existing)
-      throw notFound(`Resource "${resource.type}" with id "${id}" was not found`)
+    if (!existing) throw await notWritable(context, resource, id, 'change')
     context =
       { ...context
       , isOwner:
@@ -99,8 +109,7 @@ export const deleteResource =
     const existing =
       await readResourceRow(
         context.db, resource, id, deleteScope(viewerIn(context), resource))
-    if (!existing)
-      throw notFound(`Resource "${resource.type}" with id "${id}" was not found`)
+    if (!existing) throw await notWritable(context, resource, id, 'delete')
 
     const key = idToDb(resource.definition, id)
 

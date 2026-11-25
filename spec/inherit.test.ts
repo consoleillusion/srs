@@ -78,8 +78,8 @@ describe('inherited access', () => {
       await bob.request(
         'PATCH', `/message/${id}`
         , { data: { type: 'message', id, attributes: { text: 'edited by bob' } } })
-    expect(patch.status).toBe(404)
-    expect((await bob.request('DELETE', `/message/${id}`)).status).toBe(404)
+    expect(patch.status).toBe(403)
+    expect((await bob.request('DELETE', `/message/${id}`)).status).toBe(403)
     expect(await texts(alice)).toEqual(['original'])
   })
 

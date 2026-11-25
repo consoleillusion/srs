@@ -10,7 +10,7 @@ export type ConformanceCase =
   , error?: string
   }
 
-/** An implementation of one conformance operation. */
+/** An implementation of one conformance operation; it may return a promise. */
 export type Operation = (input: never) => unknown
 
 /** An error whose `code` a conformance case can expect. */
@@ -56,12 +56,12 @@ export const loadSuite =
  * @returns `undefined` when the case passes, otherwise why it failed.
  */
 export const runCase =
-  (operations: Record<string, Operation>, item: ConformanceCase): string | undefined => {
+  async (operations: Record<string, Operation>, item: ConformanceCase): Promise<string | undefined> => {
     const operation = operations[item.operation]
     if (!operation) return `no implementation for operation "${item.operation}"`
     let result: unknown
     try {
-      result = operation(item.input as never)
+      result = await operation(item.input as never)
     } catch (error) {
       if (item.error === undefined) return `unexpected error: ${String(error)}`
       const code = typeof (error as { code?: unknown }).code === 'string' ? (error as { code: string }).code : undefined

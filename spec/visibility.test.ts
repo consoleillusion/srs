@@ -89,9 +89,9 @@ describe('visibility: reads', () => {
     const id = await publishArticle(alice, 'public')
 
     const body = { data: { type: 'article', id, attributes: { heading: 'Hijacked' } } }
-    expect((await bob.request('PATCH', `/article/${id}`, body)).status).toBe(404)
-    expect((await bob.request('PUT', `/article/${id}`, body)).status).toBe(404)
-    expect((await bob.request('DELETE', `/article/${id}`)).status).toBe(404)
+    expect((await bob.request('PATCH', `/article/${id}`, body)).status).toBe(403)
+    expect((await bob.request('PUT', `/article/${id}`, body)).status).toBe(403)
+    expect((await bob.request('DELETE', `/article/${id}`)).status).toBe(403)
 
     const stored = await (await alice.request('GET', `/article/${id}`)).json() as any
     expect(stored.data.attributes.heading).toBe('Shared')

@@ -10,7 +10,7 @@ import { idToDb, keyCondition } from '../ids.ts'
 import { type MutationContext, viewerIn, type WriteDocument, type Mode } from './types.ts'
 import { writeError, foreignKeyColumn } from './assign.ts'
 import { readResourceRow } from './row.ts'
-import { updateResource } from './resource.ts'
+import { notWritable, updateResource } from './resource.ts'
 
 /** Reject links to rows the writer does not own (anonymous writers: non-public rows). */
 export const exposedRelations =
@@ -155,8 +155,7 @@ export const changeRelationship =
     const existing =
       await readResourceRow(
         context.db, resource, id, writeScope(viewerIn(context), resource))
-    if (!existing)
-      throw notFound(`Resource "${resource.type}" with id "${id}" was not found`)
+    if (!existing) throw await notWritable(context, resource, id, 'change')
     if (how === 'add')
       await assertRelationshipTargets(
         context, resource, { attributes: {}, relationships })

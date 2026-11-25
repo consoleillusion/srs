@@ -1,0 +1,156 @@
+{
+  "description": "Private rows are invisible to other users, and look like rows that do not exist",
+  "operation": "http.session",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Note",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ]
+      }
+    ],
+    "users": [
+      "alice",
+      "bob"
+    ],
+    "steps": [
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/note",
+        "body": {
+          "data": {
+            "type": "note",
+            "attributes": {
+              "title": "Mine"
+            }
+          }
+        },
+        "save": {
+          "n": "data.id"
+        },
+        "select": []
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/note",
+        "body": {
+          "data": {
+            "type": "note",
+            "attributes": {
+              "title": "Everyone",
+              "visibility": "authenticated"
+            }
+          }
+        },
+        "select": []
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/note/{{n}}",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "bob",
+        "method": "PATCH",
+        "path": "/note/{{n}}",
+        "body": {
+          "data": {
+            "type": "note",
+            "id": "{{n}}",
+            "attributes": {
+              "title": "Taken"
+            }
+          }
+        },
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "bob",
+        "method": "DELETE",
+        "path": "/note/{{n}}",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/note",
+        "select": [
+          "meta.page.total",
+          "data.0.attributes.title"
+        ]
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/note?filter[title]=Mine",
+        "select": [
+          "meta.page.total"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/note/{{n}}",
+        "select": [
+          "data.attributes.title"
+        ]
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 201
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 200,
+      "meta.page.total": 1,
+      "data.0.attributes.title": "Everyone"
+    },
+    {
+      "status": 200,
+      "meta.page.total": 0
+    },
+    {
+      "status": 200,
+      "data.attributes.title": "Mine"
+    }
+  ]
+}

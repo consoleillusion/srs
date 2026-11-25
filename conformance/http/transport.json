@@ -1,0 +1,84 @@
+{
+  "description": "Only the clear routes answer outside the Noise channel",
+  "operation": "http.session",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Note",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "clear": true,
+        "method": "GET",
+        "path": "/healthz",
+        "select": []
+      },
+      {
+        "clear": true,
+        "method": "GET",
+        "path": "/note",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "clear": true,
+        "method": "POST",
+        "path": "/note",
+        "body": {
+          "data": {
+            "type": "note",
+            "attributes": {
+              "title": "x"
+            }
+          }
+        },
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": null,
+        "method": "GET",
+        "path": "/note",
+        "select": [
+          "errors.0.status"
+        ]
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 200
+    },
+    {
+      "status": 426,
+      "errors.0.status": "426"
+    },
+    {
+      "status": 426,
+      "errors.0.status": "426"
+    },
+    {
+      "status": 401,
+      "errors.0.status": "401"
+    }
+  ]
+}

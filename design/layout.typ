@@ -22,7 +22,7 @@ src/
   cli.ts           `srs` command: init, serve, console, backup, restore and more
   commands.ts      the commands behind the CLI
   index.ts         public library exports
-scripts/           `bun run try`
+scripts/           `bun run try`, and conformance-case.ts for writing new cases
 spec/              end-to-end tests through the app, and the browser test
   helpers/         test server, sign-in and client helpers
   unit/            unit tests by module

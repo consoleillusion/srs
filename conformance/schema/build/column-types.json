@@ -1,0 +1,90 @@
+{
+  "description": "Each property type maps to its column type, default and constraint",
+  "operation": "schema.build",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Sample",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string",
+            "maxLength": 40,
+            "x-unique": true
+          },
+          "count": {
+            "type": "integer",
+            "default": 0
+          },
+          "ratio": {
+            "type": "number"
+          },
+          "done": {
+            "type": "boolean",
+            "default": false
+          },
+          "due": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "meta": {
+            "type": "object"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ref": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "blob": {
+            "type": "string",
+            "format": "byte"
+          },
+          "size": {
+            "type": "string",
+            "enum": [
+              "s",
+              "m",
+              "l"
+            ],
+            "default": "m"
+          },
+          "code": {
+            "type": "string",
+            "readOnly": true
+          }
+        },
+        "required": [
+          "label"
+        ]
+      }
+    ]
+  },
+  "output": [
+    {
+      "key": "table:sample",
+      "statements": [
+        "CREATE TABLE IF NOT EXISTS `sample` (\n  `id` blob PRIMARY KEY DEFAULT (uuid7()) NOT NULL,\n  `updated_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,\n  `owner` blob,\n  `visibility` text DEFAULT 'private' NOT NULL,\n  `label` text NOT NULL UNIQUE,\n  `count` integer DEFAULT 0,\n  `ratio` real,\n  `done` integer DEFAULT 0,\n  `due` integer,\n  `meta` text,\n  `items` text,\n  `ref` blob,\n  `blob` blob,\n  `size` text DEFAULT 'm',\n  `code` text,\n  CONSTRAINT `sample_owner_fk` FOREIGN KEY (`owner`) REFERENCES `user`(`id`) ON DELETE SET NULL,\n  CONSTRAINT `sample_visibility_check` CHECK(`visibility` IN ('private', 'authenticated', 'public'))\n)",
+        "CREATE INDEX IF NOT EXISTS `sample_owner_index` ON `sample` (`owner`)"
+      ]
+    },
+    {
+      "key": "trigger:sample_updated",
+      "statements": [
+        "CREATE TRIGGER IF NOT EXISTS `sample_updated`\nAFTER UPDATE ON `sample`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `sample`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE id = OLD.id;\nEND;"
+      ]
+    },
+    {
+      "key": "view:sample_view",
+      "statements": [
+        "CREATE VIEW `sample_view` AS\nSELECT\n  (CASE WHEN `t`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`id`, 1, 4))) || '-' || lower(hex(substr(`t`.`id`, 5, 2))) || '-' || lower(hex(substr(`t`.`id`, 7, 2))) || '-' || lower(hex(substr(`t`.`id`, 9, 2))) || '-' || lower(hex(substr(`t`.`id`, 11, 6)))) END) AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  `t`.`label` AS `label`,\n  `t`.`count` AS `count`,\n  `t`.`ratio` AS `ratio`,\n  `t`.`done` AS `done`,\n  `t`.`due` AS `due`,\n  `t`.`meta` AS `meta`,\n  `t`.`items` AS `items`,\n  (CASE WHEN `t`.`ref` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`ref`, 1, 4))) || '-' || lower(hex(substr(`t`.`ref`, 5, 2))) || '-' || lower(hex(substr(`t`.`ref`, 7, 2))) || '-' || lower(hex(substr(`t`.`ref`, 9, 2))) || '-' || lower(hex(substr(`t`.`ref`, 11, 6)))) END) AS `ref`,\n  `t`.`blob` AS `blob`,\n  `t`.`size` AS `size`,\n  `t`.`code` AS `code`\nFROM `sample` AS `t`"
+      ]
+    }
+  ]
+}

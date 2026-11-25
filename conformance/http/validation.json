@@ -1,0 +1,189 @@
+{
+  "description": "Writes that break the schema are refused with the offending member named; a client cannot choose the owner",
+  "operation": "http.session",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Note",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ]
+      }
+    ],
+    "users": [
+      "alice",
+      "bob"
+    ],
+    "steps": [
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/note",
+        "body": {
+          "data": {
+            "type": "note",
+            "attributes": {}
+          }
+        },
+        "select": [
+          "errors.0.status",
+          "errors.0.source.parameter"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/note",
+        "body": {
+          "data": {
+            "type": "note",
+            "attributes": {
+              "title": ""
+            }
+          }
+        },
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/note",
+        "body": {
+          "data": {
+            "type": "note",
+            "attributes": {
+              "title": "x",
+              "colour": "red"
+            }
+          }
+        },
+        "select": [
+          "errors.0.status",
+          "errors.0.source.parameter"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/note",
+        "body": {
+          "data": {
+            "type": "nope",
+            "attributes": {
+              "title": "x"
+            }
+          }
+        },
+        "select": [
+          "errors.0.status",
+          "errors.0.source.parameter"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/note",
+        "body": {
+          "data": {
+            "type": "note",
+            "attributes": {
+              "title": "x",
+              "owner": "{{bob}}"
+            }
+          }
+        },
+        "save": {
+          "n": "data.id"
+        },
+        "select": []
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/note/{{n}}",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/nothing",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/note?filter[nope]=1",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/note?sort=nope",
+        "select": [
+          "errors.0.status"
+        ]
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 400,
+      "errors.0.status": "400",
+      "errors.0.source.parameter": "data.attributes.title"
+    },
+    {
+      "status": 400,
+      "errors.0.status": "400"
+    },
+    {
+      "status": 400,
+      "errors.0.status": "400",
+      "errors.0.source.parameter": "data.attributes.colour"
+    },
+    {
+      "status": 400,
+      "errors.0.status": "400",
+      "errors.0.source.parameter": "data.type"
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 400,
+      "errors.0.status": "400"
+    },
+    {
+      "status": 400,
+      "errors.0.status": "400"
+    }
+  ]
+}

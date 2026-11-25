@@ -1,0 +1,22 @@
+{
+  "description": "A string key cannot have a format other than uuid",
+  "operation": "schema.build",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Widget",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "a": {
+            "type": "string",
+            "format": "date-time",
+            "x-primary": true
+          }
+        }
+      }
+    ]
+  },
+  "error": "bad-key-format"
+}

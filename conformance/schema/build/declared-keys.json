@@ -1,0 +1,145 @@
+{
+  "description": "x-primary keys replace id; relations and join tables use them",
+  "operation": "schema.build",
+  "input": {
+    "schemas": [
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Customer",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "customer_no": {
+            "type": "integer",
+            "x-primary": true
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Product",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "sku": {
+            "type": "string",
+            "maxLength": 40,
+            "x-primary": true
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      },
+      {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Sale",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "note": {
+            "type": "string"
+          }
+        },
+        "x-relations": {
+          "customer": {
+            "table": "customer",
+            "cardinality": "one",
+            "foreignKey": "customer_no"
+          },
+          "products": {
+            "table": "product",
+            "cardinality": "many"
+          }
+        }
+      }
+    ]
+  },
+  "output": [
+    {
+      "key": "table:customer",
+      "statements": [
+        "CREATE TABLE IF NOT EXISTS `customer` (\n  `customer_no` integer PRIMARY KEY,\n  `updated_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,\n  `owner` blob,\n  `visibility` text DEFAULT 'private' NOT NULL,\n  `name` text NOT NULL,\n  CONSTRAINT `customer_owner_fk` FOREIGN KEY (`owner`) REFERENCES `user`(`id`) ON DELETE SET NULL,\n  CONSTRAINT `customer_visibility_check` CHECK(`visibility` IN ('private', 'authenticated', 'public'))\n)",
+        "CREATE INDEX IF NOT EXISTS `customer_owner_index` ON `customer` (`owner`)"
+      ]
+    },
+    {
+      "key": "table:product",
+      "statements": [
+        "CREATE TABLE IF NOT EXISTS `product` (\n  `sku` text PRIMARY KEY NOT NULL,\n  `updated_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,\n  `owner` blob,\n  `visibility` text DEFAULT 'private' NOT NULL,\n  `title` text,\n  CONSTRAINT `product_owner_fk` FOREIGN KEY (`owner`) REFERENCES `user`(`id`) ON DELETE SET NULL,\n  CONSTRAINT `product_visibility_check` CHECK(`visibility` IN ('private', 'authenticated', 'public'))\n)",
+        "CREATE INDEX IF NOT EXISTS `product_owner_index` ON `product` (`owner`)"
+      ]
+    },
+    {
+      "key": "table:product_sale",
+      "statements": [
+        "CREATE TABLE IF NOT EXISTS `product_sale` (\n  `id` blob PRIMARY KEY DEFAULT (uuid7()) NOT NULL,\n  `updated_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,\n  `owner` blob,\n  `visibility` text DEFAULT 'private' NOT NULL,\n  `product_id` text NOT NULL,\n  `sale_id` blob NOT NULL,\n  CONSTRAINT `product_sale_product_id_fk` FOREIGN KEY (`product_id`) REFERENCES `product`(`sku`),\n  CONSTRAINT `product_sale_sale_id_fk` FOREIGN KEY (`sale_id`) REFERENCES `sale`(`id`),\n  CONSTRAINT `product_sale_owner_fk` FOREIGN KEY (`owner`) REFERENCES `user`(`id`) ON DELETE SET NULL,\n  CONSTRAINT `product_sale_product_id_sale_id_unique` UNIQUE(`product_id`, `sale_id`),\n  CONSTRAINT `product_sale_visibility_check` CHECK(`visibility` IN ('private', 'authenticated', 'public'))\n)",
+        "CREATE INDEX IF NOT EXISTS `product_sale_product_id_index` ON `product_sale` (`product_id`)",
+        "CREATE INDEX IF NOT EXISTS `product_sale_sale_id_index` ON `product_sale` (`sale_id`)",
+        "CREATE INDEX IF NOT EXISTS `product_sale_owner_index` ON `product_sale` (`owner`)"
+      ]
+    },
+    {
+      "key": "table:sale",
+      "statements": [
+        "CREATE TABLE IF NOT EXISTS `sale` (\n  `id` blob PRIMARY KEY DEFAULT (uuid7()) NOT NULL,\n  `updated_at` integer DEFAULT (cast((julianday('now') - 2440587.5)*86400000 as integer)) NOT NULL,\n  `owner` blob,\n  `visibility` text DEFAULT 'private' NOT NULL,\n  `note` text,\n  `customer_no` integer,\n  CONSTRAINT `sale_customer_no_fk` FOREIGN KEY (`customer_no`) REFERENCES `customer`(`customer_no`),\n  CONSTRAINT `sale_owner_fk` FOREIGN KEY (`owner`) REFERENCES `user`(`id`) ON DELETE SET NULL,\n  CONSTRAINT `sale_visibility_check` CHECK(`visibility` IN ('private', 'authenticated', 'public'))\n)",
+        "CREATE INDEX IF NOT EXISTS `sale_customer_no_index` ON `sale` (`customer_no`)",
+        "CREATE INDEX IF NOT EXISTS `sale_owner_index` ON `sale` (`owner`)"
+      ]
+    },
+    {
+      "key": "trigger:customer_updated",
+      "statements": [
+        "CREATE TRIGGER IF NOT EXISTS `customer_updated`\nAFTER UPDATE ON `customer`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `customer`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE `customer_no` = OLD.`customer_no`;\nEND;"
+      ]
+    },
+    {
+      "key": "trigger:product_updated",
+      "statements": [
+        "CREATE TRIGGER IF NOT EXISTS `product_updated`\nAFTER UPDATE ON `product`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `product`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE `sku` = OLD.`sku`;\nEND;"
+      ]
+    },
+    {
+      "key": "trigger:product_sale_updated",
+      "statements": [
+        "CREATE TRIGGER IF NOT EXISTS `product_sale_updated`\nAFTER UPDATE ON `product_sale`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `product_sale`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE id = OLD.id;\nEND;"
+      ]
+    },
+    {
+      "key": "trigger:sale_updated",
+      "statements": [
+        "CREATE TRIGGER IF NOT EXISTS `sale_updated`\nAFTER UPDATE ON `sale`\nFOR EACH ROW\nWHEN NEW.updated_at = OLD.updated_at\nBEGIN\n    UPDATE `sale`\n    SET updated_at = CAST(\n      (julianday('now') - 2440587.5) * 86400000 AS INTEGER\n    )\n    WHERE id = OLD.id;\nEND;"
+      ]
+    },
+    {
+      "key": "view:customer_view",
+      "statements": [
+        "CREATE VIEW `customer_view` AS\nSELECT\n  `t`.`customer_no` AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  `t`.`name` AS `name`\nFROM `customer` AS `t`"
+      ]
+    },
+    {
+      "key": "view:product_view",
+      "statements": [
+        "CREATE VIEW `product_view` AS\nSELECT\n  `t`.`sku` AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  `t`.`title` AS `title`\nFROM `product` AS `t`"
+      ]
+    },
+    {
+      "key": "view:product_sale_view",
+      "statements": [
+        "CREATE VIEW `product_sale_view` AS\nSELECT\n  (CASE WHEN `t`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`id`, 1, 4))) || '-' || lower(hex(substr(`t`.`id`, 5, 2))) || '-' || lower(hex(substr(`t`.`id`, 7, 2))) || '-' || lower(hex(substr(`t`.`id`, 9, 2))) || '-' || lower(hex(substr(`t`.`id`, 11, 6)))) END) AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  `t`.`product_id` AS `product_id`,\n  (CASE WHEN `t`.`sale_id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`sale_id`, 1, 4))) || '-' || lower(hex(substr(`t`.`sale_id`, 5, 2))) || '-' || lower(hex(substr(`t`.`sale_id`, 7, 2))) || '-' || lower(hex(substr(`t`.`sale_id`, 9, 2))) || '-' || lower(hex(substr(`t`.`sale_id`, 11, 6)))) END) AS `sale_id`,\n  (SELECT json_object('id', `r`.`sku`, 'updated_at', `r`.`updated_at`, 'owner', (CASE WHEN `r`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`owner`, 1, 4))) || '-' || lower(hex(substr(`r`.`owner`, 5, 2))) || '-' || lower(hex(substr(`r`.`owner`, 7, 2))) || '-' || lower(hex(substr(`r`.`owner`, 9, 2))) || '-' || lower(hex(substr(`r`.`owner`, 11, 6)))) END), 'visibility', `r`.`visibility`, 'title', `r`.`title`) FROM `product` AS `r` WHERE `r`.`sku` = `t`.`product_id` LIMIT 1) AS `product`,\n  (SELECT json_object('id', (CASE WHEN `r`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`id`, 1, 4))) || '-' || lower(hex(substr(`r`.`id`, 5, 2))) || '-' || lower(hex(substr(`r`.`id`, 7, 2))) || '-' || lower(hex(substr(`r`.`id`, 9, 2))) || '-' || lower(hex(substr(`r`.`id`, 11, 6)))) END), 'updated_at', `r`.`updated_at`, 'owner', (CASE WHEN `r`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`owner`, 1, 4))) || '-' || lower(hex(substr(`r`.`owner`, 5, 2))) || '-' || lower(hex(substr(`r`.`owner`, 7, 2))) || '-' || lower(hex(substr(`r`.`owner`, 9, 2))) || '-' || lower(hex(substr(`r`.`owner`, 11, 6)))) END), 'visibility', `r`.`visibility`, 'note', `r`.`note`, 'customer_no', `r`.`customer_no`) FROM `sale` AS `r` WHERE `r`.`id` = `t`.`sale_id` LIMIT 1) AS `sale`\nFROM `product_sale` AS `t`"
+      ]
+    },
+    {
+      "key": "view:sale_view",
+      "statements": [
+        "CREATE VIEW `sale_view` AS\nSELECT\n  (CASE WHEN `t`.`id` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`id`, 1, 4))) || '-' || lower(hex(substr(`t`.`id`, 5, 2))) || '-' || lower(hex(substr(`t`.`id`, 7, 2))) || '-' || lower(hex(substr(`t`.`id`, 9, 2))) || '-' || lower(hex(substr(`t`.`id`, 11, 6)))) END) AS `id`,\n  `t`.`updated_at` AS `updated_at`,\n  (CASE WHEN `t`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`t`.`owner`, 1, 4))) || '-' || lower(hex(substr(`t`.`owner`, 5, 2))) || '-' || lower(hex(substr(`t`.`owner`, 7, 2))) || '-' || lower(hex(substr(`t`.`owner`, 9, 2))) || '-' || lower(hex(substr(`t`.`owner`, 11, 6)))) END) AS `owner`,\n  `t`.`visibility` AS `visibility`,\n  `t`.`note` AS `note`,\n  `t`.`customer_no` AS `customer_no`,\n  (SELECT json_object('id', `r`.`customer_no`, 'updated_at', `r`.`updated_at`, 'owner', (CASE WHEN `r`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`owner`, 1, 4))) || '-' || lower(hex(substr(`r`.`owner`, 5, 2))) || '-' || lower(hex(substr(`r`.`owner`, 7, 2))) || '-' || lower(hex(substr(`r`.`owner`, 9, 2))) || '-' || lower(hex(substr(`r`.`owner`, 11, 6)))) END), 'visibility', `r`.`visibility`, 'name', `r`.`name`) FROM `customer` AS `r` WHERE `r`.`customer_no` = `t`.`customer_no` LIMIT 1) AS `customer`,\n  (SELECT coalesce(json_group_array(json_object('id', `r`.`sku`, 'updated_at', `r`.`updated_at`, 'owner', (CASE WHEN `r`.`owner` IS NULL THEN NULL ELSE (lower(hex(substr(`r`.`owner`, 1, 4))) || '-' || lower(hex(substr(`r`.`owner`, 5, 2))) || '-' || lower(hex(substr(`r`.`owner`, 7, 2))) || '-' || lower(hex(substr(`r`.`owner`, 9, 2))) || '-' || lower(hex(substr(`r`.`owner`, 11, 6)))) END), 'visibility', `r`.`visibility`, 'title', `r`.`title`)), json('[]')) FROM `product` AS `r` JOIN `product_sale` AS `j` ON `j`.`product_id` = `r`.`sku` WHERE `j`.`sale_id` = `t`.`id` ORDER BY `r`.`sku`) AS `products`\nFROM `sale` AS `t`"
+      ]
+    }
+  ]
+}

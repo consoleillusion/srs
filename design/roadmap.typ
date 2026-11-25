@@ -32,7 +32,7 @@ Status: *Implemented* — this is the live list of work.
   [v0.2], [Production hardening of the current server], [In progress (v0.2.3 left)],
   [v0.3], [Secure transport and accountable accounts, in TypeScript], [Done],
   [v0.4], [Schema authoring workflow and existing databases], [Done],
-  [v0.5], [Conformance suites], [In progress],
+  [v0.5], [Conformance suites], [In progress (v0.5.5 left)],
   [v0.6], [Wire-format freeze and real use], [Later],
   [v1.0], [Stable TypeScript release], [Later],
   [v1.1], [Rust, piece by piece], [Later],
@@ -122,9 +122,10 @@ Defined in @implementation. Protocol fixtures are written during v0.3.
   table.header([*Version*], [*Task*], [*Done when*], [*State*]),
   [v0.5.0], [Suite format and runner], [The book defines the case format (@implementation); a TypeScript runner runs every suite with the tests.], [Done],
   [v0.5.1], [Protocol suite], [Complete for every message in Part III, including invalid inputs.], [Done],
-  [v0.5.2], [Schema engine suite], [Schema folders with expected built schema, SQL and migration state.], [Next],
-  [v0.5.3], [Query compiler and access suites], [Expected SQL, parameters and access decisions.], [Next],
-  [v0.5.4], [HTTP suite], [The end-to-end tests drive the server over HTTP only, against a server started as a process.], [Next],
+  [v0.5.2], [Schema engine suite], [`conformance/schema/`: built objects for each schema feature, build errors by code, and migration plans for adding and removing columns and tables.], [Done],
+  [v0.5.3], [Query compiler and access suites], [`conformance/query/`: the SQL and parameters of list reads for owners, anonymous callers, filters, related filters, shares and roles; `conformance/access/`: allow and deny for owners, other users, shares, groups, roles and declared keys.], [Done],
+  [v0.5.4], [HTTP suite], [`conformance/http/`: sessions against a server started as a process, through the Noise channel: transport, CRUD, validation, isolation, sharing, roles, relationships, pagination, declared keys and the catalog.], [Done],
+  [v0.5.5], [Port the remaining end-to-end tests], [Every behaviour the `spec/` end-to-end tests check through `app.request` is also an HTTP case, so a Rust server is checked against all of it.], [Next],
 )
 
 === v0.6 — Freeze
