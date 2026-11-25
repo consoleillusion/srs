@@ -134,7 +134,7 @@ Defined in @implementation. Protocol fixtures are written during v0.3.
   columns: (auto, 1fr, 1.3fr, auto),
   table.header([*Version*], [*Task*], [*Done when*], [*State*]),
   [v0.6.0], [Freeze the wire format], [Every protocol string carries `v1`; the protocol fixtures are complete; the freeze is a decision row.], [Later],
-  [v0.6.1], [Real use], [At least one real deployment runs without a protocol change; findings are fixed.], [Later],
+  [v0.6.1], [Real use], [The practice quiz site runs on SRS without a protocol change; what it finds is fixed.], [Later],
 )
 
 === v1.0 — Stable TypeScript release
