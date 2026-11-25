@@ -68,6 +68,11 @@ Set `SRS_DATABASE_URL`, `SRS_DATABASE_TOKEN`, `OPAQUE_SERVER_SETUP` and, if
 the site is on another origin, `SRS_CORS_ORIGINS` in the platform's
 environment. `backup` refuses a remote database: Turso keeps its own backups.
 
+The handler serves the API under `basePath`. Clients address and sign the
+full path, `/api/question/…` in this example, and every link and `Location`
+header the server returns includes it. `createServerApp` takes the same
+`basePath` option for a site that runs SRS in its own process.
+
 === Settings
 All settings are environment variables. `.env.example` lists them with
 defaults.

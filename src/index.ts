@@ -2,13 +2,16 @@
  * JSON Schema in, JSON:API server out.
  *
  * Takes JSON Schema files, builds the SQLite (Turso) tables, views and
- * migrations from them, and serves the result as JSON:API with OPAQUE
- * or OpenID Connect authentication and per-row access control.
+ * migrations from them, and serves the result as JSON:API with password
+ * accounts (OPAQUE), the Noise or bearer transport and per-row access control.
  *
  * @packageDocumentation
  */
 export { init, serve } from './commands.ts'
 export { createApp, type AppOptions } from './server/app/index.ts'
+export { createServerApp } from './server/start.ts'
+export { openDatabase } from './db/open.ts'
+export { applyMigrations, type MigrationConnection, type MigrationStatement } from './db/migrate.ts'
 export type { HttpOptions, LogSink } from './server/http.ts'
 export { createServerKeys, createTransition, parseServerKeys, parseTransition, type KeyTransition } from './auth/server-keys.ts'
 export type { PublicServerKeys, ServerKeys } from './protocol/server-keys.ts'
@@ -31,4 +34,4 @@ export type
   , TableDef
   , ViewDef
   } from './db/schema-types.ts'
-export type { Row, RowDatabase, RunResult } from './server/database.ts'
+export type { Row, RowDatabase, RunResult, SqlConnection, SqlStatement, SqlTransactionFactory } from './server/database.ts'

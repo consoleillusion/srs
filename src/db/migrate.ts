@@ -3,11 +3,21 @@ import { join } from 'node:path'
 import { BREAKPOINT } from './migration-plan.ts'
 import { openDatabase } from './open.ts'
 
+/** A prepared statement, as migrations use it. */
+export type MigrationStatement = {
+  /** Run the statement and return every row. */
+  all: (...params: unknown[]) => Promise<unknown[]>
+  /** Run the statement. */
+  run: (...params: unknown[]) => Promise<unknown>
+}
+
 /** What migrations need of a connection: the local file and a remote database both have it. */
-export type MigrationConnection =
-  { exec: (sql: string) => Promise<unknown>
-  , prepare: (sql: string) => Promise<{ all: (...params: unknown[]) => Promise<unknown[]>, run: (...params: unknown[]) => Promise<unknown> }>
-  }
+export type MigrationConnection = {
+  /** Run one or more statements with no parameters. */
+  exec: (sql: string) => Promise<unknown>
+  /** Prepare a statement with positional parameters. */
+  prepare: (sql: string) => Promise<MigrationStatement>
+}
 
 export const migrationsFolder = join(import.meta.dir, '../../.migrations')
 

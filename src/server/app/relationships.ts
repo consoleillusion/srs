@@ -1,7 +1,7 @@
 import { keyParam } from '../ids.ts'
 import { keySql } from '../rows.ts'
 import { quote } from '../../db/views.ts'
-import { pathParam, type AppContext } from '../context.ts'
+import { linkRoot, pathParam, publicUrl, type AppContext } from '../context.ts'
 import type { Row } from '../database.ts'
 import { forbidden } from '../errors.ts'
 import { readJson } from '../io.ts'
@@ -92,7 +92,7 @@ export const relationshipHandlers =
           (await linkedRows(c, resource, meta, true))
             .map(x => ({ type: meta.type, id: String(x.id) }))
         const self =
-          `${new URL(c.req.url).origin}/${resource.type}/${pathParam(c, 'id')}`
+          `${linkRoot(c)}/${resource.type}/${pathParam(c, 'id')}`
         return (
           { jsonapi: JSON_API_VERSION
           , links:
@@ -165,7 +165,7 @@ export const relationshipHandlers =
         jsonApi(
           c
           , { jsonapi: JSON_API_VERSION
-            , links: { self: c.req.url }
+            , links: { self: publicUrl(c).toString() }
             , meta:
               { resources:
                 [...registry.resources.values()].map(resource => (

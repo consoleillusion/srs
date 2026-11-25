@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import type { Hono } from 'hono'
 import { generateMigrations } from '../src/db/generate-migration.ts'
 import { loadSchemas } from '../src/db/load-schemas.ts'
-import { resourceDocument, signIn, toOne } from './helpers/session.ts'
+import { resourceDocument, signedRequestAs, signIn, toOne } from './helpers/session.ts'
 import { opaqueServerSetup } from './helpers/test-server.ts'
 
 /**
@@ -65,7 +65,18 @@ describe('serverless handler over a remote database', () => {
       const bob = await signIn(app, 'bob')
       const created = await alice.request('POST', '/document', resourceDocument('document', { title: 'Plan', visibility: 'shared' }))
       expect(created.status).toBe(201)
-      const id = ((await created.json()) as { data: { id: string } }).data.id
+      const createdDoc = (await created.json()) as { data: { id: string, links: { self: string } } }
+      const id = createdDoc.data.id
+      // Links include the mount path the handler strips.
+      expect(created.headers.get('location')).toBe(`/api/document/${id}`)
+      expect(createdDoc.data.links.self).toBe(`https://site.example/api/document/${id}`)
+
+      // The client signs the path it sends, base included, and the server verifies that path.
+      const site = { request: (path: string, init?: RequestInit) => handle(new Request(`https://site.example${path}`, init)) } as unknown as Hono
+      const signed = await signedRequestAs(site, alice, 'POST', '/api/document', resourceDocument('document', { title: 'Signed' }))
+      expect(signed.status).toBe(201)
+      const unsigned = await signedRequestAs(app, alice, 'POST', '/document', resourceDocument('document', { title: 'Wrong path' }))
+      expect(unsigned.status).toBe(401)
       expect((await bob.request('GET', `/document/${id}`)).status).toBe(404)
       const write = sent.length
       expect((await alice.request('POST', '/document_share'

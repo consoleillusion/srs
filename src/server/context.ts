@@ -41,6 +41,8 @@ export type Variables =
   , clientJwk?: unknown
   , signed?: boolean
   , roles?: string[]
+  /** The path the API is mounted under, such as `/api`; empty at the root. */
+  , base?: string
   }
 
 /** The Hono environment used by the resource server. */
@@ -50,6 +52,31 @@ export type Env = { Variables: Variables }
 export type AppContext = Context<Env>
 
 export type { Next }
+
+/**
+ * The URL a client used for this request: the request URL with the mount
+ * path the platform stripped put back, so links and signatures match what
+ * the client sees.
+ *
+ * @param c - The request context.
+ * @returns A fresh URL the caller may change.
+ */
+export const publicUrl =
+  (c: AppContext): URL => {
+    const url = new URL(c.req.url)
+    const base = c.get('base') ?? ''
+    if (base) url.pathname = url.pathname === '/' ? base : `${base}${url.pathname}`
+    return url
+  }
+
+/**
+ * The origin and mount path that resource links start with.
+ *
+ * @param c - The request context.
+ * @returns For example `https://techstudy.app/api`.
+ */
+export const linkRoot =
+  (c: AppContext): string => `${new URL(c.req.url).origin}${c.get('base') ?? ''}`
 
 /**
  * Read a path parameter that the route pattern guarantees.

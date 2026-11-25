@@ -140,6 +140,7 @@ Defined in @implementation. Protocol fixtures are written during v0.3.
   [v0.6.3], [Serverless handler], [`srs/serverless` builds a `Request` to `Response` handler on the bearer transport from `.srs/schemas.json`, under a base path; `migrate` applies migrations before a deploy.], [Done],
   [v0.6.4], [Indexed reads], [Rows are read from base tables, never through views, so finding a row by id, a share, an inherited parent or a related row uses an index; `page[total]=false` skips the count. `spec/query-plans.test.ts` fails on any full table scan in those paths.], [Done],
   [v0.6.5], [Required to-many relations], [`required: true` on a `many` relation keeps at least one member.], [Done],
+  [v0.6.6], [Mount path], [Links and bearer signatures include the path the API is mounted under; the package exports `createServerApp`, `openDatabase` and `applyMigrations`.], [Done],
 )
 
 === v1.0 — Stable TypeScript release

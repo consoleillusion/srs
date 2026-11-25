@@ -1,4 +1,4 @@
-import { pathParam, type AppContext } from '../context.ts'
+import { linkRoot, pathParam, type AppContext } from '../context.ts'
 import { readJson } from '../io.ts'
 import
   { assertMayCreate
@@ -77,14 +77,14 @@ export const crudHandlers =
 
         const row =
           await readRow(db, tables, resource, query, id, { sql: '', params: [] })
-        const location = `${new URL(c.req.url).origin}/${resource.type}/${id}`
+        const location = `${linkRoot(c)}/${resource.type}/${id}`
         return jsonApi(
           c
           , { ...withLinks(c, await s.serialize(c, resource, query, row))
             , links: { self: location }
             }
           , 201
-          , { location: `/${resource.type}/${id}` })
+          , { location: `${c.get('base') ?? ''}/${resource.type}/${id}` })
       }
 
     const update =

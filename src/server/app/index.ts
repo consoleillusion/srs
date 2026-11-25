@@ -52,6 +52,12 @@ export type AppOptions =
   , retainReads?: boolean
   /** Allow admins to issue password reset tokens (default true). */
   , allowReset?: boolean
+  /**
+   * The path the API is mounted under, such as `/api`, when the platform
+   * strips it before the request reaches SRS. Links and request signatures
+   * include it.
+   */
+  , basePath?: string
   }
 
 /** Routes served outside a Noise channel in strict mode. */
@@ -95,9 +101,12 @@ const optionsFor =
  * @returns A Hono app serving every exposed resource.
  */
 export const createApp =
-  ({ built, db, opaqueServerSetup, requireSession, admins = [], http = {}, serverKeys, rotation, transport = serverKeys ? 'noise' : 'bearer', retainReads = false, allowReset = true }: AppOptions): Hono => {
+  ({ built, db, opaqueServerSetup, requireSession, admins = [], http = {}, serverKeys, rotation, transport = serverKeys ? 'noise' : 'bearer', retainReads = false, allowReset = true, basePath = '' }: AppOptions): Hono => {
     const s = createServices(built, db)
     const app = new Hono<Env>()
+    const base = basePath.replace(/\/+$/, '')
+    if (base && !base.startsWith('/')) throw new Error('basePath must start with /')
+    if (base) app.use('*', async (c, next) => { c.set('base', base); await next() })
     applyHttp(app, db, http)
 
     if (transport === 'noise' && !serverKeys)

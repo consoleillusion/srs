@@ -20,20 +20,28 @@ export type RowDatabase = {
     <T>(fn: (db: RowDatabase) => Promise<T>) => Promise<T>
 }
 
-export type SqlStatement =
-  { all: (...params: unknown[]) => Promise<Row[]>
-  , get: (...params: unknown[]) => Promise<Row | undefined>
-  , run: (...params: unknown[]) => Promise<RunResult>
-  }
+/** A prepared statement of the embedded database driver. */
+export type SqlStatement = {
+  /** Run the statement and return every row. */
+  all: (...params: unknown[]) => Promise<Row[]>
+  /** Run the statement and return the first row, if any. */
+  get: (...params: unknown[]) => Promise<Row | undefined>
+  /** Run the statement and report what it changed. */
+  run: (...params: unknown[]) => Promise<RunResult>
+}
 
+/** The driver's `transactionAsync`: wraps a function so that calling it runs it in a transaction. */
 export type SqlTransactionFactory =
   (fn: (transaction: SqlConnection) => Promise<unknown>) =>
     (...args: unknown[]) => Promise<unknown>
 
-export type SqlConnection =
-  { prepare: (sql: string) => Promise<SqlStatement>
-  , transactionAsync?: SqlTransactionFactory
-  }
+/** What the server needs of an embedded database connection, such as the one `openDatabase` returns. */
+export type SqlConnection = {
+  /** Prepare a statement. */
+  prepare: (sql: string) => Promise<SqlStatement>
+  /** Run work in a transaction, when the driver supports it. */
+  transactionAsync?: SqlTransactionFactory
+}
 
 export const createRowDatabase =
   (connection: SqlConnection): RowDatabase => {

@@ -1,4 +1,4 @@
-import type { AppContext, Next } from '../server/context.ts'
+import { publicUrl, type AppContext, type Next } from '../server/context.ts'
 import type { RowDatabase } from '../server/database.ts'
 import { unauthorized } from '../server/errors.ts'
 import { insert } from '../server/sql.ts'
@@ -36,7 +36,7 @@ export const verifySignedRequest =
     if (!jwk) throw unauthorized('This session has no client key to verify signatures')
     const publicKey = Buffer.from(parsePublicJwk(jwk).x, 'base64url')
 
-    const url = new URL(c.req.url)
+    const url = publicUrl(c)
     const body = new Uint8Array(await c.req.raw.clone().arrayBuffer())
     const message =
       signingMessage(

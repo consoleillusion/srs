@@ -36,10 +36,10 @@ export const createHandler =
       throw new Error('A serverless handler needs a remote database: set SRS_DATABASE_URL and SRS_DATABASE_TOKEN.')
     if (process.env.SRS_TRANSPORT === 'noise')
       throw new Error('The Noise transport keeps channels in one process, so it cannot run serverless; use the bearer transport over HTTPS.')
+    const base = (options.basePath ?? '').replace(/\/+$/, '')
     const app =
       await createServerApp(
-        { loaded: options.schemas as LoadedSchema[], rows: createRemoteRowDatabase(remote), transport: 'bearer' })
-    const base = (options.basePath ?? '').replace(/\/+$/, '')
+        { loaded: options.schemas as LoadedSchema[], rows: createRemoteRowDatabase(remote), transport: 'bearer', basePath: base })
     return (request: Request): Promise<Response> | Response => {
       if (!base) return app.fetch(request)
       const url = new URL(request.url)

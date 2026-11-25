@@ -1,5 +1,5 @@
 import type { ContentfulStatusCode } from 'hono/utils/http-status'
-import type { AppContext } from '../context.ts'
+import { linkRoot, publicUrl, type AppContext } from '../context.ts'
 import type { ListQuery } from '../query.ts'
 
 /** The JSON:API media type. */
@@ -71,7 +71,7 @@ export const pageLinks =
     const pages = total === undefined ? undefined : Math.max(1, Math.ceil(total / query.pageSize))
     /** The current URL with another page number. */
     const at = (page: number) => {
-      const url = new URL(c.req.url)
+      const url = publicUrl(c)
       url.searchParams.set('page[number]', String(page))
       url.searchParams.set('page[size]', String(query.pageSize))
       return url.toString()
@@ -90,7 +90,7 @@ export const pageLinks =
  */
 export const withLinks =
   (c: AppContext, document: ApiDocument, extra: Record<string, unknown> = {}) => {
-    const origin = new URL(c.req.url).origin
+    const origin = linkRoot(c)
     for (const item of [document.data, document.included].flat()) {
       if (!item?.id) continue
       const self = `${origin}/${item.type}/${item.id}`
@@ -106,6 +106,6 @@ export const withLinks =
           ? { included: included ?? [] }
           : {})
       , jsonapi: JSON_API_VERSION
-      , links: { self: c.req.url, ...extra }
+      , links: { self: publicUrl(c).toString(), ...extra }
       })
   }

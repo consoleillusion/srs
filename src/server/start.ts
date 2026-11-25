@@ -28,6 +28,8 @@ export const createServerApp =
     , metrics?: Metrics
     /** Overrides SRS_TRANSPORT. */
     , transport?: 'noise' | 'bearer'
+    /** The path the platform strips before the request reaches SRS; see AppOptions.basePath. */
+    , basePath?: string
     }) => {
     const opaqueServerSetup = process.env.OPAQUE_SERVER_SETUP
     const transport = options.transport ?? process.env.SRS_TRANSPORT ?? 'noise'
@@ -74,5 +76,6 @@ export const createServerApp =
       , retainReads: process.env.SRS_RETAIN_READS === 'true'
       , allowReset: process.env.SRS_ALLOW_RESET !== 'false'
       , admins: list(process.env.SRS_ADMINS)
+      , basePath: options.basePath
       })
   }
