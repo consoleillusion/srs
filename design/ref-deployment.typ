@@ -71,6 +71,14 @@ environment. A serverless request has no socket address, so set
 address the platform puts in `X-Forwarded-For`. The handler runs on Node as
 well as Bun. `backup` refuses a remote database: Turso keeps its own backups.
 
+SRS makes every row's uuid itself, as 16 bytes, so rows look the same in the
+embedded and the remote database; Turso Cloud's `uuid7()` returns text. When
+the connection to the remote database drops (a closed socket, common after a
+serverless function sleeps), a read runs again on a new connection, and a
+transaction that had not reached `COMMIT` runs again from the start. A drop
+during `COMMIT` is reported as an error rather than retried, since the
+write may have been saved.
+
 The handler serves the API under `basePath`. Clients address and sign the
 full path, `/api/question/…` in this example, and every link and `Location`
 header the server returns includes it. `createServerApp` takes the same

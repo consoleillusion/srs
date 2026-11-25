@@ -20,12 +20,21 @@ const sent: string[] = []
 // The pragma is per session; the stand-in keeps one, so turn foreign keys off to see that SRS turns them on.
 await local.exec('PRAGMA foreign_keys = OFF')
 const statement = async (sql: string) => await local.prepare(sql)
+// Set to drop the next statements the way a closed pooled socket does, before they reach the database.
+const drops = { left: 0, matching: /./ }
+const send = (sql: string) => {
+  if (drops.left > 0 && drops.matching.test(sql)) {
+    drops.left--
+    throw Object.assign(new Error('The socket connection was closed unexpectedly'), { code: 'ECONNRESET' })
+  }
+  sent.push(sql)
+}
 mock.module('@tursodatabase/serverless', () => ({
   connect: () => (
-    { all: async (sql: string, ...params: unknown[]) => { sent.push(sql); return (await statement(sql)).all(...params) }
-    , get: async (sql: string, ...params: unknown[]) => { sent.push(sql); return (await statement(sql)).get(...params) }
-    , run: async (sql: string, ...params: unknown[]) => { sent.push(sql); return (await statement(sql)).run(...params) }
-    , exec: async (sql: string) => { sent.push(sql); return local.exec(sql) }
+    { all: async (sql: string, ...params: unknown[]) => { send(sql); return (await statement(sql)).all(...params) }
+    , get: async (sql: string, ...params: unknown[]) => { send(sql); return (await statement(sql)).get(...params) }
+    , run: async (sql: string, ...params: unknown[]) => { send(sql); return (await statement(sql)).run(...params) }
+    , exec: async (sql: string) => { send(sql); return local.exec(sql) }
     , close: async () => {}
     })
 }))
@@ -95,6 +104,24 @@ describe('serverless handler over a remote database', () => {
         , resourceDocument('document_share', { can_read: true }, { document: toOne('document', '01900000-0000-7000-8000-000000000000'), user: toOne('user', bob.userId) }))).status).toBe(404)
 
       expect((await handle(new Request('https://site.example/other'))).status).toBe(404)
+
+      // SRS names every new row's uuid itself: Turso Cloud's uuid7() default returns text, not the 16 bytes SRS stores.
+      const inserts = sent.filter(sql => sql.startsWith('INSERT INTO') && sql.endsWith('RETURNING `id`'))
+      expect(inserts.length).toBeGreaterThan(0)
+      for (const sql of inserts) expect(sql).toMatch(/^INSERT INTO `[a-z_]+` \(`id`/)
+
+      // A read whose connection drops is sent again.
+      drops.left = 1; drops.matching = /^SELECT/
+      expect((await alice.request('GET', `/document/${id}`)).status).toBe(200)
+      // So is a transaction that drops before COMMIT: the database rolled it back, so it runs again, once.
+      drops.left = 1; drops.matching = /^INSERT INTO `document`/
+      const retried = await alice.request('POST', '/document', resourceDocument('document', { title: 'Dropped once' }))
+      expect(retried.status).toBe(201)
+      const titles = (await (await alice.request('GET', '/document?filter[title]=Dropped once')).json()) as { data: unknown[] }
+      expect(titles.data).toHaveLength(1)
+      // A drop while committing is reported, not retried: the write may have been saved.
+      drops.left = 1; drops.matching = /^COMMIT$/
+      expect((await alice.request('POST', '/document', resourceDocument('document', { title: 'Commit dropped' }))).status).toBe(500)
     } finally {
       process.env = env
     }
