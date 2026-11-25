@@ -12,7 +12,7 @@ import
   , type ViewDef
   } from '../schema-types.ts'
 import
-  { foreignKeyColumnOf
+  { ROW_KEY, foreignKeyColumnOf
   , joinForeignKeys
   , jsonObject
   , jsonValue
@@ -402,7 +402,7 @@ export const buildAuthoredViews =
 
       const sql =
         `CREATE VIEW ${quote(name)} AS\nSELECT\n  `
-        + selectEntries.join(',\n  ')
+        + [`${reference('t', 'id')} AS ${quote(ROW_KEY)}`, ...selectEntries].join(',\n  ')
         + `\nFROM ${quote(base.tableName)} AS ${quote('t')}`
 
       const definition: TableDef =

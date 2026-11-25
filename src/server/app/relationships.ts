@@ -1,3 +1,5 @@
+import { keyParam } from '../ids.ts'
+import { keySql } from '../rows.ts'
 import { quote } from '../../db/views.ts'
 import { pathParam, type AppContext } from '../context.ts'
 import type { Row } from '../database.ts'
@@ -144,8 +146,8 @@ export const relationshipHandlers =
             , [ ids.length === 0
                   ? { sql: '0', params: [] }
                   : { sql:
-                        `${quote(target.view)}.\`id\` IN (${ids.map(() => '?').join(', ')})`
-                    , params: ids
+                        `${keySql(target, target.view)} IN (${ids.map(() => '?').join(', ')})`
+                    , params: ids.map(x => keyParam(target.definition, x))
                     }
               ])
 

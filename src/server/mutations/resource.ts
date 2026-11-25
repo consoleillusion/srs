@@ -8,7 +8,7 @@ import { uuidToBuffer } from '../uuid.ts'
 import { type MutationContext, viewerIn, type WriteDocument } from './types.ts'
 import { assertRequiredAttributes, attributeAssignments, foreignKeyAssignments, writeError } from './assign.ts'
 import { readResourceRow } from './row.ts'
-import { assertRelationshipTargets, replaceManyRelationships } from './relationships.ts'
+import { assertRelationshipTargets, assertRequiredMany, replaceManyRelationships } from './relationships.ts'
 
 /** Refuse creation of resources the server alone creates, or that need a role the caller lacks. */
 export const assertMayCreate =
@@ -39,6 +39,7 @@ export const createResource =
     assertMayCreate(context, resource)
     assertRequiredAttributes(
       resource, new Set(Object.keys(document.attributes)))
+    assertRequiredMany(resource, document, 'create')
     await assertRelationshipTargets(context, resource, document)
 
     const table = resource.definition
@@ -83,6 +84,7 @@ export const updateResource =
           || existing.owner === context.userId
           || granted(viewerIn(context), resource, 'update')
       }
+    assertRequiredMany(resource, document, mode)
     await assertRelationshipTargets(context, resource, document)
 
     const assignments =

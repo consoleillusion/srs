@@ -1,7 +1,8 @@
 import { buildSchema } from '../db/build-schema.ts'
 import { applyMigrations } from '../db/migrate.ts'
 import type { LoadedSchema } from '../db/schema-types.ts'
-import type { Database } from '../db/open.ts'
+import type { MigrationConnection } from '../db/migrate.ts'
+import type { RowDatabase, SqlConnection } from './database.ts'
 import { parseServerKeys, parseTransition } from '../auth/server-keys.ts'
 import { checkTransition } from '../protocol/server-keys.ts'
 import { createApp } from './app/index.ts'
@@ -17,9 +18,19 @@ const list =
 
 /** Migrate the database, then build the HTTP app from the environment settings. */
 export const createServerApp =
-  async (options: { loaded: LoadedSchema[], db: Database, migrationsFolder: string, metrics?: Metrics }) => {
+  async (options:
+    { loaded: LoadedSchema[]
+    /** The embedded database's connection; or give `rows` for another database. */
+    , db?: MigrationConnection & SqlConnection
+    , rows?: RowDatabase
+    /** Where migrations are; without it they are not applied (serverless: apply them with the migrate command). */
+    , migrationsFolder?: string
+    , metrics?: Metrics
+    /** Overrides SRS_TRANSPORT. */
+    , transport?: 'noise' | 'bearer'
+    }) => {
     const opaqueServerSetup = process.env.OPAQUE_SERVER_SETUP
-    const transport = process.env.SRS_TRANSPORT ?? 'noise'
+    const transport = options.transport ?? process.env.SRS_TRANSPORT ?? 'noise'
     if (transport !== 'noise' && transport !== 'bearer')
       throw new Error(`SRS_TRANSPORT must be "noise" or "bearer", got "${transport}"`)
     if (transport === 'noise') {
@@ -46,12 +57,14 @@ export const createServerApp =
     }
 
     // Bring the database up to date before serving; a failure stops the server.
-    if (process.env.MIGRATE_ON_START !== 'false')
+    if (process.env.MIGRATE_ON_START !== 'false' && options.db && options.migrationsFolder)
       await applyMigrations(options.db, options.migrationsFolder)
+    const rows = options.rows ?? (options.db ? createRowDatabase(options.db) : undefined)
+    if (!rows) throw new Error('createServerApp needs a database')
 
     return createApp(
       { built: buildSchema(options.loaded)
-      , db: createRowDatabase(options.db)
+      , db: rows
       , opaqueServerSetup
       , requireSession: true
       , http: { ...httpOptionsFromEnv(), metrics: options.metrics }

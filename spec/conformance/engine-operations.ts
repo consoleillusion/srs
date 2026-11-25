@@ -22,6 +22,8 @@ import { listRows } from '../../src/server/read.ts'
 import { buildRegistry } from '../../src/server/registry.ts'
 import { deleteScope, readScope, writeScope, type Viewer } from '../../src/server/scope.ts'
 import { insert } from '../../src/server/sql.ts'
+import { keyParam } from '../../src/server/ids.ts'
+import { fromSql, keySql } from '../../src/server/rows.ts'
 import { uuidToBuffer } from '../../src/server/uuid.ts'
 import { bytesToHex } from '../../src/protocol/encoding.ts'
 import { ConformanceError, type Operation } from './runner.ts'
@@ -184,8 +186,9 @@ export const engineOperations: Record<string, Operation> =
             : deleteScope(who, resource)
           const found =
             await db.get(
-              `SELECT 1 AS found FROM \`${resource.view}\` WHERE \`id\` = ?${scope.sql ? ` AND (${scope.sql})` : ''} LIMIT 1`
-              , [check.id, ...scope.params])
+              `SELECT 1 AS found FROM ${fromSql(resource, resource.view)} WHERE ${keySql(resource, resource.view)} = ?`
+              + `${scope.sql ? ` AND (${scope.sql})` : ''} LIMIT 1`
+              , [keyParam(resource.definition, check.id), ...scope.params])
           decisions.push(found ? 'allow' : 'deny')
         }
         return decisions

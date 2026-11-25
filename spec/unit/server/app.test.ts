@@ -1,3 +1,4 @@
+import { canonicalUuid } from '../../../src/server/uuid.ts'
 import { describe, expect, test } from 'bun:test'
 import { buildSchema } from '../../../src/db/build-schema.ts'
 import
@@ -66,7 +67,9 @@ const createDatabase =
       , get: async (sql, params = []) => {
           calls.push({ sql, params })
           if (sql.includes('COUNT(')) return { count: rows.length }
-          return rows.find(row => row.id === params[0])
+          // Lookups pass the stored key: a uuid's 16 bytes.
+          const key = params[0] instanceof Uint8Array ? canonicalUuid(params[0]) : params[0]
+          return rows.find(row => row.id === key)
         }
       , run: async () => (
           { changes: 0
@@ -189,7 +192,7 @@ describe('JSON:API application', () => {
     const countCall = calls.find(x => x.sql.includes('COUNT('))!
     expect(countCall.params).toEqual(['Hello'])
 
-    const listCall = calls.find(x => x.sql.startsWith('SELECT *'))!
+    const listCall = calls.find(x => x.sql.includes('ORDER BY'))!
     expect(listCall.sql).toContain('WHERE (`article_view`.`heading` = ?)')
     expect(listCall.sql).toContain("ORDER BY `article_view`.`heading` DESC")
     expect(listCall.params).toEqual(['Hello', 5, 5])

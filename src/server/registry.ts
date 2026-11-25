@@ -1,5 +1,5 @@
 import type { BuiltSchema, TableDef } from '../db/schema-types.ts'
-import { apiName } from '../db/views.ts'
+import { apiName, quote, selectSql } from '../db/views.ts'
 
 export type RelationshipMeta =
   { label: string
@@ -23,6 +23,8 @@ export type ResourceMeta =
   , attributes: string[]
   , foreignKeyColumns: string[]
   , relationships: Record<string, RelationshipMeta>
+  /** SELECT of every column and relation of a row, from the base table aliased as the view (see rows.ts). */
+  , select: string
   }
 
 export type Registry =
@@ -106,6 +108,10 @@ export const buildRegistry =
             , foreignKeyColumns:
                 [...new Set(table.foreignKeys.flatMap(x => x.columns))]
             , relationships
+            , select:
+                readOnly
+                  ? `SELECT * FROM ${quote(view)} AS ${quote(view)}`
+                  : selectSql(table, tablesByName, () => 'full', view)
             }
           )
       }

@@ -33,7 +33,7 @@ Status: *Implemented* — this is the live list of work.
   [v0.3], [Secure transport and accountable accounts, in TypeScript], [Done],
   [v0.4], [Schema authoring workflow and existing databases], [Done],
   [v0.5], [Conformance suites], [Done],
-  [v0.6], [Wire-format freeze and real use], [Later],
+  [v0.6], [Wire-format freeze and real use], [In progress],
   [v1.0], [Stable TypeScript release], [Later],
   [v1.1], [Rust, piece by piece], [Later],
   [v1.2], [Pluggable databases], [Later],
@@ -134,7 +134,11 @@ Defined in @implementation. Protocol fixtures are written during v0.3.
   columns: (auto, 1fr, 1.3fr, auto),
   table.header([*Version*], [*Task*], [*Done when*], [*State*]),
   [v0.6.0], [Freeze the wire format], [Every protocol string carries `v1` (`srs-noise-v1`, `SRS1`, `srs-keys-v1`, `srs-register-v1`, `srs-bind-v1`, `srs-identity-wrap-v1`, `srs-cert-v1`, `srs-req-v1`, `srs-rotate-v1`, `srs-signature-v1`); the protocol fixtures cover each; the freeze is D056.], [Done],
-  [v0.6.1], [Real use], [The practice quiz site runs on SRS without a protocol change; what it finds is fixed.], [Later],
+  [v0.6.1], [Real use], [The practice quiz site runs on SRS without a protocol change; what it finds is fixed. Needs v0.6.2 to v0.6.5.], [Next],
+  [v0.6.2], [Remote Turso database], [`SRS_DATABASE_URL` and `SRS_DATABASE_TOKEN` select a remote Turso database for `serve`, `migrate`, `import` and the serverless handler; writes and transactions turn foreign keys on (`spec/serverless.test.ts`, with the driver replaced by a recording stand-in). Checked against Turso Cloud: not yet.], [Done],
+  [v0.6.3], [Serverless handler], [`srs/serverless` builds a `Request` to `Response` handler on the bearer transport from `.srs/schemas.json`, under a base path; `migrate` applies migrations before a deploy.], [Done],
+  [v0.6.4], [Indexed reads], [Rows are read from base tables, never through views, so finding a row by id, a share, an inherited parent or a related row uses an index; `page[total]=false` skips the count. `spec/query-plans.test.ts` fails on any full table scan in those paths.], [Done],
+  [v0.6.5], [Required to-many relations], [`required: true` on a `many` relation keeps at least one member.], [Done],
 )
 
 === v1.0 — Stable TypeScript release
@@ -164,7 +168,7 @@ Order and switching rules in @implementation. Starts after v1.0.0.
 #table(
   columns: (auto, 1fr, 1.3fr, auto),
   table.header([*Version*], [*Task*], [*Done when*], [*State*]),
-  [v1.2.0], [Database settings], [`SRS_DATABASE_URL` and `SRS_DATABASE_TOKEN` select the database (@implementation); with neither set, the embedded SQLite file is used. Built after the Rust migration (v1.1), hosted SQLite included.], [Later],
+  [v1.2.0], [Database settings in Rust], [`srs-store` reads `SRS_DATABASE_URL` and `SRS_DATABASE_TOKEN` as the TypeScript server does (v0.6.2).], [Later],
   [v1.2.1], [Choose the SQL layer], [A decision row selects `sqlx`, `sea-query` or both.], [Later],
   [v1.2.2], [PostgreSQL], [Every suite passes against PostgreSQL.], [Later],
   [v1.2.3], [MySQL], [Every suite passes against MySQL.], [Later],

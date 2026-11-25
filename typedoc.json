@@ -1,6 +1,6 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": ["src/index.ts", "src/client/index.ts"],
+  "entryPoints": ["src/index.ts", "src/client/index.ts", "src/serverless.ts"],
   "out": "doc",
   "cleanOutputDir": false,
   "tsconfig": "tsconfig.json",

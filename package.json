@@ -1,6 +1,6 @@
 {
   "name": "resource-server",
-  "version": "0.6.0",
+  "version": "0.6.5",
   "description": "JSON Schema in, JSON:API server out (Bun, Hono, Turso/SQLite)",
   "type": "module",
   "bin": {
@@ -9,7 +9,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client/index.ts",
-    "./build-schema": "./src/db/build-schema.ts"
+    "./build-schema": "./src/db/build-schema.ts",
+    "./serverless": "./src/serverless.ts"
   },
   "files": [
     "src",
@@ -43,6 +44,7 @@
     "@noble/hashes": "^2.4.0",
     "@serenity-kit/opaque": "^1.1.0",
     "@tursodatabase/database": "^0.8.3",
+    "@tursodatabase/serverless": "^1.4.1",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "dotenv": "^18.0.10",

@@ -39,6 +39,9 @@ export const jsonValue =
 
 const LIGHT_COLUMNS = ['id', 'owner', 'visibility']
 
+/** The hidden view column holding each row's stored key (see {@link selectSql}). */
+export const ROW_KEY = '_key'
+
 /**
  * The name a column has in views and documents: the key column is always `id`.
  *
@@ -103,7 +106,7 @@ export const foreignKeyColumnOf =
 
 /** Build the JSON sub-select for a to-one relation. */
 const oneExpression =
-  (table: TableDef, relation: RelationConfig, tablesByName: Map<string, TableDef>, light: boolean) => {
+  (table: TableDef, relation: RelationConfig, tablesByName: Map<string, TableDef>, light: boolean, t = 't') => {
     const target =
       need(tablesByName, relation.table,
         `${table.tableName}: relation targets unknown table "${relation.table}"`)
@@ -111,13 +114,13 @@ const oneExpression =
     return `(SELECT ${jsonObject(target, 'r', light)}`
       + ` FROM ${quote(target.tableName)} AS ${quote('r')}`
       + ` WHERE ${reference('r', relation.column ?? 'id')} =`
-      + ` ${reference('t', foreignKeyColumnOf(relation))}`
+      + ` ${reference(t, foreignKeyColumnOf(relation))}`
       + ` LIMIT 1)`
   }
 
 /** Build the JSON sub-select for a to-many relation via join table or inverse FK. */
 const manyExpression =
-  (table: TableDef, relation: RelationConfig, tablesByName: Map<string, TableDef>, light: boolean) => {
+  (table: TableDef, relation: RelationConfig, tablesByName: Map<string, TableDef>, light: boolean, t = 't') => {
     const target =
       need(tablesByName, relation.table,
         `${table.tableName}: relation targets unknown table "${relation.table}"`)
@@ -139,7 +142,7 @@ const manyExpression =
           + ` ON ${reference('j', targetForeignKey.columns[0]!)}`
           + ` = ${reference('r', targetForeignKey.foreignColumns[0]!)}`
         , `${reference('j', sourceForeignKey.columns[0]!)}`
-          + ` = ${reference('t', sourceForeignKey.foreignColumns[0]!)}`
+          + ` = ${reference(t, sourceForeignKey.foreignColumns[0]!)}`
         , light)
     }
 
@@ -155,7 +158,7 @@ const manyExpression =
       target
       , ''
       , `${reference('r', foreignKeyColumnOf(inverse))}`
-        + ` = ${reference('t', inverse.column ?? 'id')}`
+        + ` = ${reference(t, inverse.column ?? 'id')}`
       , light)
   }
 
@@ -165,7 +168,9 @@ export const selectSql =
   ( table: TableDef
   , tablesByName: Map<string, TableDef>
   /** The SELECT behind a resource: its columns plus each relation embedded as JSON per mode. */
-  , mode: (label: string) => RelationMode = () => 'full') => {
+  , mode: (label: string) => RelationMode = () => 'full'
+  /** The alias of the table's row; queries use the resource's view name, so their conditions read the same. */
+  , alias = 't') => {
     const relationEntries =
       Object.entries(table.relations)
         .filter(([label, relation]) =>
@@ -179,21 +184,23 @@ export const selectSql =
           `${table.tableName}: relation "${label}" conflicts with a column`)
 
     const selectEntries = [
+      // The stored key, unconverted, so lookups and joins by id can use the primary key index.
+      `${reference(alias, table.idColumn)} AS ${quote(ROW_KEY)}`,
       ...table.columns
         .filter(column => column.exposed)
         .map(
           column =>
-            `${viewValue(column, 't')} AS ${quote(apiName(table, column))}`),
+            `${viewValue(column, alias)} AS ${quote(apiName(table, column))}`),
       ...relationEntries.map(
         ([label, relation]) =>
           (relation.cardinality === 'one' ? oneExpression : manyExpression)(
-            table, relation, tablesByName, mode(label) === 'light')
+            table, relation, tablesByName, mode(label) === 'light', alias)
           + ` AS ${quote(label)}`),
     ]
 
     return 'SELECT\n'
       + selectEntries.map(x => `  ${x}`).join(',\n')
-      + `\nFROM ${quote(table.tableName)} AS ${quote('t')}`
+      + `\nFROM ${quote(table.tableName)} AS ${quote(alias)}`
   }
 
 const buildView =

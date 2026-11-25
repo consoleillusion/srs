@@ -67,8 +67,8 @@ export const errorDocument =
  * Build first/last/prev/next links for a paginated collection.
  */
 export const pageLinks =
-  (c: AppContext, query: ListQuery, total: number) => {
-    const pages = Math.max(1, Math.ceil(total / query.pageSize))
+  (c: AppContext, query: ListQuery, total: number | undefined, more = false) => {
+    const pages = total === undefined ? undefined : Math.max(1, Math.ceil(total / query.pageSize))
     /** The current URL with another page number. */
     const at = (page: number) => {
       const url = new URL(c.req.url)
@@ -78,9 +78,9 @@ export const pageLinks =
     }
     return (
       { first: at(1)
-      , last: at(pages)
+      , ...(pages === undefined ? {} : { last: at(pages) })
       , prev: query.pageNumber > 1 ? at(query.pageNumber - 1) : null
-      , next: query.pageNumber < pages ? at(query.pageNumber + 1) : null
+      , next: (pages === undefined ? more : query.pageNumber < pages) ? at(query.pageNumber + 1) : null
       })
   }
 

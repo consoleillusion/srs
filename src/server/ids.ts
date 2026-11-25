@@ -95,3 +95,14 @@ export const idSql =
  */
 export const keyCondition =
   (table: TableDef, value: string): Record<string, unknown> => ({ [table.idColumn]: idToDb(table, value) })
+
+/**
+ * The stored key to look a row up by, or `null` when the id cannot be one of
+ * the table's ids, so the lookup finds nothing rather than failing.
+ *
+ * @param table - The table.
+ * @param value - An id from a URL, a document or an embedded row.
+ */
+export const keyParam =
+  (table: TableDef, value: string): Uint8Array | number | string | null =>
+    isValidId(table, value) ? idToDb(table, value) : null

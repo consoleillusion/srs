@@ -65,4 +65,7 @@ Add a row before changing a design rule. When a rule is replaced, mark its row
   [D055], [HTTP conformance cases drive a server process through the Noise channel and select only stable values], [They check any implementation the way a client sees it, and stay valid however ids and times are generated],
   [D056], [The wire format is frozen at v1: every protocol message, label and signed layout in Part III and the bearer signing headers], [Clients and a future Rust server can rely on it; a change from now on is a new version with its own labels, and v1 keeps working beside it],
   [D057], [Linking to a row the writer can read but may not link to is 403; to a row they cannot read, 404], [The same rule as changing a row: never pretend a visible row does not exist, never reveal an invisible one],
+  [D058], [A remote Turso database is supported now, in TypeScript, not after the Rust migration], [The quiz site deploys on Vercel with Turso; the embedded file stays the default],
+  [D059], [Serverless deployments use the bearer transport over the platform's HTTPS], [A Noise channel's keys and replay window live in one process's memory, which serverless platforms do not keep; TLS gives the same protection there],
+  [D060], [The server reads rows from base tables, never through the generated views], [SQLite (and Turso) cannot use a table's indexes for a condition on a view's converted columns, so every lookup read every row; the views stay for people reading the database directly],
 )

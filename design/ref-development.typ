@@ -19,6 +19,7 @@ prints its own correct invocation in its help and messages
   table.header([*Command*], [*Does*]),
   [`init <schemas…>`], [Generate migrations, types and keys from schema folders (@migrations).],
   [`serve`], [Apply migrations and serve the API.],
+  [`migrate`], [Apply migrations without serving, to the embedded file or the remote database.],
   [`console`], [Serve the browser console (@ref-console).],
   [`import <file.db>`], [Write schemas for an existing SQLite database; `--data --owner <username>` copies its rows (@existing-databases).],
   [`backup <file>`, `restore <file>`], [Take or restore a verified backup (@operations).],

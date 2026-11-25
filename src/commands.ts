@@ -7,6 +7,8 @@ import { writeIfChanged } from './db/fs.ts'
 import { loadSchemas } from './db/load-schemas.ts'
 import type { LoadedSchema } from './db/schema-types.ts'
 import { openDatabase } from './db/open.ts'
+import { applyMigrations } from './db/migrate.ts'
+import { createRemoteRowDatabase, migrationConnection, openRemote, remoteSettings } from './db/remote.ts'
 import { backupDatabase, restoreDatabase, startBackupSchedule } from './db/backup.ts'
 import { createMetrics, serveMetrics } from './server/metrics.ts'
 import { verifyRetainedSignatures } from './db/verify-signatures.ts'
@@ -98,6 +100,8 @@ export const init =
       }
     await writeIfChanged(configPath(dir), JSON.stringify(config, null, 2) + '\n')
     await writeIfChanged(join(dir, 'types.ts'), generateTypes(built))
+    // The loaded schemas, for a serverless handler that cannot read the schema folder (srs/serverless).
+    await writeIfChanged(join(dir, 'schemas.json'), JSON.stringify(loaded) + '\n')
 
     const key = await serverKey()
     console.log(`\nInitialised ${relative(process.cwd(), dir) || '.'} (${built.orderedTables.length} tables).`)
@@ -129,7 +133,9 @@ export const serve =
       throw new Error(
         `The schemas changed since init. Run \`${invocation()} init ${config.schemas.join(' ')}\` again, then serve.`)
 
-    const db = await openDatabase()
+    const remote = remoteSettings()
+    const db = remote ? undefined : await openDatabase()
+    if (remote) await applyMigrations(migrationConnection(openRemote(remote)), join(dir, 'migrations'))
     const metricsPort = process.env.SRS_METRICS_PORT
     if (metricsPort !== undefined && !/^\d+$/.test(metricsPort))
       throw new Error(`SRS_METRICS_PORT must be a port number, got "${metricsPort}"`)
@@ -137,6 +143,7 @@ export const serve =
     const app = await createServerApp(
       { loaded
       , db
+      , rows: remote ? createRemoteRowDatabase(remote) : undefined
       , migrationsFolder: join(dir, 'migrations')
       , metrics
       })
@@ -154,7 +161,7 @@ export const serve =
     // Finish in-flight requests, then close the database, so a deploy never cuts a write short.
     const backupDir = process.env.SRS_BACKUP_DIR
     const stopBackups =
-      backupDir
+      backupDir && db
         ? await startBackupSchedule(
             db
             , { dir: resolve(backupDir)
@@ -163,7 +170,9 @@ export const serve =
               , onBackup: metrics?.backup
               })
         : undefined
-    if (!backupDir)
+    if (remote)
+      console.log('Using the remote database at SRS_DATABASE_URL; back it up with Turso.')
+    else if (!backupDir)
       console.warn('SRS_BACKUP_DIR is not set, so no backups are being taken.')
 
     const shutdown =
@@ -171,7 +180,7 @@ export const serve =
         stopBackups?.()
         metricsServer?.stop()
         await server.stop()
-        await db.close()
+        await db?.close()
         process.exit(0)
       }
     process.once('SIGTERM', shutdown)
@@ -182,6 +191,8 @@ export const serve =
 /** Copy the database to a new verified file. Run it with the server stopped, or use SRS_BACKUP_DIR while serving. */
 export const backup =
   async (options: { file: string }) => {
+    if (remoteSettings())
+      throw new Error('backup copies the embedded database file; a remote database is backed up by Turso (point-in-time recovery).')
     const db = await openDatabase()
     try {
       await backupDatabase(db, options.file)
@@ -312,18 +323,43 @@ export const importData =
     const loaded = await loadSchemas({ schemaDir: config.schemas })
     if (schemaHash(loaded) !== config.schemaHash)
       throw new Error(`The schemas changed since init. Run \`${invocation()} init ${config.schemas.join(' ')}\` again first.`)
-    const db = await openDatabase()
+    const remote = remoteSettings()
+    const db = remote ? migrationConnection(openRemote(remote)) : await openDatabase()
     try {
       await applyMigrations(db, join(dir, 'migrations'))
-      const rows = createRowDatabase(db)
+      const rows = remote ? createRemoteRowDatabase(remote) : createRowDatabase(db as Awaited<ReturnType<typeof openDatabase>>)
       const user = await rows.get('SELECT `id` FROM `user` WHERE lower(`username`) = lower(?)', [options.owner])
       if (!user)
         throw new Error(`No user "${options.owner}". Start the server, register that user, stop the server, and run this again.`)
       const counts =
         await copyRows(resolve(options.file), planImport(resolve(options.file)), rows, buildSchema(loaded).orderedTables, canonicalUuid(user.id))
       for (const [table, count] of Object.entries(counts)) console.log(`${table}: ${count} rows`)
-      console.log(`\nImported into ${resolve(process.env.DB_PATH ?? '.db')}, owned by ${options.owner}.`)
+      console.log(`\nImported into ${remote ? remote.url : resolve(process.env.DB_PATH ?? '.db')}, owned by ${options.owner}.`)
     } finally {
       await db.close()
     }
+  }
+
+/**
+ * Apply the migrations written by init to the database: the embedded file, or
+ * the remote one when SRS_DATABASE_URL is set. A serverless deployment, which
+ * never runs serve, applies them this way before each deploy.
+ *
+ * @param options - The project folder written by init.
+ */
+export const migrate =
+  async (options: { dir?: string }) => {
+    const dir = resolve(options.dir ?? defaultDir)
+    const config = await readConfig(dir)
+    const loaded = await loadSchemas({ schemaDir: config.schemas })
+    if (schemaHash(loaded) !== config.schemaHash)
+      throw new Error(`The schemas changed since init. Run \`${invocation()} init ${config.schemas.join(' ')}\` again first.`)
+    const remote = remoteSettings()
+    const connection = remote ? migrationConnection(openRemote(remote)) : await openDatabase()
+    try {
+      await applyMigrations(connection, join(dir, 'migrations'))
+    } finally {
+      await connection.close()
+    }
+    console.log(`Migrations applied to ${remote ? remote.url : resolve(process.env.DB_PATH ?? '.db')}.`)
   }

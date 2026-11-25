@@ -132,6 +132,21 @@ const replaceManyRelationship =
         , { [foreignKey]: sourceBuffer }, keyCondition(target, targetId))
   }
 
+/**
+ * Refuse a write that would leave a required to-many relationship empty:
+ * creating or replacing (PUT) without members, or setting it to none.
+ */
+export const assertRequiredMany =
+  (resource: ResourceMeta, document: WriteDocument, mode: Mode | 'create') => {
+    for (const [label, relation] of exposedRelations(resource, 'many')) {
+      if (!relation.required) continue
+      const value = document.relationships.get(label)
+      const empty = Array.isArray(value) ? value.length === 0 : value === undefined && mode !== 'patch'
+      if (empty)
+        throw badRequest(`Relationship "${label}" needs at least one member`, `data.relationships.${label}`)
+    }
+  }
+
 export const replaceManyRelationships =
   async (
     context: MutationContext,
@@ -180,6 +195,8 @@ export const changeRelationship =
       how === 'add'
         ? [...new Set([...current, ...value])]
         : current.filter(x => !value.includes(x))
+    if (relation.required && next.length === 0)
+      throw badRequest(`Relationship "${label}" needs at least one member`, `relationships.${label}`)
     try {
       await replaceManyRelationship(context, resource, relation, id, next)
     } catch (error) {

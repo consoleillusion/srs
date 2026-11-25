@@ -154,9 +154,15 @@ SQLite file and needs no other service; this stays the default.
 #table(
   columns: (auto, 1fr),
   table.header([*Setting*], [*Meaning*]),
-  [`SRS_DATABASE_URL`], [Where the database is: `file:path` for SQLite (the default is the `.srs` folder's file), `libsql://…` for a hosted SQLite service, `postgres://…` or `mysql://…`.],
-  [`SRS_DATABASE_TOKEN`], [The access token or password for a hosted database, kept out of the URL so it can come from a secret store.],
+  [`SRS_DATABASE_URL`], [A remote Turso database (`libsql://…`). *Implemented* in TypeScript (`src/db/remote.ts`), for serverless deployments (@ref-deployment). Later: `postgres://…` and `mysql://…`.],
+  [`SRS_DATABASE_TOKEN`], [The database's access token, kept out of the URL so it can come from a secret store.],
 )
+
+A remote Turso database came before Rust because the first real deployment
+runs on Vercel (D058). Foreign keys are off in every new SQLite session and a
+remote session can be replaced between requests, so every write turns them on
+first, and every transaction runs on its own session that turns them on before
+`BEGIN`.
 
 Only after Rust owns storage, `srs-store` gains a dialect layer for PostgreSQL
 and MySQL alongside SQLite. The differences it has to cover are known: JSON

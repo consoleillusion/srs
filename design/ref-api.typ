@@ -111,6 +111,9 @@ Collections support:
 
 - `page[number]` — 1-based page number, default `1`;
 - `page[size]` — rows per page, default `20`, maximum `100`;
+- `page[total]=false` — leave out the total, which costs a read of every
+  matching row; `meta.page` then has no `total` or `pages`, `links` no `last`,
+  and `links.next` is set when another page exists;
 - `sort` — comma-separated fields; prefix a field with `-` for descending;
 - `filter[field]=value` — equality filter; repeatable as `AND` conditions;
 - `filter[field][operator]=value` — `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `in` and

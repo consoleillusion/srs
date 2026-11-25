@@ -4,7 +4,7 @@ import { config } from 'dotenv'
 
 config({ quiet: true })
 
-const { backup, consolePage, defaultDir, importData, importSchemas, init, invocation, restore, rotateKeys, serve, verifySignatures } = await import('./commands.ts')
+const { backup, consolePage, defaultDir, importData, importSchemas, init, invocation, migrate, restore, rotateKeys, serve, verifySignatures } = await import('./commands.ts')
 
 const srs = invocation()
 const usage = `${srs}: JSON Schema in, JSON:API server out
@@ -20,6 +20,11 @@ const usage = `${srs}: JSON Schema in, JSON:API server out
 
   ${srs} backup <file>
       Write a verified copy of the database (DB_PATH). Needs the server stopped.
+
+  ${srs} migrate [--dir ${defaultDir}]
+      Apply the migrations to the database without serving: the embedded file,
+      or the remote one when SRS_DATABASE_URL is set. Run it before deploying
+      a serverless handler.
 
   ${srs} import <file.db> [--out schemas] [--force]
       Read an existing SQLite database and write one schema per table, keeping
@@ -73,6 +78,7 @@ const main =
         , port: values.port === undefined ? undefined : Number(values.port)
         })
     if (command === 'verify-signatures') return verifySignatures()
+    if (command === 'migrate') return migrate({ dir: values.dir })
     if (command === 'import') {
       const file = positionals[1]
       if (!file) throw new Error(`Give import a database file, e.g. \`${srs} import shop.db\``)

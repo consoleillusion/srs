@@ -44,6 +44,30 @@ The image runs as a non-root user, sets `DB_PATH=/data/srs.db` and
 `SRS_BACKUP_DIR=/backups`, reports health through `/readyz`, and shuts down
 cleanly on `SIGTERM` (`podman stop`).
 
+=== Serverless, with a remote database
+On a platform with no long-running process and no local disk, such as Vercel,
+SRS runs as a request handler (`srs/serverless`) over a remote Turso database,
+on the bearer transport over the platform's HTTPS (D059).
+
+```bash
+bun src/cli.ts init schemas              # also writes .srs/schemas.json
+export SRS_DATABASE_URL='libsql://<database>.turso.io'
+export SRS_DATABASE_TOKEN='<token>'      # turso db tokens create <database>
+bun src/cli.ts migrate                   # before each deploy that changes schemas
+```
+
+```ts
+// In an Astro site: src/pages/api/[...path].ts
+import schemas from '../../../.srs/schemas.json'
+import { createHandler } from 'srs/serverless'
+const handle = await createHandler({ schemas, basePath: '/api' })
+export const ALL = ({ request }: { request: Request }) => handle(request)
+```
+
+Set `SRS_DATABASE_URL`, `SRS_DATABASE_TOKEN`, `OPAQUE_SERVER_SETUP` and, if
+the site is on another origin, `SRS_CORS_ORIGINS` in the platform's
+environment. `backup` refuses a remote database: Turso keeps its own backups.
+
 === Settings
 All settings are environment variables. `.env.example` lists them with
 defaults.
@@ -69,6 +93,12 @@ defaults.
   [`SRS_PREVIOUS_SERVER_KEYS`, `SRS_KEY_TRANSITION`],
   [none],
   [Set together by the `rotate-keys` command during a key rotation; remove both after the stop date],
+  [`SRS_DATABASE_URL`],
+  [none],
+  [A remote Turso database (`libsql://…`); unset means the embedded file at `DB_PATH`],
+  [`SRS_DATABASE_TOKEN`],
+  [none],
+  [The remote database's access token],
   [`SRS_TRANSPORT`],
   [`noise`],
   [`noise` serves everything through the encrypted channel and needs `SRS_SERVER_KEYS`; `bearer` serves routes directly and needs TLS],

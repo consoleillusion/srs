@@ -1,19 +1,25 @@
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { BREAKPOINT } from './migration-plan.ts'
-import { openDatabase, type Database } from './open.ts'
+import { openDatabase } from './open.ts'
+
+/** What migrations need of a connection: the local file and a remote database both have it. */
+export type MigrationConnection =
+  { exec: (sql: string) => Promise<unknown>
+  , prepare: (sql: string) => Promise<{ all: (...params: unknown[]) => Promise<unknown[]>, run: (...params: unknown[]) => Promise<unknown> }>
+  }
 
 export const migrationsFolder = join(import.meta.dir, '../../.migrations')
 
 /** Apply every migration not yet recorded in the database, each in one transaction. */
 export const applyMigrations =
-  async (client: Database, folder = migrationsFolder) => {
+  async (client: MigrationConnection, folder = migrationsFolder) => {
     await client.exec(
       'CREATE TABLE IF NOT EXISTS `__migrations` (`name` text PRIMARY KEY, `applied_at` integer NOT NULL)')
     const applied =
       new Set(
         (await (await client.prepare('SELECT name FROM `__migrations`')).all())
-          .map(x => x.name as string))
+          .map(x => (x as { name: string }).name))
     const names =
       (await readdir(folder, { withFileTypes: true }))
         .filter(x => x.isDirectory() && !applied.has(x.name))

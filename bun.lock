@@ -11,6 +11,7 @@
         "@noble/hashes": "^2.4.0",
         "@serenity-kit/opaque": "^1.1.0",
         "@tursodatabase/database": "^0.8.3",
+        "@tursodatabase/serverless": "^1.4.1",
         "ajv": "^8.20.0",
         "ajv-formats": "^3.0.1",
         "dotenv": "^18.0.10",
@@ -46,6 +47,8 @@
     "@tursodatabase/database-linux-x64-gnu": ["@tursodatabase/database-linux-x64-gnu@0.8.4", "", { "os": "linux", "cpu": "x64", "libc": "glibc" }, "sha512-gGaS21vusrbJ3Aw6ZcgPrmE7LgHPjJibh2n3JHgmLTmNVq0enfbtNqmlm5X20Dw3OvTHR5WPd6blGvk9gpvorw=="],
 
     "@tursodatabase/database-win32-x64-msvc": ["@tursodatabase/database-win32-x64-msvc@0.8.4", "", { "os": "win32", "cpu": "x64" }, "sha512-85lyfmrtrberCfILhTTIME4VzjCNkLWZFMm9bYZKp1w7S2bwJ/Vl4UwXuhl7+vRVIJix1i7bn4wjBJ8k6sl82A=="],
+
+    "@tursodatabase/serverless": ["@tursodatabase/serverless@1.4.1", "", {}, "sha512-kcbGx0zb0Js4WnIrIF4AlsK3gzryRdTyUQev/9UbxtcH/iyk7u0Rk+l7dWdPC/5Ymu1WlbSyn4oUb02eNbn6Mw=="],
 
     "@types/bun": ["@types/bun@1.4.5", "", { "dependencies": { "bun-types": "1.4.5" } }, "sha512-DpgwNI9z0L1S0gtb45QLCWgwCUcMLnsHYMJHQvpNj7erGiCGBvpggltAIeARrtobNMKMuy0UP7i56tKKgwFs/Q=="],
 

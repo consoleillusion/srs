@@ -253,7 +253,7 @@ Relations are declared under `x-relations`.
   [`table`],
   [Target table],
   [`column`],
-  [Target column, default `id`],
+  [Target column, default the target table's key (`id`, or its `x-primary` property)],
   [`cardinality`],
   [`one` or `many`],
   [`foreignKey`],
@@ -261,7 +261,7 @@ Relations are declared under `x-relations`.
   [`through`],
   [Optional join-table name override for `many`],
   [`required`],
-  [Whether a derived `one` foreign key is `NOT NULL`],
+  [For `one`: the foreign key is `NOT NULL`. For `many`: the relation always keeps at least one member],
   [`onDelete`],
   [Foreign-key delete action],
   [`onUpdate`],
@@ -298,6 +298,11 @@ sorted endpoint pair, for example `article_tag`. The join table has:
 - both endpoint foreign keys, `NOT NULL`;
 - a unique constraint on the endpoint pair;
 - a trigger and a view.
+
+With `required: true`, a create or a `PUT` must give at least one member, and
+a `PATCH` or a relationship request cannot leave none; each is refused with
+`400` naming the relationship. Deleting the last related row itself is not
+prevented: its join rows go with it.
 
 A `many` relation with `through` uses the named join table instead of deriving a
 new one. A self-referential many-to-many relation derives a join table named

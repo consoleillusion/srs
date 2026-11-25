@@ -1,0 +1,14 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: Question
+type: object
+additionalProperties: false
+properties:
+  text:
+    type: string
+required:
+  - text
+x-relations:
+  tags:
+    table: label
+    cardinality: many
+    required: true
