@@ -175,6 +175,7 @@
 #include "accounts.typ"
 #include "requests.typ"
 #include "lifecycle.typ"
+#include "encryption.typ"
 
 #part("IV", "Delivery",
   [Running SRS, the order it is built in, and the work that remains.])

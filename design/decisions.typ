@@ -68,4 +68,5 @@ Add a row before changing a design rule. When a rule is replaced, mark its row
   [D058], [A remote Turso database is supported now, in TypeScript, not after the Rust migration], [The quiz site deploys on Vercel with Turso; the embedded file stays the default],
   [D059], [Serverless deployments use the bearer transport over the platform's HTTPS], [A Noise channel's keys and replay window live in one process's memory, which serverless platforms do not keep; TLS gives the same protection there],
   [D060], [The server reads rows from base tables, never through the generated views], [SQLite (and Turso) cannot use a table's indexes for a condition on a view's converted columns, so every lookup read every row; the views stay for people reading the database directly],
+  [D061], [Encrypted fields use a random key per row, sealed to each reader's X25519 key; each user's private key is wrapped under their OPAQUE export key], [Rows can be shared without sharing a user's other data, and a password change rewraps one key instead of re-encrypting everything],
 )

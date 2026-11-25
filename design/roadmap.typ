@@ -38,6 +38,7 @@ Status: *Implemented* — this is the live list of work.
   [v1.1], [Rust, piece by piece], [Later],
   [v1.2], [Pluggable databases], [Later],
   [v1.3], [JSON:API 1.1 and Dhall schemas], [Later],
+  [v1.4], [Encrypted fields], [Later],
   [v2.0], [Post-quantum cryptography], [Later],
 )
 
@@ -186,6 +187,20 @@ Additions only: clients of the 1.0 API keep working. Starts after v1.1.
   [v1.3.0], [JSON:API 1.1], [The server reports `jsonapi.version` `1.1`; accepts the `ext` and `profile` media type parameters and answers 415 or 406 for extensions it does not support, as 1.1 requires; accepts `lid` in create documents so a request can refer to a resource it creates; the HTTP suite covers each.], [Later],
   [v1.3.1], [Atomic operations], [The atomic operations extension (`https://jsonapi.org/ext/atomic`): several creates, updates and deletes in one request, applied in one transaction, each checked against access rules and audited, with `lid` references between them.], [Later],
   [v1.3.2], [Dhall schema files], [`.dhall` files are read beside `.json` and `.yaml`, evaluated to JSON Schema and checked by the meta-schema; a typed Dhall package for SRS keywords (`x-access`, `x-relations`, …) lets mistakes fail before `init`. The schema fingerprint covers the evaluated schema, so formatting changes do not force a migration.], [Later],
+)
+
+=== v1.4 — Encrypted fields
+
+Designed in @encrypted-fields. Starts after v1.0, in TypeScript or Rust,
+whichever owns the protocol at the time; the client side is TypeScript.
+
+#table(
+  columns: (auto, 1fr, 1.3fr, auto),
+  table.header([*Version*], [*Task*], [*Done when*], [*State*]),
+  [v1.4.0], [Encryption keys], [Every account has an X25519 encryption key pair, its private half wrapped under the export key; password change rewraps it. Protocol fixtures cover the wrap and the seal.], [Later],
+  [v1.4.1], [Owner-only encrypted fields], [`x-encrypted: true` properties are encrypted by the client under a per-row key sealed to the owner; the server stores and returns only the envelope, refuses filters and sorts on it, and the meta-schema refuses keywords it cannot check.], [Later],
+  [v1.4.2], [Shared encrypted rows], [Sharing a row with a user seals its row key to them; removing the share deletes their copy, and the owner's client can re-key the row.], [Later],
+  [v1.4.3], [Groups and recovery codes], [Open: sealing to members who join a group later, and whether recovery codes are offered by default.], [Open],
 )
 
 === v2.0 — Post-quantum cryptography
