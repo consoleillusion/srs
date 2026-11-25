@@ -4,7 +4,7 @@
   "out": "doc",
   "cleanOutputDir": false,
   "tsconfig": "tsconfig.json",
-  "name": "resource-server",
+  "name": "srs",
   "readme": "README.md",
   "excludePrivate": true,
   "excludeInternal": true,

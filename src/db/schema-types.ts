@@ -160,6 +160,20 @@ export type ViewDef =
   , dropSql: string
   }
 
+/**
+ * Whether a property is stored as JSON text: it is an object or an array, or
+ * it declares no `type` (a `oneOf`, `anyOf` or `$ref` of shapes), so its
+ * value may be any JSON.
+ *
+ * @param property - The property's schema.
+ */
+export const storedAsJson =
+  (property: { type?: unknown }): boolean => {
+    if (property.type === undefined) return true
+    const types = [property.type].flat()
+    return types.includes('object') || types.includes('array')
+  }
+
 /** The result of building schemas: tables, authored views, triggers and generated views. */
 export type BuiltSchema =
   { tables: Record<string, TableDef>

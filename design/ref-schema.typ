@@ -108,6 +108,8 @@ only accepted value.
   [`text` JSON],
   [`array`],
   [`text` JSON],
+  [no `type`: only `oneOf`, `anyOf` or `$ref`],
+  [`text` JSON; the value is checked against the schema],
   [string `enum`],
   [`text` with enum typing],
   [`[T, "null"]`],

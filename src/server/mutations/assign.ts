@@ -1,4 +1,4 @@
-import type { ColumnDef, RelationConfig, TableDef } from '../../db/schema-types.ts'
+import { storedAsJson, type ColumnDef, type RelationConfig, type TableDef } from '../../db/schema-types.ts'
 import { badRequest, conflict, forbidden } from '../errors.ts'
 import type { ResourceMeta } from '../registry.ts'
 import { type Values } from '../sql.ts'
@@ -29,7 +29,7 @@ const coerceValue =
     if (property.format === 'byte')
       return Buffer.from(value as string, 'base64')
 
-    if (property.type === 'object' || property.type === 'array')
+    if (storedAsJson(property))
       return JSON.stringify(value)
 
     if (property.type === 'boolean')

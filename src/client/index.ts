@@ -10,7 +10,7 @@
  *
  * @example Create a client and sign in
  * ```ts
- * import { createResourceServerClient } from 'resource-server/client'
+ * import { createResourceServerClient } from 'srs/client'
  *
  * const client = createResourceServerClient({ baseUrl: 'https://api.example.com' })
  * await client.register({ username: 'alice', password: 'correct horse battery staple' })
@@ -102,7 +102,7 @@ const bodyBytes =
       400, 'Bad Request', 'Signed requests need a string or byte body')
   }
 
-/** A client for a resource-server: sign-in, session handling and JSON:API requests that are signed when the server requires it. */
+/** A client for an SRS server: sign-in, session handling and JSON:API requests that are signed when the server requires it. */
 export type ResourceServerClient = {
   /** Create an account, and sign in unless `signIn` is false. */
   register: (

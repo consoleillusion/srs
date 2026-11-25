@@ -49,7 +49,7 @@ beforeAll(async () => {
 
 afterAll(() => rm(project, { recursive: true, force: true }))
 
-describe('resource-server init and serve', () => {
+describe('srs init and serve', () => {
   let key = ''
   let serverKeys = ''
 

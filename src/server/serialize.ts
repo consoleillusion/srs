@@ -1,4 +1,4 @@
-import type { ColumnDef } from '../db/schema-types.ts'
+import { storedAsJson, type ColumnDef } from '../db/schema-types.ts'
 import type { ApiDocument, ResourceObject } from './app/document.ts'
 import type { Row } from './database.ts'
 import type { Registry, RelationshipMeta, ResourceMeta } from './registry.ts'
@@ -76,7 +76,7 @@ const decodeAttribute =
     }
     if (type === 'boolean')
       return value === true || value === 1 || value === '1'
-    if (type === 'object' || type === 'array') {
+    if (storedAsJson(column.schema)) {
       if (typeof value !== 'string') return value
       try {
         return JSON.parse(value)

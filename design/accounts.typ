@@ -47,7 +47,7 @@ Bodies are plain JSON; binary values are base64url.
 )
 
 The lifecycle routes are in @lifecycle. The TypeScript client for all of them
-is `createSecureClient` in `resource-server/client`.
+is `createSecureClient` in `srs/client`.
 
 === Registration <registration>
 

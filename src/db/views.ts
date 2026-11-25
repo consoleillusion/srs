@@ -1,5 +1,6 @@
 import
-  { type BuiltSchema
+  { storedAsJson
+  , type BuiltSchema
   , type ColumnDef
   , type RelationConfig
   , type TableDef
@@ -32,7 +33,7 @@ export const jsonValue =
     if (column.schema.type === 'boolean')
       return `(CASE WHEN ${value} IS NULL THEN NULL`
         + ` WHEN ${value} THEN json('true') ELSE json('false') END)`
-    if (column.schema.type === 'object' || column.schema.type === 'array')
+    if (storedAsJson(column.schema))
       return `json(${value})`
     return value
   }

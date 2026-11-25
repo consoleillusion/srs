@@ -1,4 +1,4 @@
-import { snakeCase, type ColumnSql, type JSONSchemaProperty } from '../schema-types.ts'
+import { snakeCase, storedAsJson, type ColumnSql, type JSONSchemaProperty } from '../schema-types.ts'
 
 const UUID_DEFAULT = '(uuid7())'
 
@@ -48,7 +48,7 @@ const quoted = (value: string) => `'${value.replaceAll("'", "''")}'`
 /** A schema default as a SQL literal, or undefined when it cannot be stored. */
 const defaultSql =
   (value: unknown, property: JSONSchemaProperty) => {
-    if (property.type === 'object' || property.type === 'array')
+    if (storedAsJson(property))
       return quoted(JSON.stringify(value))
     if (property.format === 'date-time') {
       const millis = typeof value === 'string' ? Date.parse(value) : NaN

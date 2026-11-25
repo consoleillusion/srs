@@ -1,0 +1,31 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: Shape
+type: object
+additionalProperties: false
+description: A property with no type of its own, only a oneOf of object shapes.
+properties:
+  kind:
+    type: string
+    enum: [circle, square]
+  body:
+    oneOf:
+      - $ref: "#/$defs/circle"
+      - $ref: "#/$defs/square"
+required: [kind, body]
+x-checks:
+  - "json_extract(`body`, '$.kind') = `kind`"
+$defs:
+  circle:
+    type: object
+    additionalProperties: false
+    required: [kind, radius]
+    properties:
+      kind: { const: circle }
+      radius: { type: number }
+  square:
+    type: object
+    additionalProperties: false
+    required: [kind, side]
+    properties:
+      kind: { const: square }
+      side: { type: number }

@@ -66,7 +66,10 @@ export const ALL = ({ request }: { request: Request }) => handle(request)
 
 Set `SRS_DATABASE_URL`, `SRS_DATABASE_TOKEN`, `OPAQUE_SERVER_SETUP` and, if
 the site is on another origin, `SRS_CORS_ORIGINS` in the platform's
-environment. `backup` refuses a remote database: Turso keeps its own backups.
+environment. A serverless request has no socket address, so set
+`SRS_TRUSTED_PROXY_HOPS=1` for the rate limit to count each client by the
+address the platform puts in `X-Forwarded-For`. The handler runs on Node as
+well as Bun. `backup` refuses a remote database: Turso keeps its own backups.
 
 The handler serves the API under `basePath`. Clients address and sign the
 full path, `/api/question/…` in this example, and every link and `Location`
