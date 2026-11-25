@@ -36,8 +36,6 @@ Everything with state *Next*, *Later* or *Open* in @roadmap.
   transport requires TLS, which prevents this; the Noise transport removes the
   gap by design (@login).
 - A parent's owner cannot moderate inherited child rows.
-- Running the container image with a mounted project, and a real identity
-  provider, have not been checked (v0.2.3, v0.2.4).
 - Only SQLite databases can be imported, and only the embedded SQLite
   database can be served (v1.2).
 

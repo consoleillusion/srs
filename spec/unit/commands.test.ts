@@ -192,3 +192,21 @@ describe('config errors', () => {
     }
   })
 })
+
+describe('serve in a container', () => {
+  test('says when nothing is mounted at the project folder, or the mounted folder has no init', async () => {
+    const { mkdtempSync, mkdirSync } = await import('node:fs')
+    const { tmpdir } = await import('node:os')
+    const { join } = await import('node:path')
+    const cli = join(import.meta.dir, '../../src/cli.ts')
+    const serveIn = (cwd: string) =>
+      Bun.spawnSync(['bun', cli, 'serve'], { cwd, env: { PATH: process.env.PATH ?? '', SRS_IN_CONTAINER: '1' }, stdout: 'pipe', stderr: 'pipe' })
+    const empty = mkdtempSync(join(tmpdir(), 'srs-mount-'))
+    const result = serveIn(empty)
+    expect(result.exitCode).toBe(1)
+    expect(result.stderr.toString()).toContain('Nothing is mounted at')
+    expect(result.stderr.toString()).toContain('-v "$PWD":/project:ro,z')
+    mkdirSync(join(empty, 'schemas'))
+    expect(serveIn(empty).stderr.toString()).toContain('has no .srs/config.json')
+  })
+})

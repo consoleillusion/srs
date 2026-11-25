@@ -2,9 +2,12 @@
 # by the `init` command) at /project and your data at /data. From the project folder:
 #
 #   podman build -t srs -f /path/to/srs/Containerfile /path/to/srs
-#   podman run -p 5734:5734 --env-file .env --userns=keep-id \
+#   podman run -p 5734:5734 --userns=keep-id \
 #     -v "$PWD":/project:ro,z -v srs-data:/data -v srs-backups:/backups srs
 #
+# The server reads /project/.env, so the settings init printed only need to be
+# in the project's .env file. Without the -v "$PWD":/project mount the
+# container has no project and stops, saying so.
 # `:z` lets the container read the mount on SELinux systems; `--userns=keep-id`
 # runs the server as your own user in rootless Podman, so it can read files you
 # own. Docker takes the same command without `--userns=keep-id`.
@@ -24,6 +27,7 @@ COPY package.json ./
 COPY src ./src
 
 ENV NODE_ENV=production \
+    SRS_IN_CONTAINER=1 \
     DB_PATH=/data/srs.db \
     SRS_BACKUP_DIR=/backups \
     PORT=5734

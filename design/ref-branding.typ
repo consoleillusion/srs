@@ -19,7 +19,7 @@ is set:
 - in *lowercase*: `srs`, never `SRS` or `Srs`;
 - in a *sans serif*, at its *heaviest weight* (black, 900);
 - in *italic*;
-- *partly gray*: the final "s" is gray, the other letters are not.
+- in one *gray*, all three letters.
 
 The typeface is Inter Display Black Italic, with Inter, DM Sans and Fira Sans as
 fallbacks (`design/brand.typ`).
@@ -31,7 +31,7 @@ fallbacks (`design/brand.typ`).
 - *Sans serif* is modern, unobtrusive and unadorned.
 - *Lowercase* is simplicity and ease of use.
 - *Gray* is a background colour that goes with anything, as srs serves stably
-  and reliably in the background. The gray letter is the last "s", for server.
+  and reliably in the background.
 
 === Colours
 
@@ -39,11 +39,10 @@ fallbacks (`design/brand.typ`).
   columns: (auto, auto, 1fr),
   table.header([*Use*], [*Colour*], [*Notes*]),
   [Dark background], [`#111111`], [The title page.],
-  [Letters "sr" on dark], [`#ece6d8`], [Warm off-white.],
-  [Letter "s" on dark], [`#888888`], [5.3:1 on `#111111`: WCAG AAA for large text, which the logotype always is.],
-  [Small text on dark], [`#a6a6a6`], [7.7:1 on `#111111`: AAA at any size, for the lines around the logotype.],
-  [Letters "sr" on light], [`#111111`], [],
-  [Letter "s" on light], [`#767676`], [4.5:1 on white: AA at any size, so it stays readable when the logo is small.],
+  [Logotype on dark], [`#a6a6a6`], [7.7:1 on `#111111`: WCAG AAA at any size.],
+  [Small text on dark], [`#a6a6a6`], [The quiet line below the logotype.],
+  [Other text on dark], [`#ece6d8`], [Warm off-white, for the name above the logotype.],
+  [Logotype on light], [`#767676`], [4.5:1 on white: AA at any size. `#a6a6a6` is too faint on a light background (2.4:1).],
 )
 
 === The title page

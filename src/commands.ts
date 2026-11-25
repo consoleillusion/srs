@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { readFile } from 'node:fs/promises'
+import { readdir, readFile } from 'node:fs/promises'
 import { join, relative, resolve } from 'node:path'
 import * as opaque from '@serenity-kit/opaque'
 import { generateMigrations } from './db/generate-migration.ts'
@@ -53,6 +53,14 @@ const readConfig =
       text = await readFile(configPath(dir), 'utf8')
     } catch (error) {
       const code = (error as NodeJS.ErrnoException).code
+      if (code === 'ENOENT' && process.env.SRS_IN_CONTAINER === '1') {
+        const mounted = (await readdir(process.cwd()).catch(() => [])).length > 0
+        throw new Error(
+          mounted
+            ? `The folder mounted at ${process.cwd()} has no ${relative(process.cwd(), configPath(dir))}. Run init in that folder on the host first.`
+            : `Nothing is mounted at ${process.cwd()}. From the folder where you ran init, run:\n\n`
+              + '  podman run -p 5734:5734 --userns=keep-id -v "$PWD":/project:ro,z -v srs-data:/data srs\n')
+      }
       if (code === 'ENOENT')
         throw new Error(`No ${configPath(dir)}. Run \`${invocation()} init <schema…>\` first, in ${process.cwd()}.`)
       // Anything else (permission denied, a bad mount) must not be reported as a missing file.

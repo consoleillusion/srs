@@ -13,22 +13,36 @@ up rather than out. The container image declares `/data` and `/backups` as
 volumes for this reason.
 
 === Container
-The image is built from `Containerfile`. Run it from your project folder:
+The image is built from `Containerfile`. In this repository, with the chat
+template as the project:
 
 ```bash
-podman build -t srs -f /path/to/srs/Containerfile /path/to/srs
-podman run -p 5734:5734 --env-file .env --userns=keep-id \
+bun run cli -- init templates/chat     # writes .srs/ and prints the settings
+# put the printed OPAQUE_SERVER_SETUP and SRS_SERVER_KEYS lines in .env
+podman build -t srs .
+podman run -p 5734:5734 --userns=keep-id \
   -v "$PWD":/project:ro,z -v srs-data:/data -v srs-backups:/backups srs
 ```
 
-`/project` holds your schema files and the `.srs/` folder written by the `init` command.
-`:z` relabels the mount so the container may read it on SELinux systems (Fedora,
-RHEL), and `--userns=keep-id` runs the server as your own user under rootless
-Podman, so it can read the files you own. Without them, the server cannot read
-`.srs/config.json` and stops with `Cannot read /project/.srs/config.json`. Docker
-takes the same command without `--userns=keep-id`.
+For a project of your own, run `init` and the `run` command in the project
+folder, and point the build at the SRS checkout:
+`podman build -t srs -f /path/to/srs/Containerfile /path/to/srs`.
+
+- `-v "$PWD":/project` is required: it gives the container your schema files,
+  the `.srs/` folder written by `init`, and `.env`, which the server reads from
+  there. Without it the container has no project and stops with
+  `Nothing is mounted at /project`.
+- `:z` relabels the mount so the container may read it on SELinux systems
+  (Fedora, RHEL), and `--userns=keep-id` runs the server as your own user under
+  rootless Podman, so it can read the files you own. Without them the server
+  stops with `Cannot read /project/.srs/config.json`. Docker takes the same
+  command without `--userns=keep-id`.
+- `srs-data` and `srs-backups` are named volumes that keep the database and
+  backups when the container is replaced.
+
 The image runs as a non-root user, sets `DB_PATH=/data/srs.db` and
-`SRS_BACKUP_DIR=/backups`, and reports health through `/readyz`.
+`SRS_BACKUP_DIR=/backups`, reports health through `/readyz`, and shuts down
+cleanly on `SIGTERM` (`podman stop`).
 
 === Settings
 All settings are environment variables. `.env.example` lists them with
