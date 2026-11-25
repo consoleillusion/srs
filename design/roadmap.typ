@@ -32,7 +32,7 @@ Status: *Implemented* — this is the live list of work.
   [v0.2], [Production hardening of the current server], [Done],
   [v0.3], [Secure transport and accountable accounts, in TypeScript], [Done],
   [v0.4], [Schema authoring workflow and existing databases], [Done],
-  [v0.5], [Conformance suites], [In progress (v0.5.5 left)],
+  [v0.5], [Conformance suites], [Done],
   [v0.6], [Wire-format freeze and real use], [Later],
   [v1.0], [Stable TypeScript release], [Later],
   [v1.1], [Rust, piece by piece], [Later],
@@ -125,7 +125,7 @@ Defined in @implementation. Protocol fixtures are written during v0.3.
   [v0.5.2], [Schema engine suite], [`conformance/schema/`: built objects for each schema feature, build errors by code, and migration plans for adding and removing columns and tables.], [Done],
   [v0.5.3], [Query compiler and access suites], [`conformance/query/`: the SQL and parameters of list reads for owners, anonymous callers, filters, related filters, shares and roles; `conformance/access/`: allow and deny for owners, other users, shares, groups, roles and declared keys.], [Done],
   [v0.5.4], [HTTP suite], [`conformance/http/`: sessions against a server started as a process, through the Noise channel: transport, CRUD, validation, isolation, sharing, roles, relationships, pagination, declared keys and the catalog.], [Done],
-  [v0.5.5], [Port the remaining end-to-end tests], [Every behaviour the `spec/` end-to-end tests check through `app.request` is also an HTTP case, so a Rust server is checked against all of it.], [Next],
+  [v0.5.5], [Port the remaining end-to-end tests], [Every resource-API behaviour the `spec/` end-to-end tests check is also an HTTP case (`conformance/http/sample-*.json`, on the sample schemas): creates, ownership, isolation, links across users, system resources, methods and media types, relationship routes, filters, includes, inherited access, roles, group sharing, visibility, signing and audit. Account and transport behaviour is pinned by the protocol suite, including bearer signing.], [Done],
 )
 
 === v0.6 — Freeze
@@ -133,7 +133,7 @@ Defined in @implementation. Protocol fixtures are written during v0.3.
 #table(
   columns: (auto, 1fr, 1.3fr, auto),
   table.header([*Version*], [*Task*], [*Done when*], [*State*]),
-  [v0.6.0], [Freeze the wire format], [Every protocol string carries `v1`; the protocol fixtures are complete; the freeze is a decision row.], [Later],
+  [v0.6.0], [Freeze the wire format], [Every protocol string carries `v1` (`srs-noise-v1`, `SRS1`, `srs-keys-v1`, `srs-register-v1`, `srs-bind-v1`, `srs-identity-wrap-v1`, `srs-cert-v1`, `srs-req-v1`, `srs-rotate-v1`, `srs-signature-v1`); the protocol fixtures cover each; the freeze is D056.], [Done],
   [v0.6.1], [Real use], [The practice quiz site runs on SRS without a protocol change; what it finds is fixed.], [Later],
 )
 

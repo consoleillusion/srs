@@ -1,0 +1,229 @@
+{
+  "description": "Links never reach another user's rows, and deleting your own row never touches theirs",
+  "operation": "http.session",
+  "input": {
+    "schemaDir": "src/schema",
+    "users": [
+      "alice",
+      "bob"
+    ],
+    "steps": [
+      {
+        "as": "bob",
+        "method": "POST",
+        "path": "/tag",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "tag",
+            "attributes": {
+              "name": "bobs"
+            }
+          }
+        },
+        "save": {
+          "bt": "data.id"
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/tag",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "tag",
+            "attributes": {
+              "name": "alices"
+            }
+          }
+        },
+        "save": {
+          "at": "data.id"
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/article",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "article",
+            "attributes": {
+              "heading": "Linked"
+            },
+            "relationships": {
+              "tag": {
+                "data": [
+                  {
+                    "type": "tag",
+                    "id": "{{bt}}"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/article",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "article",
+            "attributes": {
+              "heading": "Linked"
+            },
+            "relationships": {
+              "tag": {
+                "data": [
+                  {
+                    "type": "tag",
+                    "id": "{{at}}"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "save": {
+          "a": "data.id"
+        }
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/article/{{a}}",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "article",
+            "id": "{{a}}",
+            "attributes": {},
+            "relationships": {
+              "tag": {
+                "data": [
+                  {
+                    "type": "tag",
+                    "id": "{{bt}}"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/article/{{a}}/relationships/tag",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": [
+            {
+              "type": "tag",
+              "id": "{{bt}}"
+            }
+          ]
+        }
+      },
+      {
+        "as": "bob",
+        "method": "POST",
+        "path": "/article",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "article",
+            "attributes": {
+              "heading": "Bobs"
+            },
+            "relationships": {
+              "tag": {
+                "data": [
+                  {
+                    "type": "tag",
+                    "id": "{{bt}}"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "save": {
+          "b": "data.id"
+        }
+      },
+      {
+        "as": "alice",
+        "method": "DELETE",
+        "path": "/tag/{{at}}",
+        "select": []
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/article/{{b}}?include=tag",
+        "select": [
+          "data.relationships.tag.data.length",
+          "included.0.attributes.name"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/article/{{a}}",
+        "select": [
+          "data.relationships.tag.data.length"
+        ]
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 201
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 204
+    },
+    {
+      "status": 200,
+      "data.relationships.tag.data.length": 1,
+      "included.0.attributes.name": "bobs"
+    },
+    {
+      "status": 200,
+      "data.relationships.tag.data.length": 0
+    }
+  ]
+}

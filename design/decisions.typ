@@ -63,4 +63,6 @@ Add a row before changing a design rule. When a rule is replaced, mark its row
   [D053], [Sign-in is built-in OPAQUE accounts only; there is no external identity provider], [SRS must run with no other service, and provider tokens are bearer tokens that cannot sign requests],
   [D054], [A property marked `x-primary` replaces the generated `id`, and an imported table keeps its own key], [Other programs and existing rows keep their ids, and the key lives in the schema, so building is repeatable],
   [D055], [HTTP conformance cases drive a server process through the Noise channel and select only stable values], [They check any implementation the way a client sees it, and stay valid however ids and times are generated],
+  [D056], [The wire format is frozen at v1: every protocol message, label and signed layout in Part III and the bearer signing headers], [Clients and a future Rust server can rely on it; a change from now on is a new version with its own labels, and v1 keeps working beside it],
+  [D057], [Linking to a row the writer can read but may not link to is 403; to a row they cannot read, 404], [The same rule as changing a row: never pretend a visible row does not exist, never reveal an invisible one],
 )

@@ -1,0 +1,239 @@
+{
+  "description": "User rows: own row only, no secrets, no renames, no deletes; keys and schema rows unreachable",
+  "operation": "http.session",
+  "input": {
+    "schemaDir": "src/schema",
+    "users": [
+      "alice",
+      "bob"
+    ],
+    "steps": [
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/user/{{alice}}",
+        "select": [
+          "data.attributes.username",
+          "data.attributes.password",
+          "data.attributes.registration_record",
+          "data.attributes.disabled_at"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/user/{{bob}}",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/user",
+        "select": [
+          "meta.page.total"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/user/{{alice}}",
+        "select": [
+          "data.attributes.display_name"
+        ],
+        "body": {
+          "data": {
+            "type": "user",
+            "id": "{{alice}}",
+            "attributes": {
+              "display_name": "Alice A."
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/user/{{alice}}",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "user",
+            "id": "{{alice}}",
+            "attributes": {
+              "username": "admin"
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/user/{{alice}}",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "user",
+            "id": "{{alice}}",
+            "attributes": {
+              "email": "not-an-email"
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/user/{{alice}}",
+        "select": [
+          "data.attributes.email"
+        ],
+        "body": {
+          "data": {
+            "type": "user",
+            "id": "{{alice}}",
+            "attributes": {
+              "email": "a@example.com"
+            }
+          }
+        }
+      },
+      {
+        "as": "bob",
+        "method": "PATCH",
+        "path": "/user/{{bob}}",
+        "select": [
+          "data.attributes.email"
+        ],
+        "body": {
+          "data": {
+            "type": "user",
+            "id": "{{bob}}",
+            "attributes": {
+              "email": "a@example.com"
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/user/{{bob}}",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "user",
+            "id": "{{bob}}",
+            "attributes": {
+              "display_name": "Hacked"
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "DELETE",
+        "path": "/user/{{alice}}",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/user",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "user",
+            "attributes": {
+              "username": "mallory"
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/key",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/schema",
+        "select": [
+          "meta.page.total"
+        ]
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 200,
+      "data.attributes.username": "alice",
+      "data.attributes.password": null,
+      "data.attributes.registration_record": null,
+      "data.attributes.disabled_at": null
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 200,
+      "meta.page.total": 1
+    },
+    {
+      "status": 200,
+      "data.attributes.display_name": "Alice A."
+    },
+    {
+      "status": 400,
+      "errors.0.status": "400"
+    },
+    {
+      "status": 400,
+      "errors.0.status": "400"
+    },
+    {
+      "status": 200,
+      "data.attributes.email": "a@example.com"
+    },
+    {
+      "status": 200,
+      "data.attributes.email": "a@example.com"
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 409,
+      "errors.0.status": "409"
+    },
+    {
+      "status": 403,
+      "errors.0.status": "403"
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 200,
+      "meta.page.total": 0
+    }
+  ]
+}

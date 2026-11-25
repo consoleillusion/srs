@@ -60,7 +60,7 @@ describe('inherited access', () => {
     const { bob, carol, chat } = await setup({ can_read: true, can_write: false })
 
     expect((await post(carol, chat, 'intruder')).status).toBe(404)
-    expect((await post(bob, chat, 'read-only member')).status).toBe(404)
+    expect((await post(bob, chat, 'read-only member')).status).toBe(403)
   })
 
   test('read-only members still read messages', async () => {

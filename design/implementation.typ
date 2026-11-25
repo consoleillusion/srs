@@ -43,7 +43,8 @@ expected-output files in a shared folder (`conformance/<piece>/`), with a
 small runner in each language. Both implementations must pass the same files.
 
 - *Protocol:* fixed keys and random values, with the exact bytes of every
-  handshake message, envelope, binder, certificate and signature. Also invalid
+  handshake message, envelope, binder, certificate and signature, and of the
+  bearer transport's signed requests. Also invalid
   inputs and the error each must produce.
 - *Schema engine:* schema folders, with the built schema, generated SQL and
   migration state expected for each.

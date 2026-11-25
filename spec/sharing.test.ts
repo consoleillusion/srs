@@ -111,7 +111,7 @@ describe('sharing with users', () => {
     expect(after.data.attributes.visibility).toBe('shared')
 
     expect((await bob.request('DELETE', `/note/${note}`)).status).toBe(403)
-    expect((await share(bob, note, { user: carol.userId })).status).toBe(404)
+    expect((await share(bob, note, { user: carol.userId })).status).toBe(403)
     expect(await titleOf(carol, note)).toBeUndefined()
   })
 

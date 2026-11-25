@@ -1,0 +1,136 @@
+{
+  "description": "Who may create: public-create resources take anonymous rows with no owner; others need a session",
+  "operation": "http.session",
+  "input": {
+    "schemaDir": "src/schema",
+    "users": [
+      "alice"
+    ],
+    "admins": [
+      "alice"
+    ],
+    "steps": [
+      {
+        "as": null,
+        "method": "POST",
+        "path": "/feedback",
+        "select": [
+          "data.attributes.owner"
+        ],
+        "body": {
+          "data": {
+            "type": "feedback",
+            "attributes": {
+              "message": "hi"
+            }
+          }
+        },
+        "save": {
+          "f": "data.id"
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/feedback",
+        "select": [
+          "data.attributes.visibility"
+        ],
+        "body": {
+          "data": {
+            "type": "feedback",
+            "attributes": {
+              "message": "mine"
+            }
+          }
+        }
+      },
+      {
+        "as": null,
+        "method": "POST",
+        "path": "/note",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "note",
+            "attributes": {
+              "title": "x"
+            }
+          }
+        }
+      },
+      {
+        "as": null,
+        "method": "PATCH",
+        "path": "/feedback/{{f}}",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "feedback",
+            "id": "{{f}}",
+            "attributes": {
+              "message": "changed"
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/feedback/{{f}}",
+        "select": [
+          "data.attributes.message",
+          "data.attributes.owner"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/feedback/{{f}}",
+        "select": [
+          "data.attributes.message"
+        ],
+        "body": {
+          "data": {
+            "type": "feedback",
+            "id": "{{f}}",
+            "attributes": {
+              "message": "moderated"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 201,
+      "data.attributes.owner": null
+    },
+    {
+      "status": 201,
+      "data.attributes.visibility": "private"
+    },
+    {
+      "status": 401,
+      "errors.0.status": "401"
+    },
+    {
+      "status": 401,
+      "errors.0.status": "401"
+    },
+    {
+      "status": 200,
+      "data.attributes.message": "hi",
+      "data.attributes.owner": null
+    },
+    {
+      "status": 200,
+      "data.attributes.message": "moderated"
+    }
+  ]
+}

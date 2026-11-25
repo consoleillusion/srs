@@ -1,0 +1,13 @@
+{
+  "description": "Bearer transport: an empty body is the SHA-256 of nothing",
+  "operation": "bearer.signing-message",
+  "input": {
+    "method": "DELETE",
+    "path": "/note/1",
+    "sessionId": "01900000-0000-7000-8000-00000000000A",
+    "timestamp": "1",
+    "nonce": "abcdefghijklmnop",
+    "body": ""
+  },
+  "output": "7372732d7369676e61747572652d76310a44454c4554450a2f6e6f74652f310a30313930303030302d303030302d373030302d383030302d3030303030303030303030610a310a6162636465666768696a6b6c6d6e6f700a3437444551706a38484253612d5f54496d572d354a4365755165526b6d354e4d704a575a47336853754655"
+}

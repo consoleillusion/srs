@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises'
+import { cp, mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { createSecureClient, type SecureClient } from '../../src/client/index.ts'
@@ -26,13 +26,18 @@ type Step =
   , clear?: boolean
   , method: string
   , path: string
+  , headers?: Record<string, string>
   , body?: unknown
+  /** The body as raw text, sent as is, for requests that are not JSON. */
+  , raw?: string
   , select?: string[]
   , save?: Record<string, string>
   }
 
 type HttpInput =
-  { schemas: unknown[]
+  { schemas?: unknown[]
+  /** A folder of schema files in this repository, such as `src/schema`, instead of inline schemas. */
+  , schemaDir?: string
   , users?: string[]
   , admins?: string[]
   , steps: Step[]
@@ -107,7 +112,8 @@ export const httpOperations: Record<string, Operation> =
       let server: ReturnType<typeof Bun.spawn> | undefined
       try {
         await mkdir(join(dir, 'schemas'))
-        await Promise.all(input.schemas.map((schema, index) =>
+        if (input.schemaDir) await cp(resolve(import.meta.dir, '../..', input.schemaDir), join(dir, 'schemas'), { recursive: true })
+        await Promise.all((input.schemas ?? []).map((schema, index) =>
           writeFile(join(dir, 'schemas', `${String(index).padStart(2, '0')}.json`), JSON.stringify(schema))))
         const init = await run(['init', 'schemas'], dir, base)
         const pick = (name: string) => init.match(new RegExp(`${name}=(\\S+)`))?.[1] ?? ''
@@ -132,23 +138,35 @@ export const httpOperations: Record<string, Operation> =
         const results: Record<string, unknown>[] = []
         for (const step of input.steps) {
           const path = fill(step.path, saved) as string
-          const body = step.body === undefined ? undefined : JSON.stringify(fill(step.body, saved))
-          const headers: Record<string, string> = { accept: 'application/vnd.api+json', ...(body ? { 'content-type': 'application/vnd.api+json' } : {}) }
+          const body = step.raw ?? (step.body === undefined ? undefined : JSON.stringify(fill(step.body, saved)))
+          const headers: Record<string, string> =
+            { accept: 'application/vnd.api+json', ...(body ? { 'content-type': 'application/vnd.api+json' } : {}), ...step.headers }
           let status: number
           let json: unknown
+          let responseHeaders: (name: string) => string | null
           if (step.clear) {
             const response = await fetch(`${url}${path}`, { method: step.method, headers, body })
             status = response.status
+            responseHeaders = name => response.headers.get(name)
             json = await response.json().catch(() => undefined)
           } else {
             const client = clients.get(step.as ?? null)
             if (!client) throw new Error(`no user "${step.as}"`)
             const response = await client.request(path, { method: step.method, headers, body })
             status = response.status
+            responseHeaders = name => response.headers.get(name) ?? null
             json = (() => { try { return response.json() } catch { return undefined } })()
           }
           for (const [name, from] of Object.entries(step.save ?? {})) saved.set(name, String(at(json, from)))
-          results.push({ status, ...Object.fromEntries((step.select ?? []).map(x => [x, at(json, x) ?? null])) })
+          // `header:<name>` selects a response header; ids in a Location header are replaced by `{id}`.
+          const value =
+            (path: string) =>
+              path.startsWith('header:')
+                ? path === 'header:location'
+                  ? responseHeaders('location')?.replace(/\/[^/]+$/, '/{id}').replace(/^https?:\/\/[^/]+/, '') ?? null
+                  : responseHeaders(path.slice(7))
+                : at(json, path) ?? null
+          results.push({ status, ...Object.fromEntries((step.select ?? []).map(x => [x, value(x)])) })
         }
         return results
       } finally {

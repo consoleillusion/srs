@@ -18,7 +18,7 @@ import
   , verifyCertificate
   , wrapIdentity
   } from '../../src/protocol/accounts.ts'
-import { ed25519PublicKey, ed25519Sign, ed25519Verify } from '../../src/client/crypto.ts'
+import { ed25519PublicKey, ed25519Sign, ed25519Verify, signingMessage } from '../../src/client/crypto.ts'
 import type { Operation } from './runner.ts'
 import { engineOperations } from './engine-operations.ts'
 import { httpOperations } from './http-operations.ts'
@@ -185,6 +185,10 @@ export const operations: Record<string, Operation> =
             { h: hexToBytes(input.h), sid: hexToBytes(input.sid), n: BigInt(input.n), method: input.method
             , path: input.path, contentType: input.contentType, body: hexToBytes(input.body) })
         , hexToBytes(input.sessionPublic))
+  , 'bearer.signing-message': (input: { method: string, path: string, sessionId: string, timestamp: string, nonce: string, body: string }) =>
+      bytesToHex(signingMessage({ ...input, body: hexToBytes(input.body) }))
+  , 'bearer.sign': (input: { seed: string, message: string }) =>
+      bytesToHex(ed25519Sign(hexToBytes(input.message), hexToBytes(input.seed)))
   , ...engineOperations
   , ...httpOperations
   }

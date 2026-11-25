@@ -1,0 +1,269 @@
+{
+  "description": "Messages inherit access from their chat: members read, writers post, nobody else",
+  "operation": "http.session",
+  "input": {
+    "schemaDir": "src/schema",
+    "users": [
+      "alice",
+      "bob",
+      "carol"
+    ],
+    "steps": [
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/chat",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "chat",
+            "attributes": {
+              "name": "Team",
+              "visibility": "shared"
+            }
+          }
+        },
+        "save": {
+          "c": "data.id"
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/message",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "message",
+            "attributes": {
+              "text": "hi"
+            },
+            "relationships": {
+              "chat": {
+                "data": {
+                  "type": "chat",
+                  "id": "{{c}}"
+                }
+              }
+            }
+          }
+        },
+        "save": {
+          "m": "data.id"
+        }
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/message/{{m}}",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/chat_share",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "chat_share",
+            "attributes": {
+              "can_read": true,
+              "can_write": false
+            },
+            "relationships": {
+              "chat": {
+                "data": {
+                  "type": "chat",
+                  "id": "{{c}}"
+                }
+              },
+              "user": {
+                "data": {
+                  "type": "user",
+                  "id": "{{bob}}"
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/message/{{m}}",
+        "select": [
+          "data.attributes.text"
+        ]
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/chat/{{c}}/messages",
+        "select": [
+          "data.length"
+        ]
+      },
+      {
+        "as": "bob",
+        "method": "POST",
+        "path": "/message",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "message",
+            "attributes": {
+              "text": "me too"
+            },
+            "relationships": {
+              "chat": {
+                "data": {
+                  "type": "chat",
+                  "id": "{{c}}"
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "as": "bob",
+        "method": "PATCH",
+        "path": "/message/{{m}}",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "message",
+            "id": "{{m}}",
+            "attributes": {
+              "text": "edited"
+            }
+          }
+        }
+      },
+      {
+        "as": "carol",
+        "method": "POST",
+        "path": "/message",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "message",
+            "attributes": {
+              "text": "intruder"
+            },
+            "relationships": {
+              "chat": {
+                "data": {
+                  "type": "chat",
+                  "id": "{{c}}"
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "as": "carol",
+        "method": "GET",
+        "path": "/message/{{m}}",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "bob",
+        "method": "POST",
+        "path": "/chat",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "chat",
+            "attributes": {
+              "name": "Mine"
+            }
+          }
+        },
+        "save": {
+          "bc": "data.id"
+        }
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/message/{{m}}",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "message",
+            "id": "{{m}}",
+            "attributes": {},
+            "relationships": {
+              "chat": {
+                "data": {
+                  "type": "chat",
+                  "id": "{{bc}}"
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 201
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 200,
+      "data.attributes.text": "hi"
+    },
+    {
+      "status": 200,
+      "data.length": 1
+    },
+    {
+      "status": 403,
+      "errors.0.status": "403"
+    },
+    {
+      "status": 403,
+      "errors.0.status": "403"
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    }
+  ]
+}

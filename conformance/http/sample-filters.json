@@ -1,0 +1,240 @@
+{
+  "description": "Every filter operator, AND-ed filters, literal wildcards and typed values",
+  "operation": "http.session",
+  "input": {
+    "schemaDir": "src/schema",
+    "users": [
+      "alice"
+    ],
+    "steps": [
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/tag",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "tag",
+            "attributes": {
+              "name": "alpha",
+              "kind": "topic"
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/tag",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "tag",
+            "attributes": {
+              "name": "beta",
+              "kind": "exam"
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/tag",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "tag",
+            "attributes": {
+              "name": "gamma",
+              "kind": "topic"
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/tag",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "tag",
+            "attributes": {
+              "name": "a%b",
+              "kind": "exam"
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/tag",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "tag",
+            "attributes": {
+              "name": "a_b",
+              "kind": "topic"
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/tag?filter[name]=beta",
+        "select": [
+          "meta.page.total"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/tag?filter[name][ne]=beta",
+        "select": [
+          "meta.page.total"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/tag?filter[name][starts]=a",
+        "select": [
+          "meta.page.total"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/tag?filter[name][ends]=a",
+        "select": [
+          "meta.page.total"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/tag?filter[name][contains]=%25",
+        "select": [
+          "meta.page.total"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/tag?filter[name][contains]=_",
+        "select": [
+          "meta.page.total"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/tag?filter[name][in]=alpha,gamma",
+        "select": [
+          "meta.page.total"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/tag?filter[name][gt]=beta&filter[kind]=topic",
+        "select": [
+          "meta.page.total",
+          "data.0.attributes.name"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/tag?filter[name][nope]=x",
+        "select": [
+          "errors.0.status",
+          "errors.0.source.parameter"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/tag?filter=name",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/tag?filter[kind]=weird",
+        "select": [
+          "meta.page.total"
+        ]
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 201
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 200,
+      "meta.page.total": 1
+    },
+    {
+      "status": 200,
+      "meta.page.total": 4
+    },
+    {
+      "status": 200,
+      "meta.page.total": 3
+    },
+    {
+      "status": 200,
+      "meta.page.total": 3
+    },
+    {
+      "status": 200,
+      "meta.page.total": 1
+    },
+    {
+      "status": 200,
+      "meta.page.total": 1
+    },
+    {
+      "status": 200,
+      "meta.page.total": 2
+    },
+    {
+      "status": 200,
+      "meta.page.total": 1,
+      "data.0.attributes.name": "gamma"
+    },
+    {
+      "status": 400,
+      "errors.0.status": "400",
+      "errors.0.source.parameter": "filter[name][nope]"
+    },
+    {
+      "status": 400,
+      "errors.0.status": "400"
+    },
+    {
+      "status": 200,
+      "meta.page.total": 0
+    }
+  ]
+}

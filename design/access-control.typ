@@ -31,7 +31,8 @@ object; every key is optional and its absence gives the secure default.
   if `authenticated`; by holders of a read share if `shared`.
 - Embedded related rows follow the same rule.
 - Rows the caller cannot read return `404`, never `403`, so their existence is
-  not revealed. A forbidden operation on a readable row returns `403`.
+  not revealed. A forbidden operation on a readable row returns `403`: changing
+  or deleting it, or linking to it from a row the caller writes.
 - Roles come from `user_role` rows, which only admins manage, and from the
   configured admin list. Groups never confer roles.
 - Inheritance applies to reads only, to at most three levels.

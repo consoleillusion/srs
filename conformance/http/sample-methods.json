@@ -1,0 +1,203 @@
+{
+  "description": "HEAD and OPTIONS, method errors, and the media type rules (415 and 406)",
+  "operation": "http.session",
+  "input": {
+    "schemaDir": "src/schema",
+    "users": [
+      "alice"
+    ],
+    "steps": [
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/tag",
+        "select": [
+          "header:location",
+          "header:content-type"
+        ],
+        "body": {
+          "data": {
+            "type": "tag",
+            "attributes": {
+              "name": "math",
+              "kind": "topic"
+            }
+          }
+        },
+        "save": {
+          "t": "data.id"
+        }
+      },
+      {
+        "as": "alice",
+        "method": "HEAD",
+        "path": "/tag",
+        "select": [
+          "header:content-type",
+          "data"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "HEAD",
+        "path": "/tag/{{t}}",
+        "select": [
+          "data"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "HEAD",
+        "path": "/tag/00000000-0000-7000-8000-000000000000",
+        "select": [
+          "data"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "OPTIONS",
+        "path": "/tag",
+        "select": [
+          "header:allow"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "OPTIONS",
+        "path": "/tag/{{t}}",
+        "select": [
+          "header:allow"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "OPTIONS",
+        "path": "/",
+        "select": [
+          "header:allow"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/tag/{{t}}",
+        "select": [
+          "errors.0.status",
+          "header:allow"
+        ],
+        "body": {
+          "data": {
+            "type": "tag",
+            "attributes": {
+              "name": "x"
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/tag",
+        "select": [
+          "errors.0.status"
+        ],
+        "raw": "{\"data\":{\"type\":\"tag\",\"attributes\":{\"name\":\"x\"}}}",
+        "headers": {
+          "content-type": "application/json"
+        }
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/tag",
+        "select": [
+          "errors.0.status"
+        ],
+        "headers": {
+          "accept": "application/vnd.api+json; version=2"
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/tag",
+        "select": [
+          "errors.0.status"
+        ],
+        "raw": "{not json"
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/tag",
+        "select": [
+          "errors.0.status",
+          "errors.0.source.parameter"
+        ],
+        "body": {
+          "data": {
+            "type": "tag",
+            "attributes": {
+              "name": "x",
+              "kind": "nope"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 201,
+      "header:location": "/tag/{id}",
+      "header:content-type": "application/vnd.api+json"
+    },
+    {
+      "status": 200,
+      "header:content-type": "application/vnd.api+json",
+      "data": null
+    },
+    {
+      "status": 200,
+      "data": null
+    },
+    {
+      "status": 404,
+      "data": null
+    },
+    {
+      "status": 204,
+      "header:allow": "GET, HEAD, POST, OPTIONS"
+    },
+    {
+      "status": 204,
+      "header:allow": "GET, HEAD, PUT, PATCH, DELETE, OPTIONS"
+    },
+    {
+      "status": 204,
+      "header:allow": "GET, HEAD, OPTIONS"
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404",
+      "header:allow": null
+    },
+    {
+      "status": 415,
+      "errors.0.status": "415"
+    },
+    {
+      "status": 406,
+      "errors.0.status": "406"
+    },
+    {
+      "status": 400,
+      "errors.0.status": "400"
+    },
+    {
+      "status": 400,
+      "errors.0.status": "400",
+      "errors.0.source.parameter": "data.attributes.kind"
+    }
+  ]
+}

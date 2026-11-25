@@ -3,7 +3,7 @@ import type { Row } from '../database.ts'
 import { badRequest, forbidden, notFound } from '../errors.ts'
 import type { ResourceMeta } from '../registry.ts'
 import { joinForeignKeys } from '../../db/views.ts'
-import { writeScope } from '../scope.ts'
+import { readScope, writeScope } from '../scope.ts'
 import { exists, insert, remove, update } from '../sql.ts'
 import { uuidToBuffer } from '../uuid.ts'
 import { idToDb, keyCondition } from '../ids.ts'
@@ -19,6 +19,20 @@ export const exposedRelations =
       ([, relation]) =>
         relation.exposed !== false
         && (cardinality === undefined || relation.cardinality === cardinality))
+
+/**
+ * The error for a related row the writer may not link to: 403 when they can
+ * read it, 404 when they cannot, so an unreadable row stays invisible.
+ */
+const notLinkable =
+  async (context: MutationContext, table: string, id: string) => {
+    const target = context.registry.get(table)
+    const readable =
+      target && await readResourceRow(context.db, target, id, readScope(viewerIn(context), target, context.registry))
+    return readable
+      ? forbidden(`You may read ${table} "${id}" but not link to it`)
+      : notFound(`Related ${table} "${id}" was not found`)
+  }
 
 export const assertRelationshipTargets =
   async (
@@ -36,7 +50,7 @@ export const assertRelationshipTargets =
         if (parent) {
           if (!await readResourceRow(
             context.db, parent, id, writeScope(viewerIn(context), parent)))
-            throw notFound(`Related ${relation.table} "${id}" was not found`)
+            throw await notLinkable(context, relation.table, id)
           continue
         }
         const condition =
@@ -46,7 +60,7 @@ export const assertRelationshipTargets =
         const target = context.built.orderedTables.find(x => x.tableName === relation.table)!
         if (!await exists(
           context.db, relation.table, { ...keyCondition(target, id), ...condition }))
-          throw notFound(`Related ${relation.table} "${id}" was not found`)
+          throw await notLinkable(context, relation.table, id)
       }
     }
   }

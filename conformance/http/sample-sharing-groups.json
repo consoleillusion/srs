@@ -1,0 +1,340 @@
+{
+  "description": "Group shares reach members while they are members; shares apply only to shared rows",
+  "operation": "http.session",
+  "input": {
+    "schemaDir": "src/schema",
+    "users": [
+      "alice",
+      "bob",
+      "carol"
+    ],
+    "steps": [
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/note",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "note",
+            "attributes": {
+              "title": "Team plan",
+              "visibility": "shared"
+            }
+          }
+        },
+        "save": {
+          "n": "data.id"
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/user_group",
+        "body": {
+          "data": {
+            "type": "user_group",
+            "attributes": {
+              "name": "team"
+            },
+            "relationships": {
+              "users": {
+                "data": [
+                  {
+                    "type": "user",
+                    "id": "{{bob}}"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "save": {
+          "g": "data.id"
+        },
+        "select": []
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/user_group/{{g}}/relationships/users",
+        "select": [
+          "data.length"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/note_share",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "note_share",
+            "attributes": {
+              "can_read": true
+            },
+            "relationships": {
+              "note": {
+                "data": {
+                  "type": "note",
+                  "id": "{{n}}"
+                }
+              },
+              "user_group": {
+                "data": {
+                  "type": "user_group",
+                  "id": "{{g}}"
+                }
+              }
+            }
+          }
+        },
+        "save": {
+          "s": "data.id"
+        }
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/note/{{n}}",
+        "select": [
+          "data.attributes.title"
+        ]
+      },
+      {
+        "as": "carol",
+        "method": "GET",
+        "path": "/note/{{n}}",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "bob",
+        "method": "PATCH",
+        "path": "/user_group/{{g}}/relationships/users",
+        "body": {
+          "data": [
+            {
+              "type": "user",
+              "id": "{{carol}}"
+            }
+          ]
+        },
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/note_share/{{s}}",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/note/{{n}}",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "note",
+            "id": "{{n}}",
+            "attributes": {
+              "visibility": "private"
+            }
+          }
+        }
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/note/{{n}}",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/note/{{n}}",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "note",
+            "id": "{{n}}",
+            "attributes": {
+              "visibility": "shared"
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/user_group/{{g}}/relationships/users",
+        "body": {
+          "data": []
+        },
+        "select": [
+          "data.length"
+        ]
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/note/{{n}}",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/note_share",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "note_share",
+            "attributes": {
+              "can_read": false,
+              "can_write": false
+            },
+            "relationships": {
+              "note": {
+                "data": {
+                  "type": "note",
+                  "id": "{{n}}"
+                }
+              },
+              "user": {
+                "data": {
+                  "type": "user",
+                  "id": "{{bob}}"
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/note_share",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "note_share",
+            "attributes": {
+              "can_read": true
+            },
+            "relationships": {
+              "note": {
+                "data": {
+                  "type": "note",
+                  "id": "{{n}}"
+                }
+              },
+              "user": {
+                "data": {
+                  "type": "user",
+                  "id": "{{bob}}"
+                }
+              },
+              "user_group": {
+                "data": {
+                  "type": "user_group",
+                  "id": "{{g}}"
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "as": "alice",
+        "method": "DELETE",
+        "path": "/note/{{n}}",
+        "select": []
+      },
+      {
+        "as": "alice",
+        "method": "GET",
+        "path": "/note_share/{{s}}",
+        "select": [
+          "errors.0.status"
+        ]
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 201
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 200,
+      "data.length": 1
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 200,
+      "data.attributes.title": "Team plan"
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 200
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 200
+    },
+    {
+      "status": 200,
+      "data.length": 0
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 409,
+      "errors.0.status": "409"
+    },
+    {
+      "status": 409,
+      "errors.0.status": "409"
+    },
+    {
+      "status": 204
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    }
+  ]
+}

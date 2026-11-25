@@ -1,0 +1,234 @@
+{
+  "description": "Public, authenticated and private rows, anonymous reads, and invalid visibility values",
+  "operation": "http.session",
+  "input": {
+    "schemaDir": "src/schema",
+    "users": [
+      "alice",
+      "bob"
+    ],
+    "steps": [
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/tag",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "tag",
+            "attributes": {
+              "name": "open",
+              "visibility": "public"
+            }
+          }
+        },
+        "save": {
+          "pub": "data.id"
+        }
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/tag",
+        "select": [
+          "data.attributes.visibility"
+        ],
+        "body": {
+          "data": {
+            "type": "tag",
+            "attributes": {
+              "name": "closed"
+            }
+          }
+        },
+        "save": {
+          "priv": "data.id"
+        }
+      },
+      {
+        "as": null,
+        "method": "GET",
+        "path": "/tag",
+        "select": [
+          "meta.page.total",
+          "data.0.attributes.name"
+        ]
+      },
+      {
+        "as": null,
+        "method": "GET",
+        "path": "/tag/{{priv}}",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": null,
+        "method": "POST",
+        "path": "/tag",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "tag",
+            "attributes": {
+              "name": "anon"
+            }
+          }
+        }
+      },
+      {
+        "as": null,
+        "method": "PATCH",
+        "path": "/tag/{{pub}}",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "tag",
+            "id": "{{pub}}",
+            "attributes": {
+              "name": "x"
+            }
+          }
+        }
+      },
+      {
+        "as": null,
+        "method": "GET",
+        "path": "/article",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "POST",
+        "path": "/article",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "article",
+            "attributes": {
+              "heading": "For members",
+              "visibility": "authenticated"
+            }
+          }
+        },
+        "save": {
+          "a": "data.id"
+        }
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/article/{{a}}",
+        "select": [
+          "data.attributes.heading"
+        ]
+      },
+      {
+        "as": null,
+        "method": "GET",
+        "path": "/article/{{a}}",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/article/{{a}}",
+        "select": [],
+        "body": {
+          "data": {
+            "type": "article",
+            "id": "{{a}}",
+            "attributes": {
+              "visibility": "private"
+            }
+          }
+        }
+      },
+      {
+        "as": "bob",
+        "method": "GET",
+        "path": "/article/{{a}}",
+        "select": [
+          "errors.0.status"
+        ]
+      },
+      {
+        "as": "alice",
+        "method": "PATCH",
+        "path": "/article/{{a}}",
+        "select": [
+          "errors.0.status"
+        ],
+        "body": {
+          "data": {
+            "type": "article",
+            "id": "{{a}}",
+            "attributes": {
+              "visibility": "everyone"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "output": [
+    {
+      "status": 201
+    },
+    {
+      "status": 201,
+      "data.attributes.visibility": "private"
+    },
+    {
+      "status": 200,
+      "meta.page.total": 1,
+      "data.0.attributes.name": "open"
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 401,
+      "errors.0.status": "401"
+    },
+    {
+      "status": 401,
+      "errors.0.status": "401"
+    },
+    {
+      "status": 401,
+      "errors.0.status": "401"
+    },
+    {
+      "status": 201
+    },
+    {
+      "status": 200,
+      "data.attributes.heading": "For members"
+    },
+    {
+      "status": 401,
+      "errors.0.status": "401"
+    },
+    {
+      "status": 200
+    },
+    {
+      "status": 404,
+      "errors.0.status": "404"
+    },
+    {
+      "status": 400,
+      "errors.0.status": "400"
+    }
+  ]
+}
