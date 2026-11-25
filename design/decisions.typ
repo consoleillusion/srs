@@ -58,4 +58,6 @@ Add a row before changing a design rule. When a rule is replaced, mark its row
   [D048], [An existing database is imported as schemas plus a copy of its rows, not served in place], [SRS needs its own columns and tables on every resource; adding them to a live database other programs use could break them, and the source stays read-only],
   [D049], [The database is chosen by `SRS_DATABASE_URL` and `SRS_DATABASE_TOKEN`; embedded SQLite is the default], [One setting to move to a hosted database, and no external service needed to start],
   [D050], [The `console` command serves a separate page on its own port, reaching the server through CORS], [The API server serves no HTML, and the page is the same client any browser application would use],
+  [D051], [JSON:API 1.1, Dhall schemas and post-quantum cryptography come after the Rust migration], [Each is easier to build once, in Rust, than twice; post-quantum is a new wire format and so v2.0],
+  [D052], [Post-quantum changes are hybrid, never post-quantum alone], [The post-quantum algorithms are young; hybrid keeps today's security if they are broken and adds protection if they are not],
 )

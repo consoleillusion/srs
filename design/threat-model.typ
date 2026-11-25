@@ -54,3 +54,7 @@ first contact.
 - *Denial of service.* An active attacker can always drop traffic.
 - *Registration before the key is pinned.* Pinning is the trust anchor; a
   client given a wrong fingerprint talks to whoever holds that key.
+- *A quantum computer.* X25519, Ed25519 and OPAQUE are classical. Someone who
+  records traffic today could decrypt it once a large quantum computer exists,
+  and such a computer could forge signatures. Hybrid post-quantum algorithms
+  are planned for v2.0 (@roadmap).

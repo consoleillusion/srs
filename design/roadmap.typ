@@ -37,6 +37,8 @@ Status: *Implemented* — this is the live list of work.
   [v1.0], [Stable TypeScript release], [Later],
   [v1.1], [Rust, piece by piece], [Later],
   [v1.2], [Pluggable databases], [Later],
+  [v1.3], [JSON:API 1.1 and Dhall schemas], [Later],
+  [v2.0], [Post-quantum cryptography], [Later],
 )
 
 === v0.1 — Core
@@ -166,4 +168,33 @@ Order and switching rules in @implementation. Starts after v1.0.0.
   [v1.2.3], [MySQL], [Every suite passes against MySQL.], [Later],
   [v1.2.4], [Several processes], [Open: shared replay windows, channel state and rate limits are designed before this is built.], [Open],
   [v1.2.5], [Import from other databases], [the `import` command reads PostgreSQL and MySQL sources, by URL.], [Later],
+)
+
+=== v1.3 — JSON:API 1.1 and Dhall schemas
+
+Additions only: clients of the 1.0 API keep working. Starts after v1.1.
+
+#table(
+  columns: (auto, 1fr, 1.3fr, auto),
+  table.header([*Version*], [*Task*], [*Done when*], [*State*]),
+  [v1.3.0], [JSON:API 1.1], [The server reports `jsonapi.version` `1.1`; accepts the `ext` and `profile` media type parameters and answers 415 or 406 for extensions it does not support, as 1.1 requires; accepts `lid` in create documents so a request can refer to a resource it creates; the HTTP suite covers each.], [Later],
+  [v1.3.1], [Atomic operations], [The atomic operations extension (`https://jsonapi.org/ext/atomic`): several creates, updates and deletes in one request, applied in one transaction, each checked against access rules and audited, with `lid` references between them.], [Later],
+  [v1.3.2], [Dhall schema files], [`.dhall` files are read beside `.json` and `.yaml`, evaluated to JSON Schema and checked by the meta-schema; a typed Dhall package for SRS keywords (`x-access`, `x-relations`, …) lets mistakes fail before `init`. The schema fingerprint covers the evaluated schema, so formatting changes do not force a migration.], [Later],
+)
+
+=== v2.0 — Post-quantum cryptography
+
+A new wire format, so a major version: `srs-noise-v2`, `srs-cert-v2` and
+`srs-req-v2`. Every change is hybrid: a classical and a post-quantum
+algorithm are combined, so the result is no weaker than today if either one
+is broken. Starts after v1.1, in the Rust protocol crate, with the TypeScript
+client following through WebAssembly.
+
+#table(
+  columns: (auto, 1fr, 1.3fr, auto),
+  table.header([*Version*], [*Task*], [*Done when*], [*State*]),
+  [v2.0.0], [Hybrid transport], [The handshake adds an ML-KEM-768 exchange to X25519 (a hybrid NK pattern, following PQNoise and the Noise hybrid forward-secrecy patterns), with the server's ML-KEM key in its key bundle and fingerprint. Recorded traffic stays confidential against a future quantum computer. Conformance cases cover it.], [Later],
+  [v2.0.1], [Hybrid signatures], [Identity, session and server keys become Ed25519 plus ML-DSA-65 pairs; a signature verifies only if both parts do. The cost, measured and recorded: an ML-DSA-65 signature is 3,309 bytes on every signed request and on every retained write.], [Later],
+  [v2.0.2], [Hybrid key rotation], [A server moves from a classical to a hybrid key bundle through a signed transition (@server-key-rotation), so pinned clients follow without repinning.], [Later],
+  [v2.0.3], [Post-quantum passwords], [Open: OPAQUE is classical. Its messages already travel inside the hybrid channel, so recorded logins stay confidential, but it is not secure against an active quantum attacker. Replace it once a post-quantum asymmetric PAKE is standardised (the CFRG draft CPaceOQUAKE+ is a candidate) and has a maintained implementation.], [Open],
 )
