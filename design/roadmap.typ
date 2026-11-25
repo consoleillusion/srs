@@ -142,6 +142,7 @@ Defined in @implementation. Protocol fixtures are written during v0.3.
   [v0.6.5], [Required to-many relations], [`required: true` on a `many` relation keeps at least one member.], [Done],
   [v0.6.6], [Mount path], [Links and bearer signatures include the path the API is mounted under; the package exports `createServerApp`, `openDatabase` and `applyMigrations`.], [Done],
   [v0.6.7], [Properties without a type], [A property declared only by `oneOf`, `anyOf` or `$ref` is stored as JSON; ids and session keys use no Bun-only APIs, so the serverless handler runs on Node.], [Done],
+  [v0.6.8], [Bundlers], [Module paths come from `import.meta.url`, so SRS loads under Vite and Node bundles, such as an Astro site that mounts it.], [Done],
 )
 
 === v1.0 — Stable TypeScript release

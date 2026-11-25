@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { buildSchema } from './build-schema.ts'
@@ -40,7 +41,7 @@ export const generateMigrations =
 
 if (import.meta.main) {
   const loaded = await loadSchemas({ schemaDir: process.env.SCHEMA_DIR })
-  generateMigrations(join(import.meta.dir, '../../.migrations'), loaded).catch(error => {
+  generateMigrations(fileURLToPath(new URL('../../.migrations', import.meta.url)), loaded).catch(error => {
     console.error(error)
     process.exitCode = 1
   })

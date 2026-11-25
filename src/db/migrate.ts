@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { BREAKPOINT } from './migration-plan.ts'
@@ -19,7 +20,7 @@ export type MigrationConnection = {
   prepare: (sql: string) => Promise<MigrationStatement>
 }
 
-export const migrationsFolder = join(import.meta.dir, '../../.migrations')
+export const migrationsFolder = fileURLToPath(new URL('../../.migrations', import.meta.url))
 
 /** Apply every migration not yet recorded in the database, each in one transaction. */
 export const applyMigrations =

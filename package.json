@@ -1,6 +1,6 @@
 {
   "name": "srs",
-  "version": "0.6.7",
+  "version": "0.6.8",
   "description": "JSON Schema in, JSON:API server out (Bun, Hono, Turso/SQLite)",
   "type": "module",
   "bin": {
