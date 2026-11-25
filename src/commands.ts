@@ -251,3 +251,71 @@ export const consolePage =
       + `\n  SRS_CORS_ORIGINS=${origin}\n`
       + '\nThen open the page, enter the server URL and the fingerprint printed by init, and connect.')
   }
+
+/**
+ * Plan an import from an existing SQLite database: write one schema per table,
+ * and a report of what could not be carried over (design book, Existing databases).
+ *
+ * @param options - The source file, the folder for the schemas, whether to replace files there, and where to write the report.
+ */
+export const importSchemas =
+  async (options: { file: string, out: string, force?: boolean, report?: string }) => {
+    const { planImport } = await import('./db/import.ts')
+    const { stringify } = await import('yaml')
+    const { mkdir, writeFile, access } = await import('node:fs/promises')
+    const plan = planImport(resolve(options.file))
+    const out = resolve(options.out)
+    await mkdir(out, { recursive: true })
+    for (const table of plan.tables) {
+      const path = join(out, `${table.target}.yaml`)
+      if (!options.force && await access(path).then(() => true, () => false))
+        throw new Error(`${path} exists. Use --force to replace it, or another --out folder.`)
+    }
+    for (const table of plan.tables)
+      await writeFile(join(out, `${table.target}.yaml`), stringify(table.schema, { lineWidth: 0 }))
+    const report =
+      `# Import report\n\nSource: ${resolve(options.file)}\n\n`
+      + `${plan.tables.length} tables: ${plan.tables.map(x => x.target).join(', ')}\n\n`
+      + (plan.notes.length ? plan.notes.map(x => `- ${x}`).join('\n') + '\n' : 'Everything was carried over.\n')
+    // Beside the schema folder, not in it: the folder holds schema files only.
+    await writeFile(resolve(options.report ?? 'import-report.md'), report)
+    console.log(report)
+    console.log(
+      `Wrote ${plan.tables.length} schemas to ${out}, and this report to import-report.md.\nReview the schemas (add x-access rules), then:\n`
+      + `\n  ${invocation()} init ${relative(process.cwd(), out) || '.'}`
+      + `\n  ${invocation()} serve            # register the user who will own the rows, then stop it`
+      + `\n  ${invocation()} import ${options.file} --data --owner <username>`)
+  }
+
+/**
+ * Copy the rows of an existing SQLite database into the SRS database built
+ * from its imported schemas. The server must be stopped.
+ *
+ * @param options - The source file, the owning username, and the project folder.
+ */
+export const importData =
+  async (options: { file: string, owner: string, dir?: string }) => {
+    const { planImport, copyRows } = await import('./db/import.ts')
+    const { applyMigrations } = await import('./db/migrate.ts')
+    const { buildSchema } = await import('./db/build-schema.ts')
+    const { canonicalUuid } = await import('./server/uuid.ts')
+    const dir = resolve(options.dir ?? defaultDir)
+    const config = await readConfig(dir)
+    const loaded = await loadSchemas({ schemaDir: config.schemas })
+    if (schemaHash(loaded) !== config.schemaHash)
+      throw new Error(`The schemas changed since init. Run \`${invocation()} init ${config.schemas.join(' ')}\` again first.`)
+    const db = await openDatabase()
+    try {
+      await applyMigrations(db, join(dir, 'migrations'))
+      const rows = createRowDatabase(db)
+      const user = await rows.get('SELECT `id` FROM `user` WHERE lower(`username`) = lower(?)', [options.owner])
+      if (!user)
+        throw new Error(`No user "${options.owner}". Start the server, register that user, stop the server, and run this again.`)
+      const counts =
+        await copyRows(resolve(options.file), planImport(resolve(options.file)), rows, buildSchema(loaded).orderedTables, canonicalUuid(user.id))
+      for (const [table, count] of Object.entries(counts)) console.log(`${table}: ${count} rows`)
+      console.log(`\nImported into ${resolve(process.env.DB_PATH ?? '.db')}, owned by ${options.owner}.`)
+    } finally {
+      await db.close()
+    }
+  }

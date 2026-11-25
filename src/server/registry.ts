@@ -1,4 +1,5 @@
 import type { BuiltSchema, TableDef } from '../db/schema-types.ts'
+import { apiName } from '../db/views.ts'
 
 export type RelationshipMeta =
   { label: string
@@ -6,6 +7,8 @@ export type RelationshipMeta =
   , table: string
   , type: string
   , linkAny: boolean
+  /** The related table, whose key decides what its ids look like. */
+  , target: TableDef
   }
 
 export type ResourceMeta =
@@ -30,6 +33,7 @@ export type Registry =
 export const buildRegistry =
   (built: BuiltSchema): Registry => {
     const resources = new Map<string, ResourceMeta>()
+    const tablesByName = new Map(built.orderedTables.map(x => [x.tableName, x]))
     const exposedTables =
       new Set(
         built.orderedTables.filter(x => x.exposed).map(x => x.tableName))
@@ -68,7 +72,7 @@ export const buildRegistry =
               column =>
                 column.exposed
                 && !hiddenRelationForeignKeys.has(column.columnName))
-            .map(column => column.columnName)
+            .map(column => apiName(table, column))
         const attributes =
           columns.filter(
             x =>
@@ -85,6 +89,7 @@ export const buildRegistry =
                 , table: relation.table
                 , type: relation.table
                 , linkAny: relation['x-link-any'] === true
+                , target: tablesByName.get(relation.table)!
                 }
               ])))
 

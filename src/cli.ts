@@ -4,7 +4,7 @@ import { config } from 'dotenv'
 
 config({ quiet: true })
 
-const { backup, consolePage, defaultDir, init, invocation, restore, rotateKeys, serve, verifySignatures } = await import('./commands.ts')
+const { backup, consolePage, defaultDir, importData, importSchemas, init, invocation, restore, rotateKeys, serve, verifySignatures } = await import('./commands.ts')
 
 const srs = invocation()
 const usage = `${srs}: JSON Schema in, JSON:API server out
@@ -20,6 +20,14 @@ const usage = `${srs}: JSON Schema in, JSON:API server out
 
   ${srs} backup <file>
       Write a verified copy of the database (DB_PATH). Needs the server stopped.
+
+  ${srs} import <file.db> [--out schemas] [--force]
+      Read an existing SQLite database and write one schema per table, keeping
+      its keys and foreign keys, and import-report.md. The file is only read.
+
+  ${srs} import <file.db> --data --owner <username> [--dir .srs]
+      Copy the rows into the database built from those schemas (after init and
+      registering the owner). The server must be stopped.
 
   ${srs} console [--port 5735] [--host 127.0.0.1]
       Serve a browser page for using a server: connect with its fingerprint,
@@ -50,6 +58,9 @@ const main =
           , force: { type: 'boolean' }
           , days: { type: 'string' }
           , host: { type: 'string' }
+          , out: { type: 'string' }
+          , owner: { type: 'string' }
+          , data: { type: 'boolean' }
           , help: { type: 'boolean', short: 'h' }
           }
         })
@@ -62,6 +73,15 @@ const main =
         , port: values.port === undefined ? undefined : Number(values.port)
         })
     if (command === 'verify-signatures') return verifySignatures()
+    if (command === 'import') {
+      const file = positionals[1]
+      if (!file) throw new Error(`Give import a database file, e.g. \`${srs} import shop.db\``)
+      if (values.data) {
+        if (!values.owner) throw new Error('import --data needs --owner <username>')
+        return importData({ file, owner: values.owner, dir: values.dir })
+      }
+      return importSchemas({ file, out: values.out ?? 'schemas', force: values.force })
+    }
     if (command === 'console')
       return consolePage({ port: values.port === undefined ? undefined : Number(values.port), host: values.host })
     if (command === 'rotate-keys') return rotateKeys({ days: values.days === undefined ? undefined : Number(values.days) })

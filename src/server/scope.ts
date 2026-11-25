@@ -1,6 +1,8 @@
 import type { AppContext, Next } from './context.ts'
 import type { Operation } from '../db/schema-types.ts'
-import { quote, uuidString } from '../db/views.ts'
+import { quote } from '../db/views.ts'
+import type { TableDef } from '../db/schema-types.ts'
+import { idSql } from './ids.ts'
 import type { Row, RowDatabase } from './database.ts'
 import type { Registry, ResourceMeta } from './registry.ts'
 import { uuidToBuffer } from './uuid.ts'
@@ -45,12 +47,13 @@ export const granted =
 
 /** SQL that is true when a share grants this user (or one of their groups) the permission. */
 const sharedWith =
-  (table: string, idSql: string, userId: string, grant: Grant): Scope => {
+  (definition: TableDef, rowId: string, userId: string, grant: Grant): Scope => {
     const user = uuidToBuffer(userId)
+    const table = definition.tableName
     return (
       { sql:
           `EXISTS (SELECT 1 FROM ${quote(`${table}_share`)} AS \`s\``
-          + ` WHERE ${uuidString(`\`s\`.${quote(`${table}_id`)}`)} = ${idSql}`
+          + ` WHERE ${idSql(definition, 's', `${table}_id`)} = ${rowId}`
           + ` AND \`s\`.${quote(grant)}`
           + ' AND (`s`.`user_id` = ? OR `s`.`user_group_id` IN'
           + ' (SELECT `m`.`user_group_id` FROM `user_group_membership` AS `m`'
@@ -90,7 +93,7 @@ export const readScope =
         })
       if (resource.access.shareable) {
         const shared =
-          sharedWith(resource.table, `${a}.\`id\``, viewer.userId, 'can_read')
+          sharedWith(resource.definition, `${a}.\`id\``, viewer.userId, 'can_read')
         scopes.push(
           { sql: `(${a}.\`visibility\` = 'shared' AND ${shared.sql})`
           , params: shared.params
@@ -130,7 +133,7 @@ export const writeScope =
     const scopes: Scope[] = [{ sql: `${a}.\`owner\` = ?`, params: [viewer.userId] }]
     if (resource.access.shareable)
       scopes.push(
-        sharedWith(resource.table, `${a}.\`id\``, viewer.userId, 'can_write'))
+        sharedWith(resource.definition, `${a}.\`id\``, viewer.userId, 'can_write'))
     return anyOf(scopes)
   }
 

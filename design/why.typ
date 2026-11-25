@@ -64,9 +64,9 @@ the user's password unlocks.
   accounts, ready for a web or mobile front end. The same server carries the
   project from prototype to production without a rewrite.
 - *An API over an existing database.* Import the tables of a database as
-  schemas (@existing-databases); SRS adds its own columns, tables and views and
-  serves the data, private, shared or public, with access control from the
-  first request. *Specified.*
+  schemas (@existing-databases), keeping their keys; SRS adds its own columns,
+  tables and views and serves the data, private, shared or public, with access
+  control from the first request. SQLite sources today.
 - *Internal tools and home labs.* Inventory, booking, asset and runbook tools
   on a local network, without setting up TLS.
 - *Devices and sensors.* Give each device its own account; readings arrive

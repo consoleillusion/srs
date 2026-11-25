@@ -1,9 +1,10 @@
 import type { Row } from '../database.ts'
-import { forbidden, notFound } from '../errors.ts'
+import { badRequest, forbidden, notFound } from '../errors.ts'
+import { idFromDb, idKindOf, idToDb, keyCondition } from '../ids.ts'
 import type { ResourceMeta } from '../registry.ts'
 import { deleteScope, granted, writeScope } from '../scope.ts'
 import { insert, remove, update } from '../sql.ts'
-import { canonicalUuid, uuidToBuffer } from '../uuid.ts'
+import { uuidToBuffer } from '../uuid.ts'
 import { type MutationContext, viewerIn, type WriteDocument } from './types.ts'
 import { assertRequiredAttributes, attributeAssignments, foreignKeyAssignments, writeError } from './assign.ts'
 import { readResourceRow } from './row.ts'
@@ -29,8 +30,12 @@ export const createResource =
       resource, new Set(Object.keys(document.attributes)))
     await assertRelationshipTargets(context, resource, document)
 
+    const table = resource.definition
+    // A text key has no generator: the client names the row.
+    if (!document.id && idKindOf(table) === 'string')
+      throw badRequest(`"${resource.type}" rows are named by the client: send "data.id"`, 'data.id')
     const assignments =
-      { ...(document.id ? { id: uuidToBuffer(document.id) } : {})
+      { ...(document.id ? keyCondition(table, document.id) : {})
       , ...await attributeAssignments(context, resource, document, 'create')
       , ...(context.userId !== undefined
           ? { owner: uuidToBuffer(context.userId) }
@@ -40,12 +45,12 @@ export const createResource =
 
     let inserted: Row | undefined
     try {
-      inserted = await insert(context.db, resource.table, assignments)
+      inserted = await insert(context.db, resource.table, assignments, table.idColumn)
     } catch (error) {
       throw writeError(error)
     }
 
-    const id = canonicalUuid(inserted?.id)
+    const id = idFromDb(table, inserted?.[table.idColumn])
     await replaceManyRelationships(context, resource, id, document, 'create')
     return id
   }
@@ -78,7 +83,7 @@ export const updateResource =
     if (Object.keys(assignments).length > 0) {
       try {
         await update(
-          context.db, resource.table, assignments, { id: uuidToBuffer(id) })
+          context.db, resource.table, assignments, keyCondition(resource.definition, id))
       } catch (error) {
         throw writeError(error)
       }
@@ -97,7 +102,7 @@ export const deleteResource =
     if (!existing)
       throw notFound(`Resource "${resource.type}" with id "${id}" was not found`)
 
-    const idBuffer = uuidToBuffer(id)
+    const key = idToDb(resource.definition, id)
 
     for (const table of context.built.orderedTables) {
       if (!table.derived) continue
@@ -105,12 +110,12 @@ export const deleteResource =
       for (const foreignKey of table.foreignKeys) {
         if (foreignKey.foreignTable !== resource.table) continue
         await remove(
-          context.db, table.tableName, { [foreignKey.columns[0]!]: idBuffer })
+          context.db, table.tableName, { [foreignKey.columns[0]!]: key })
       }
     }
 
     try {
-      await remove(context.db, resource.table, { id: idBuffer })
+      await remove(context.db, resource.table, keyCondition(resource.definition, id))
     } catch (error) {
       throw writeError(error)
     }

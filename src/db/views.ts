@@ -39,15 +39,25 @@ export const jsonValue =
 
 const LIGHT_COLUMNS = ['id', 'owner', 'visibility']
 
+/**
+ * The name a column has in views and documents: the key column is always `id`.
+ *
+ * @param table - The column's table.
+ * @param column - The column.
+ */
+export const apiName =
+  (table: TableDef, column: ColumnDef) =>
+    column.columnName === table.idColumn ? 'id' : column.columnName
+
 /** JSON object of a row's exposed columns (light: only what linkage and access checks need). */
 export const jsonObject =
   (table: TableDef, alias: string, light = false) => {
     const args = table.columns
       .filter(column =>
-        column.exposed && (!light || LIGHT_COLUMNS.includes(column.columnName)))
+        column.exposed && (!light || LIGHT_COLUMNS.includes(apiName(table, column))))
       .flatMap(
         column =>
-          [ literal(column.columnName)
+          [ literal(apiName(table, column))
           , jsonValue(column, reference(alias, column.columnName))
           ])
     return `json_object(${args.join(', ')})`
@@ -85,7 +95,7 @@ const groupedSelect =
     + ` FROM ${quote(target.tableName)} AS ${quote('r')}`
     + joinSql
     + ` WHERE ${whereSql}`
-    + ` ORDER BY ${reference('r', 'id')})`
+    + ` ORDER BY ${reference('r', target.idColumn)})`
 
 export const foreignKeyColumnOf =
   (relation: RelationConfig) =>
@@ -173,7 +183,7 @@ export const selectSql =
         .filter(column => column.exposed)
         .map(
           column =>
-            `${viewValue(column, 't')} AS ${quote(column.columnName)}`),
+            `${viewValue(column, 't')} AS ${quote(apiName(table, column))}`),
       ...relationEntries.map(
         ([label, relation]) =>
           (relation.cardinality === 'one' ? oneExpression : manyExpression)(

@@ -127,7 +127,7 @@ export const createServices =
                 , { actor: user ? uuidToBuffer(user) : null
                   , action: operation
                   , resource: resource.type
-                  , resource_id: uuidToBuffer(id)
+                  , resource_id: id
                   , ...(retained
                       ? retainedSignature(inner!)
                       : { signature: c.get('signed') ? c.req.header(SIGNATURE_HEADER) ?? null : null })

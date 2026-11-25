@@ -29,9 +29,9 @@ Status: *Implemented* — this is the live list of work.
   columns: (auto, 1fr, auto),
   table.header([*Series*], [*Goal*], [*State*]),
   [v0.1], [Core: schema to tables, views, migrations, JSON:API, OPAQUE accounts, access control], [Done],
-  [v0.2], [Production hardening of the current server], [In progress (`v0.2.0` done)],
+  [v0.2], [Production hardening of the current server], [In progress (v0.2.3 left)],
   [v0.3], [Secure transport and accountable accounts, in TypeScript], [Done],
-  [v0.4], [Schema authoring workflow and existing databases], [In progress],
+  [v0.4], [Schema authoring workflow and existing databases], [Done],
   [v0.5], [Conformance suites], [In progress],
   [v0.6], [Wire-format freeze and real use], [Later],
   [v1.0], [Stable TypeScript release], [Later],
@@ -108,8 +108,9 @@ Makes adding a resource reliable for people and AI models. Independent of v0.3.
   [v0.4.2], [Schema catalog], [The resource catalog at `GET /` describes each resource's attributes and relations.], [Done],
   [v0.4.3], [Templates], [Example schemas for common patterns (owned notes, shared documents, public catalog, chat with inherited messages) with tests that load them.], [Done],
   [v0.4.4], [Schema change guidance], [The schema reference explains which changes rebuild tables and which lose data.], [Done],
-  [v0.4.5], [Import schemas from SQLite], [`bun src/cli.ts import <file.db> --out schemas` writes one schema per table following the mapping in @existing-databases, with a report of what it could not map; the written schemas pass the meta-schema and the `init` command.], [Next],
-  [v0.4.6], [Import rows], [`import --data` copies rows into the SRS database in one transaction: new ids, `source_id` kept, foreign keys rewritten, rows owned by `--owner`. The source is opened read-only.], [Later],
+  [v0.4.5], [Declared keys], [A property marked `x-primary` replaces the generated `id`: integer keys are assigned by the database, text keys are chosen by the client, and relations, shares, filters and the audit log use the key (`spec/declared-keys.test.ts`).], [Done],
+  [v0.4.6], [Import schemas from SQLite], [`bun src/cli.ts import <file.db> --out schemas` writes one schema per table following the mapping in @existing-databases, keeping keys with `x-primary`, and `import-report.md` listing what it could not carry over; the written schemas pass the meta-schema and `init`, and building them again changes nothing (`spec/import.test.ts`).], [Done],
+  [v0.4.7], [Import rows], [`import --data` copies every row into the SRS database in one transaction, keeping keys and foreign keys as they are; every row is owned by `--owner`. The source is opened read-only.], [Done],
 )
 
 === v0.5 — Conformance suites

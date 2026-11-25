@@ -64,7 +64,7 @@ naming the schema and the property.
   [`x-unique`],
   [Unique constraint],
   [`x-primary`],
-  [Custom primary key marker],
+  [Marks the property that identifies rows, in place of the generated `id` (see _Keys_)],
   [`x-system`],
   [Always-loaded system schema],
   [`x-view` / `x-source`],
@@ -127,6 +127,38 @@ The builder injects these columns into every table when they are not declared:
 See @ref-data-model for their semantics. A schema may declare
 `id`, `updated_at`, or `owner` explicitly; the builder preserves the declared
 position and type rules. `owner` must remain a UUID column.
+
+=== Keys
+A table is keyed by its generated `id` unless one property is marked
+`x-primary: true`. That property then replaces `id`: it is the table's primary
+key, and its value is the resource id in URLs and documents.
+
+```yaml
+properties:
+  customer_no:
+    type: integer
+    x-primary: true
+```
+
+#table(
+  columns: (auto, 1fr, 1fr),
+  table.header([*Key type*], [*New rows*], [*Ids in the API*]),
+  [`integer`], [Assigned by the database (the next number) unless the client sends `data.id`], [Decimal digits as a string: `"42"`],
+  [`string`], [The client must send `data.id`; a duplicate is 409], [The text itself, 1 to 255 characters],
+  [`string`, `format: uuid`], [Generated, as for `id`], [A canonical UUID],
+)
+
+- The key is never an attribute: it appears only as the resource id, and the
+  catalog does not list it.
+- Relations, join tables, share tables, filters across relations and the
+  audit log all use the key. A `one` relation's `column` defaults to the target
+  table's key, and its foreign key column takes the key's type.
+- Because the key is in the schema file, building the same schemas again
+  always gives the same table: running `init` twice changes nothing.
+- Only one property can be `x-primary`, it must be an integer or a string
+  (`uuid` is the only format allowed), and the table cannot also have a column
+  named `id`.
+- Authored views need a base table keyed by `id`.
 
 === `x-exposed`
 `x-exposed` defaults to `true`. Setting it to `false` removes the declaration
@@ -455,7 +487,8 @@ Schema building fails when:
 - an inverse-one `many` relation uses `x-link-any`;
 - a unique constraint references an unknown column;
 - `x-exposed` is not a boolean;
-- `x-unique` or `x-primary` markers conflict with the generated defaults;
+- more than one property is `x-primary`, the key is not an integer or a
+  string, or a keyed table also has an `id` column;
 - an authored view is missing `x-source` or a property `x-source`;
 - an authored view path names a hidden table, column, or relation;
 - an authored view relation property names a relation reached through another

@@ -6,6 +6,7 @@ import { joinForeignKeys } from '../../db/views.ts'
 import { writeScope } from '../scope.ts'
 import { exists, insert, remove, update } from '../sql.ts'
 import { uuidToBuffer } from '../uuid.ts'
+import { idToDb, keyCondition } from '../ids.ts'
 import { type MutationContext, viewerIn, type WriteDocument, type Mode } from './types.ts'
 import { writeError, foreignKeyColumn } from './assign.ts'
 import { readResourceRow } from './row.ts'
@@ -42,8 +43,9 @@ export const assertRelationshipTargets =
           relation['x-link-any'] ? {}
           : context.userId !== undefined ? { owner: uuidToBuffer(context.userId) }
           : { visibility: 'public' }
+        const target = context.built.orderedTables.find(x => x.tableName === relation.table)!
         if (!await exists(
-          context.db, relation.table, { id: uuidToBuffer(id), ...condition }))
+          context.db, relation.table, { ...keyCondition(target, id), ...condition }))
           throw notFound(`Related ${relation.table} "${id}" was not found`)
       }
     }
@@ -73,7 +75,8 @@ const replaceManyRelationship =
 
       const sourceColumn = sourceForeignKey.columns[0]!
       const targetColumn = targetForeignKey.columns[0]!
-      const sourceBuffer = uuidToBuffer(sourceId)
+      const targetTable = context.built.orderedTables.find(x => x.tableName === relation.table)!
+      const sourceBuffer = idToDb(resource.definition, sourceId)
 
       await remove(context.db, join.tableName, { [sourceColumn]: sourceBuffer })
 
@@ -81,7 +84,7 @@ const replaceManyRelationship =
         await insert(
           context.db, join.tableName
           , { [sourceColumn]: sourceBuffer
-            , [targetColumn]: uuidToBuffer(targetId)
+            , [targetColumn]: idToDb(targetTable, targetId)
             // The link belongs to whoever made it.
             , ...(context.userId ? { owner: uuidToBuffer(context.userId) } : {})
             })
@@ -104,7 +107,7 @@ const replaceManyRelationship =
         + ' a join table or inverse one relation')
 
     const foreignKey = foreignKeyColumn(target, inverse)
-    const sourceBuffer = uuidToBuffer(sourceId)
+    const sourceBuffer = idToDb(resource.definition, sourceId)
 
     await update(
       context.db, target.tableName, { [foreignKey]: null }, { [foreignKey]: sourceBuffer })
@@ -112,7 +115,7 @@ const replaceManyRelationship =
     for (const targetId of targetIds)
       await update(
         context.db, target.tableName
-        , { [foreignKey]: sourceBuffer }, { id: uuidToBuffer(targetId) })
+        , { [foreignKey]: sourceBuffer }, keyCondition(target, targetId))
   }
 
 export const replaceManyRelationships =

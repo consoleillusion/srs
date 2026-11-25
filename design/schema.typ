@@ -13,7 +13,9 @@ generator derives everything else.
 - A schema `title` becomes a snake_case table name and resource type.
 - Table, column and relation names are snake_case.
 - Every table has `id` (a UUIDv7 stored as a 16-byte blob), `updated_at` and
-  `owner`. Exposed tables also have `visibility`.
+  `owner`. Exposed tables also have `visibility`. A property marked
+  `x-primary` replaces `id` as the key, so existing tables keep their own ids
+  (@ref-schema, _Keys_).
 - `one` relations add a foreign-key column when one is not declared.
 - `many` relations use a join table unless an inverse `one` relation exists.
 - `x-exposed: false` removes a table, column or relation from every API

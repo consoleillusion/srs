@@ -14,6 +14,18 @@ book names commands by their name alone (`init`, `serve`, `console`); the CLI
 prints its own correct invocation in its help and messages
 (`bun src/cli.ts --help`).
 
+#table(
+  columns: (auto, 1fr),
+  table.header([*Command*], [*Does*]),
+  [`init <schemas…>`], [Generate migrations, types and keys from schema folders (@migrations).],
+  [`serve`], [Apply migrations and serve the API.],
+  [`console`], [Serve the browser console (@ref-console).],
+  [`import <file.db>`], [Write schemas for an existing SQLite database; `--data --owner <username>` copies its rows (@existing-databases).],
+  [`backup <file>`, `restore <file>`], [Take or restore a verified backup (@operations).],
+  [`verify-signatures`], [Check every retained request signature.],
+  [`rotate-keys`], [Start a server key rotation (@server-key-rotation).],
+)
+
 === Trying it
 
 ```bash

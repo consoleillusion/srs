@@ -24,9 +24,9 @@ properties:
     description: Resource type acted on
     type: string
   resource_id:
-    description: Id of the row acted on
+    description: Id of the row acted on, as the API shows it
     type: string
-    format: uuid
+    maxLength: 255
   signature:
     description: Request signature, when the request was signed
     type: string

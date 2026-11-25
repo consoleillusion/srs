@@ -1,5 +1,6 @@
 import type { ColumnDef, TableDef } from '../db/schema-types.ts'
-import { quote, relationJoin, selectSql, uuidString } from '../db/views.ts'
+import { quote, relationJoin, selectSql } from '../db/views.ts'
+import { idSql } from './ids.ts'
 import type { Row, RowDatabase } from './database.ts'
 import { badRequest } from './errors.ts'
 import type { FilterField, ListQuery } from './query.ts'
@@ -119,7 +120,7 @@ const filterScope =
     const fromTable = relationSource(hop.from)
     const toTable = hop.to.view
     const correlated =
-      { sql: `${uuidString(`${quote(s)}.\`id\``)} = ${quote(alias)}.\`id\``, params: [] }
+      { sql: `${idSql(tables.get(fromTable)!, s)} = ${quote(alias)}.\`id\``, params: [] }
     const where = whereSql([correlated, readable, inner])
     return (
       { sql:
@@ -127,7 +128,7 @@ const filterScope =
           + relationJoin(
               hop.from.definition, relation, tables, s, t, j, fromTable)
           + ` JOIN ${quote(toTable)} AS ${quote(f)}`
-          + ` ON ${quote(f)}.\`id\` = ${uuidString(`${quote(t)}.\`id\``)}`
+          + ` ON ${quote(f)}.\`id\` = ${idSql(tables.get(relation.table)!, t)}`
           + `${where.sql})`
       , params: where.params
       })

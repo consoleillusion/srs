@@ -109,7 +109,7 @@ export const registerChannelLifecycle =
     const audit =
       async (tx: RowDatabase, action: string, actor: Uint8Array | null, subject: Uint8Array | null) => {
         if (options.audit)
-          await insert(tx, 'audit_log', { actor, action, resource: 'account', resource_id: subject })
+          await insert(tx, 'audit_log', { actor, action, resource: 'account', resource_id: subject ? canonicalUuid(subject) : null })
       }
 
     /** End logins in the database and drop their channels. */

@@ -6,7 +6,7 @@ const TIMESTAMP_DEFAULT =
   "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
 
 export const createUpdatedTrigger =
-  (tableName: string) => `
+  (tableName: string, idColumn = 'id') => `
 CREATE TRIGGER IF NOT EXISTS \`${tableName}_updated\`
 AFTER UPDATE ON \`${tableName}\`
 FOR EACH ROW
@@ -16,7 +16,7 @@ BEGIN
     SET updated_at = CAST(
       (julianday('now') - 2440587.5) * 86400000 AS INTEGER
     )
-    WHERE id = OLD.id;
+    WHERE ${idColumn === 'id' ? 'id = OLD.id' : `\`${idColumn}\` = OLD.\`${idColumn}\``};
 END;`.trim()
 
 /**
@@ -69,20 +69,20 @@ const typeOf =
 
 /** The SQLite declaration of a column built from a schema property. */
 export const buildColumn =
-  (key: string, property: JSONSchemaProperty, required: boolean): ColumnSql => {
+  (key: string, property: JSONSchemaProperty, required: boolean, isKey = snakeCase(key) === 'id'): ColumnSql => {
     const columnName = snakeCase(key)
-    const isId = columnName === 'id'
     const isUpdatedAt = columnName === 'updated_at'
+    // A uuid key is generated; an integer key is assigned by SQLite (it is the rowid); a text key comes from the client.
     const fallback =
-      isId ? UUID_DEFAULT : isUpdatedAt ? TIMESTAMP_DEFAULT : undefined
+      isKey && property.format === 'uuid' ? UUID_DEFAULT : isUpdatedAt ? TIMESTAMP_DEFAULT : undefined
     const declared =
       property.default === undefined ? undefined : defaultSql(property.default, property)
 
     return (
       { type: typeOf(property)
-      , notNull: required || isId || isUpdatedAt
-      , unique: property['x-unique'] === true
-      , primaryKey: property['x-primary'] === true || isId
+      , notNull: required || isUpdatedAt || (isKey && property.type !== 'integer')
+      , unique: property['x-unique'] === true && !isKey
+      , primaryKey: isKey
       , ...(declared ?? fallback ? { default: declared ?? fallback } : {})
       })
   }

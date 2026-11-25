@@ -3,7 +3,7 @@ import { innerOf, type AppContext, type Next } from '../context.ts'
 import type { RowDatabase } from '../database.ts'
 import { methodNotAllowed, unauthorized } from '../errors.ts'
 import type { Registry } from '../registry.ts'
-import { UUID_PATTERN, uuidToBuffer } from '../uuid.ts'
+import { uuidToBuffer } from '../uuid.ts'
 import { insert } from '../sql.ts'
 import { retainedSignature } from './services.ts'
 import { negotiate, operationOf } from './negotiate.ts'
@@ -93,7 +93,7 @@ export const createGuard =
             { actor: uuidToBuffer(c.get('userId') ?? '')
             , action: 'read'
             , resource: type
-            , resource_id: id && UUID_PATTERN.test(id) ? uuidToBuffer(id) : null
+            , resource_id: id ?? null
             , ...retainedSignature(inner)
             })
         }

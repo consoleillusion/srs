@@ -90,7 +90,7 @@ describe('links and document structure', () => {
     const id = await createArticleAs(alice, 'Hello', { tag: toMany('tag', [tag]) })
 
     const doc = await json(await alice.request('GET', `/article/${id}?include=tag`))
-    expect(doc.jsonapi).toEqual({ version: '1.1' })
+    expect(doc.jsonapi).toEqual({ version: '1.0' })
     expect(doc.links.self).toBe(`http://localhost/article/${id}?include=tag`)
     expect(doc.data.links.self).toBe(`http://localhost/article/${id}`)
     expect(doc.data.relationships.tag.links).toEqual(

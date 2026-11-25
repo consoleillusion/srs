@@ -132,6 +132,8 @@ export type ForeignKeyDef =
 export type TableDef =
   { key: string
   , tableName: string
+  /** The column that identifies rows: `id`, or the property marked `x-primary`. */
+  , idColumn: string
   , createSql: string
   , indexSql: string[]
   , schema: JSONSchema

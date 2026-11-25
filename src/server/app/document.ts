@@ -6,7 +6,7 @@ import type { ListQuery } from '../query.ts'
 export const JSON_API = 'application/vnd.api+json'
 
 /** The `jsonapi` member added to every document. */
-export const JSON_API_VERSION = { version: '1.1' }
+export const JSON_API_VERSION = { version: '1.0' }
 
 type Links = { self?: string, related?: string }
 
@@ -60,7 +60,7 @@ export const errorDocument =
           , ...(parameter ? { source: { parameter } } : {})
           }
         ]
-    , jsonapi: { version: '1.0' }
+    , jsonapi: JSON_API_VERSION
     })
 
 /**

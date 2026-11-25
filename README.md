@@ -43,7 +43,7 @@ and readable only according to its access rules.
 - **Accountable records**: approvals, inspections, timesheets, logs — each change signed by the person who made it.
 - **Devices and AI agents**, each with its own account and every action attributable.
 - **Published datasets** that anyone can read and only editors change.
-- **An API over an existing database** (planned: an `import` command).
+- **An API over an existing SQLite database**: `bun src/cli.ts import shop.db` writes its schemas, keeping its keys, and `--data` copies its rows.
 
 The design book's first chapter, _Why SRS_, covers these and what SRS is not for.
 

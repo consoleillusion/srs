@@ -61,4 +61,5 @@ Add a row before changing a design rule. When a rule is replaced, mark its row
   [D051], [JSON:API 1.1, Dhall schemas and post-quantum cryptography come after the Rust migration], [Each is easier to build once, in Rust, than twice; post-quantum is a new wire format and so v2.0],
   [D052], [Post-quantum changes are hybrid, never post-quantum alone], [The post-quantum algorithms are young; hybrid keeps today's security if they are broken and adds protection if they are not],
   [D053], [Sign-in is built-in OPAQUE accounts only; there is no external identity provider], [SRS must run with no other service, and provider tokens are bearer tokens that cannot sign requests],
+  [D054], [A property marked `x-primary` replaces the generated `id`, and an imported table keeps its own key], [Other programs and existing rows keep their ids, and the key lives in the schema, so building is repeatable],
 )

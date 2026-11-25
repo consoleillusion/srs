@@ -1,0 +1,16 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: Sale
+type: object
+additionalProperties: false
+description: A sale, keyed by the usual uuid, linking a customer and products.
+properties:
+  note:
+    type: string
+x-relations:
+  customer:
+    table: customer
+    cardinality: one
+    foreignKey: customer_no
+  products:
+    table: product
+    cardinality: many

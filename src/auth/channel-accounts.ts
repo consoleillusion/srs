@@ -275,7 +275,7 @@ export const registerChannelAccounts =
       const reset =
         await db.get(
           "SELECT max(`updated_at`) AS `at` FROM `audit_log` WHERE `action` = 'reset_used' AND `resource_id` = ?"
-          , [login.user_id]).catch(() => undefined)
+          , [canonicalUuid(login.user_id)]).catch(() => undefined)
       return c.json(
         { loginId
         , userId

@@ -394,6 +394,8 @@ export const buildAuthoredViews =
         }
       }
 
+      if (base.idColumn !== 'id')
+        throw new Error(`${title}: authored views need a base table keyed by a uuid id; "${base.tableName}" is keyed by "${base.idColumn}"`)
       requireScopeProperty(schema, base, 'id', 'uuid')
       requireScopeProperty(schema, base, 'owner', 'uuid')
       requireScopeProperty(schema, base, 'visibility')
@@ -406,6 +408,7 @@ export const buildAuthoredViews =
       const definition: TableDef =
         { key: pascalCase(title)
         , tableName: name
+        , idColumn: 'id'
         , createSql: ''
         , indexSql: []
         , schema

@@ -18,9 +18,9 @@ export const exists =
     return row !== undefined
   }
 
-/** Insert one row (defaults when empty) and return its new id. */
+/** Insert one row (defaults when empty) and return its key column (`id` unless the table declares another). */
 export const insert =
-  (db: RowDatabase, table: string, values: Values): Promise<Row | undefined> => {
+  (db: RowDatabase, table: string, values: Values, key = 'id'): Promise<Row | undefined> => {
     const columns = Object.keys(values)
     const sql =
       columns.length === 0
@@ -28,7 +28,7 @@ export const insert =
         : `(${columns.map(quote).join(', ')})`
           + ` VALUES (${columns.map(() => '?').join(', ')})`
     return db.get(
-      `INSERT INTO ${quote(table)} ${sql} RETURNING \`id\``, Object.values(values))
+      `INSERT INTO ${quote(table)} ${sql} RETURNING ${quote(key)}`, Object.values(values))
   }
 
 /** Set the given columns on every row matching the conditions. */
