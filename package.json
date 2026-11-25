@@ -29,8 +29,8 @@
     "test": "bun test",
     "cli": "bun src/cli.ts",
     "pretest": "bun src/db/generate-migration.ts",
-    "docs": "bun install --cwd tools/typedoc && tools/typedoc/node_modules/.bin/typedoc",
-    "docs:check": "bun install --cwd tools/typedoc && tools/typedoc/node_modules/.bin/typedoc --emit none"
+    "docs": "bunx typedoc",
+    "docs:check": "bunx typedoc --emit none"
   },
   "dependencies": {
     "@apidevtools/json-schema-ref-parser": "^16.0.7",
