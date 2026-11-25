@@ -9,6 +9,33 @@ SRS runs on a network the operator does not fully trust, possibly without TLS.
 Clients are configured with the server's key fingerprint (@server-keys) before
 first contact.
 
+=== Trust, in short
+
+Security without TLS rests on three things the client must get right. Each
+replaces part of what TLS does.
+
++ *The pinned fingerprint.* The client is given the server's fingerprint
+  (`srs1:…`, printed by `init`) by a trusted path before it first connects:
+  built into an app, typed from the operator's screen, read from a QR code. The
+  Noise handshake then proves, from the very first message, registration
+  included, that the other end holds that key. Nothing is trusted on first
+  use. A client that takes the fingerprint from the network instead (the
+  console's _Trust key from server_) is trusting on first use, and an active
+  attacker present at that moment can be the server for it.
++ *The client code.* The guarantees hold only while genuine client code runs
+  the protocol. Code fetched over the untrusted network can be replaced by an
+  attacker, who then reads the password as it is typed, so client code must
+  arrive by a trusted path (@outside-the-model). This is the gap TLS closes
+  for web pages.
++ *The device.* Malware on the client's device sees what the user sees.
+
+Given those, every later message is encrypted to the pinned server, every
+request after login is signed by the user's key, and a server key can change
+only by a transition signed by the old key (@server-key-rotation). The
+channel and the signatures are what is proved, not who a person is: anyone
+who can reach the server may register an account. Which accounts may do what
+is access control (@access-control).
+
 === Attackers
 
 #table(
@@ -37,7 +64,7 @@ first contact.
   [Login rate limits cannot be bypassed by forging an address], [Malicious client.],
 )
 
-=== Outside the model
+=== Outside the model <outside-the-model>
 
 - *Client code delivered over the untrusted network.* If a browser loads the
   application's JavaScript over plain HTTP, an active attacker can replace it

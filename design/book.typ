@@ -2,15 +2,14 @@
 // Chapters live one per file and are included below under their part.
 
 // ── Palette ────────────────────────────────────────────────────────────
+#import "brand.typ": logo, night, brand-light, night-quiet
 #let bone = rgb("#f3eee3")
 #let ink = rgb(28, 24, 20).transparentize(10%)
 #let muted = rgb(28, 24, 20).transparentize(48%)
 #let rule = rgb(28, 24, 20).transparentize(80%)
 #let shade = rgb("#e9e2d3")
 #let accent = rgb("#7a2e1d").transparentize(8%)
-#let charcoal = rgb("#1f1e1c")
 #let paper-light = rgb("#ece6d8").transparentize(12%)
-#let paper-quiet = rgb("#ece6d8").transparentize(45%)
 
 #let sans = ("Inter", "Source Sans 3", "Fira Sans", "Noto Sans", "DejaVu Sans", "Liberation Sans", "Arial")
 
@@ -131,12 +130,17 @@
 }
 
 // ── Title page ─────────────────────────────────────────────────────────
-#page(header: none, footer: none, fill: charcoal)[
-  #set text(fill: paper-light)
-  #place(bottom + left, title-group(
-    [Standard Resource Server], [SRS design], [Goals, rules, protocol and roadmap],
-    size: 44pt, quiet: paper-quiet,
-  ))
+#page(header: none, footer: none, fill: night)[
+  #set text(fill: brand-light)
+  #place(bottom + left, {
+    set par(spacing: 0pt)
+    stack(
+      spacing: 16pt,
+      text(size: 12pt, weight: 600)[Standard Resource Server],
+      logo(size: 112pt),
+      text(size: 12pt, fill: night-quiet)[Design: goals, rules, protocol and roadmap],
+    )
+  })
 ]
 
 #page(header: none)[
@@ -186,7 +190,7 @@
 #include "status.typ"
 
 #part("VI", "Reference",
-  [The schema keywords, data model, API, authentication routes, deployment settings and development commands.])
+  [The schema keywords, data model, API, authentication routes, deployment settings, development commands, the console and the brand.])
 #include "ref-schema.typ"
 #include "ref-data-model.typ"
 #include "ref-api.typ"
@@ -194,3 +198,4 @@
 #include "ref-deployment.typ"
 #include "ref-development.typ"
 #include "ref-console.typ"
+#include "ref-branding.typ"
