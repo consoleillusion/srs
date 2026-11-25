@@ -33,7 +33,8 @@ Status: *Implemented* — this is the live list of work.
   [v0.3], [Secure transport and accountable accounts, in TypeScript], [Done],
   [v0.4], [Schema authoring workflow and existing databases], [Done],
   [v0.5], [Conformance suites], [Done],
-  [v0.6], [Wire-format freeze and real use], [In progress],
+  [v0.6], [Wire-format freeze and real use], [Done],
+  [v0.7], [Release readiness: the steps to v1.0.0], [Next],
   [v1.0], [Stable TypeScript release], [Later],
   [v1.1], [Rust, piece by piece], [Later],
   [v1.2], [Pluggable databases], [Later],
@@ -135,7 +136,7 @@ Defined in @implementation. Protocol fixtures are written during v0.3.
   columns: (auto, 1fr, 1.3fr, auto),
   table.header([*Version*], [*Task*], [*Done when*], [*State*]),
   [v0.6.0], [Freeze the wire format], [Every protocol string carries `v1` (`srs-noise-v1`, `SRS1`, `srs-keys-v1`, `srs-register-v1`, `srs-bind-v1`, `srs-identity-wrap-v1`, `srs-cert-v1`, `srs-req-v1`, `srs-rotate-v1`, `srs-signature-v1`); the protocol fixtures cover each; the freeze is D056.], [Done],
-  [v0.6.1], [Real use], [The practice quiz site runs on SRS without a protocol change; what it finds is fixed. Needs v0.6.2 to v0.6.5.], [Next],
+  [v0.6.1], [Real use], [The practice quiz site runs on SRS without a protocol change; what it finds is fixed. Needs v0.6.2 to v0.6.5. techstudy.app runs on SRS from v0.6.9.], [Done],
   [v0.6.2], [Remote Turso database], [`SRS_DATABASE_URL` and `SRS_DATABASE_TOKEN` select a remote Turso database for `serve`, `migrate`, `import` and the serverless handler; writes and transactions turn foreign keys on (`spec/serverless.test.ts`, with the driver replaced by a recording stand-in). Differences found on Turso Cloud (techstudy.app) fixed in v0.6.9.], [Done],
   [v0.6.3], [Serverless handler], [`srs/serverless` builds a `Request` to `Response` handler on the bearer transport from `.srs/schemas.json`, under a base path; `migrate` applies migrations before a deploy.], [Done],
   [v0.6.4], [Indexed reads], [Rows are read from base tables, never through views, so finding a row by id, a share, an inherited parent or a related row uses an index; `page[total]=false` skips the count. `spec/query-plans.test.ts` fails on any full table scan in those paths.], [Done],
@@ -146,11 +147,34 @@ Defined in @implementation. Protocol fixtures are written during v0.3.
   [v0.6.9], [Turso Cloud], [Every uuid is made in code, since Turso Cloud's `uuid7()` returns text; statements and transactions retry when the remote connection drops before `COMMIT`.], [Done],
 )
 
+=== v0.7 — Release readiness
+
+Each step is a condition of v1.0.0. A step is done only when its check passes
+as written.
+
+#table(
+  columns: (auto, 1fr, 1.3fr, auto),
+  table.header([*Version*], [*Task*], [*Done when*], [*State*]),
+  [v0.7.0], [Suites on Turso Cloud], [`bun run test:remote`, with `SRS_TEST_DATABASE_URL` and `SRS_TEST_DATABASE_TOKEN` naming a scratch Turso database, runs the protocol, schema, query, access and HTTP suites against it and passes. The script empties the scratch database first and refuses a database that holds rows it did not create.], [Next],
+  [v0.7.1], [Publish command], [`srs publish <database>` builds the site's database in a local file, loads it from a source (`--from` an SQLite file, or `--data` a directory of JSON:API documents), checks it, and uploads it with `turso db import` under a new name, never replacing a database that holds rows. It prints the URL and a new token. The quiz site uses it in place of its own script.], [Later],
+  [v0.7.2], [Import reads Turso files], [`srs import --data` reads SQLite files written by the Turso engine, including its custom column types, as well as plain SQLite.], [Later],
+  [v0.7.3], [Package], [SRS is published to npm as `srs`, with `CHANGELOG.md` listing every version from v0.6.0. In a new empty directory, `bun add srs`, `bunx srs init <schemas>` and `bunx srs serve` work as `ref-deployment` documents them, checked by a script in CI.], [Later],
+  [v0.7.4], [Book matches code], [Every *Implemented* claim in the book names a file or test that exists and passes; every *Specified* claim is marked as such; every command in the book is run by the docs check.], [Later],
+  [v0.7.5], [Thirty days in use], [techstudy.app runs one SRS version for 30 consecutive days with no SRS change made for it. Any SRS fix the site needs restarts the count. Security fixes are made at once and also restart it.], [Later],
+)
+
 === v1.0 — Stable TypeScript release
 
-`v1.0.0` is released when v0.2 to v0.6 are done. From then on the wire format
-is frozen (@implementation), and a breaking change to the HTTP API or the
-protocol needs a new major version.
+`v1.0.0` is tagged and published when v0.2 to v0.7 are done. It is the last
+v0.7 version renamed: no code changes between the two.
+
+From v1.0.0 on:
+- The wire format is frozen (@implementation, D056). A breaking change to the
+  HTTP API, the protocol or the schema keywords needs v2.0.0.
+- A minor version (v1.1.0) adds features without breaking anything. A patch
+  version (v1.0.1) only fixes bugs.
+- Every release has a `CHANGELOG.md` entry and passes every suite on the
+  embedded database and on Turso Cloud (v0.7.0).
 
 === v1.1 — Rust, piece by piece
 
