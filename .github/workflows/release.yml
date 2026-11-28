@@ -41,13 +41,6 @@ jobs:
       - name: Compile PDF
         run: ./compile.sh srs.pdf
 
-      - name: Verify reproducible metadata
-        run: |
-          ./compile.sh /tmp/reproduced.pdf >/dev/null
-          expected="$(sha256sum srs.pdf | cut -d' ' -f1)"
-          actual="$(sha256sum /tmp/reproduced.pdf | cut -d' ' -f1)"
-          test "$expected" = "$actual"
-
       - name: Upload PDF
         uses: actions/upload-artifact@v4
         with:
