@@ -1,0 +1,91 @@
+name: Build and Release PDF
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pdf-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TYPST_VERSION: '0.15.1'
+  TYPST_ARCHIVE: typst-x86_64-unknown-linux-musl.tar.xz
+  TYPST_SHA256: a6d077d0a95eed5a2eba715b2dae06be954f624ccbf85758a03f389ded33118c
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Typst
+        run: |
+          base="https://github.com/typst/typst/releases/download/v${TYPST_VERSION}"
+          curl -fsSL "$base/$TYPST_ARCHIVE" -o typst.tar.xz
+          echo "$TYPST_SHA256  typst.tar.xz" | sha256sum --check -
+          tar -xJf typst.tar.xz
+          sudo install typst-x86_64-unknown-linux-musl/typst /usr/local/bin/typst
+          typst --version
+
+      - name: Check CNL declarations
+        run: python3 tools/lint_cnl.py
+
+      - name: Compile PDF
+        run: ./compile.sh srs.pdf
+
+      - name: Verify reproducible metadata
+        run: |
+          ./compile.sh /tmp/reproduced.pdf >/dev/null
+          expected="$(sha256sum srs.pdf | cut -d' ' -f1)"
+          actual="$(sha256sum /tmp/reproduced.pdf | cut -d' ' -f1)"
+          test "$expected" = "$actual"
+
+      - name: Upload PDF
+        uses: actions/upload-artifact@v4
+        with:
+          name: design-pdf
+          path: srs.pdf
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download PDF
+        uses: actions/download-artifact@v4
+        with:
+          name: course-pdf
+          path: dist
+
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          asset="srs-${TAG}.pdf"
+          cp dist/srs.pdf "$asset"
+
+          gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1 || \
+            gh release create "$TAG" \
+              --repo "$REPO" \
+              --title "$TAG" \
+              --notes "Release $TAG"
+
+          gh release upload "$TAG" "$asset" \
+            --repo "$REPO" \
+            --clobber
