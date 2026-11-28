@@ -34,7 +34,8 @@
 )[srs]
 
 // ── Palette ────────────────────────────────────────────────────────────
-#let bone = rgb("#f3eee3")
+//#let bone = rgb("#f3eee3")
+#let bone = rgb("#f1f1f1")
 #let ink = rgb(28, 24, 20).transparentize(10%)
 #let muted = rgb(28, 24, 20).transparentize(48%)
 #let rule = rgb(28, 24, 20).transparentize(80%)
