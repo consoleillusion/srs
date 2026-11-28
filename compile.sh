@@ -10,5 +10,5 @@ out="${1:-$root/srs-design.pdf}"
 # change the timestamp on the next build.
 epoch="$(git -C "$root" log -1 --format=%ct -- content 2>/dev/null || printf '0')"
 
-typst compile "$root/design/index.typ" "$out" --creation-timestamp "$epoch"
+typst compile "$root/design/index.typ" "$out" 
 printf 'Built %s\n' "$out"
